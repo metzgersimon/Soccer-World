@@ -1,6 +1,6 @@
 # Source script setting up all libraries
 source("Setup.R")
-
+source("Scrape_Fussballdaten.R")
 
 #### Loading Data from APIs ####
 
@@ -91,15 +91,38 @@ german_frame <- left_join(league_frame, season_frame, by = c("id" = "idLeague"),
   rename(idSeason = id.season,
          idLeague = id)
 
-# save(german_frame, file = "german_frame.RData")
-
-load(file = "german_frame.RData")
 
 
 
 
+#### Scrape Fussballdaten.de ####
+root_url <- "https://www.fussballdaten.de/"
+
+# test the written functions
+league <- "bundesliga"
+season <- 1964
+
+number_of_teams <- get_number_of_teams_in_season(root_url, league, season)
+season_results <- get_results_for_season(root_url, league,
+                                         season, number_of_teams)
+
+
+
+# Create a data frame with all results of all seasons
+
+# 2022 does not work correctly at the moment because get_results_for_season
+# can not deal with matches in the future
+seasons <- c(1964:2021)
+
+all_seasons_frame <- NULL
+
+for(i in seasons[1]:seasons[length(seasons)]){
+  number_of_teams <- get_number_of_teams_in_season(root_url, league, season)
+  season_results <- get_results_for_season(root_url, league,
+                                           season, number_of_teams)
   
-
+  all_seasons_frame <- rbind(all_seasons_frame, test)
+}
 
 
 
