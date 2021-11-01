@@ -54,7 +54,8 @@ get_results_for_season <- function(root_url, league, season, number_of_teams){
     matchday_results_page <- read_html(url)
     
     # extract the dates for the i-th matchday
-    matchday_date <- html_nodes(matchday_results_page, css = ".datum-row") %>%
+    ## (in the future we need html_nodes, because we have multiple dates) ##
+    matchday_date <- html_node(matchday_results_page, css = ".datum-row") %>%
       html_text()
     
     # extract all the results for every match on the i-th matchday

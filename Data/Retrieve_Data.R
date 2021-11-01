@@ -1,6 +1,5 @@
 # Source script setting up all libraries
 source("Setup.R")
-source("Scrape_Fussballdaten.R")
 
 #### Loading Data from APIs ####
 
