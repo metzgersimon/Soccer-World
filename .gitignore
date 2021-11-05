@@ -38,4 +38,8 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
+# MacOs invisible folders
+.DS*
+
+# do not push API keys
 API_keys.R
