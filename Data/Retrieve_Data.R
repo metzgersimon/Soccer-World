@@ -124,4 +124,20 @@ for(i in seasons[1]:seasons[length(seasons)]){
 }
 
 
+### Scrape ODDSPORTAL ###
+list_save <- list()
+seasons <- c(2004:2022)
+ports <- 
+  for(season in seasons){
+    rand_port <- as.integer(runif(1, 0, 1) * length(netstat::unassigned_ports()))
+    port <- netstat::unassigned_ports()[rand_port]
+    print(port)
+    test <- get_past_odd_results(sport = "soccer", country = "germany",
+                                 league = "bundesliga", season = season, port = port)
+    list_save <- append(list_save,
+                        test)
+  }
+
+
+
 
