@@ -1,0 +1,160 @@
+# Function get all seasons for a given league which is passed on as a parameter
+# through an ID
+get_seasons_by_league_id <- function(league_id){
+  # For this API one first have to get a token which is valid for one hour
+  # (this is done with a POST).
+  # This token then must be used instead of the API key when retrieving data
+  access_token_elena <- get_elena_access_token()
+  
+  # create the url endpoint for the seasons 
+  url_season <- paste0("https://football.elenasport.io/v2/leagues/",
+                       league_id, "/seasons")
+  
+  # retrieve the data from the API
+  season_response <- GET(url_season, 
+                         add_headers('Authorization' = 
+                                       paste0("Bearer ", access_token_elena)))
+  
+  # extract the content
+  season_content <- content(season_response)$data
+  
+  # create a data frame by parsing the list of lists
+  season_frame <- list.stack(season_content)
+  
+  return(season_frame)
+}
+
+
+# function to get all fixtures of a season which is passed to the function
+# via a season_id
+get_fixtures_by_season_id <- function(season_id){
+  # For this API one first have to get a token which is valid for one hour
+  # (this is done with a POST).
+  # This token then must be used instead of the API key when retrieving data
+  access_token_elena <- get_elena_access_token()
+  
+  # create a variable to control the paginated endpoint
+  page <- 1
+ 
+  # create the url endpoint for the paginated fixtures 
+  url_fixtures <- paste0("https://football.elenasport.io/v2/",
+                         "seasons/", season_id, "/fixtures?page=",
+                         page)
+  
+  # retrieve the data from the API
+  fixtures_response <- GET(url_fixtures, 
+                           add_headers('Authorization' = 
+                                         paste0("Bearer ", access_token_elena)))
+  
+  # extract the content of the response
+  fixtures_content <- content(fixtures_response)
+  
+  # extract the content of the first page and store it as a data frame
+  current_fixtures_frame <- list.stack(fixtures_content$data)
+  
+  # use the helper function clean_fixtures_frame to extract the list of referees
+  # from the fixtures_frame and store them as new variables in the frame
+  fixtures_frame <- clean_fixtures_frame(current_fixtures_frame)
+  
+  # extract information about whether there is a next page
+  has_next <- fixtures_content$pagination$hasNextPage
+  
+  
+  # iterate through the pages as long as there is a next page
+  while(has_next){
+    
+    # create the url endpoint for the current page 
+    url_fixtures <- paste0("https://football.elenasport.io/v2/",
+                           "seasons/", season_id, "/fixtures?page=",
+                           page)
+    
+    # retrieve the data from the API
+    fixtures_response <- GET(url_fixtures, 
+                             add_headers('Authorization' = 
+                                           paste0("Bearer ", access_token_elena)))
+    
+    # extract the content of the response
+    fixtures_content <- content(fixtures_response)
+    
+    # reset the has_next variable 
+    has_next <- fixtures_content$pagination$hasNextPage
+    
+    # extract the content of the current page and store it as a data frame
+    current_fixtures_frame <- list.stack(fixtures_content$data)
+    
+    # use the helper function clean_fixtures_frame to extract the list of referees
+    # from the current_fixtures_frame and store them as new variables in the frame
+    current_fixtures <- fixtures_by_season_helper(current_fixtures_frame)
+    
+    # append the fixtures of the current page to the frame of the previous pages
+    fixtures_frame <- bind_rows(fixtures_frame, current_fixtures)
+    
+    # increase the page counter
+    page <- page + 1
+  
+  }
+  
+  # return the fixtures_frame 
+  return(fixtures_frame)
+  
+}
+  
+# helper function extracts the list of referee information from 
+# a column in the fixtures_frame and merge all information together
+clean_fixtures_frame <- function(fixtures_frame){
+  
+  # extract the number of referees (should be always 4 but maybe there is some 
+  # mistake in the data)
+  number_of_refs <- current_fixtures_frame %>% 
+    group_by(id) %>% 
+    count() %>%
+    ungroup() %>%
+    select(n) %>%
+    unique() %>%
+    unlist() %>%
+    unname()
+  
+  # extract the referee column which is a list and store it as a data frame
+  # after that correct a typo, "assitant referee" to "assistant_referee"
+  referees <- list.stack(fixtures_frame$referees) %>%
+    mutate(type = ifelse(type == "assitant referee", "assistant_referee",
+                         type))
+  
+  # drop all unnecessary columns from the fixtures frame and only use unique
+  # rows (after dropping the referees column there is only one row per fixture
+  # instead of 4 available)
+  fixtures_frame <- fixtures_frame %>%
+    select(-c(elapsed, elapsedPlus, eventsHash, lineupsHash, statsHash,
+              referees)) %>%
+    unique()
+  
+  # iterate through the referees frame starting with 0 (instead of 1)
+  # in order to use this method
+  for(i in 0:(nrow(referees)-1)){
+    # we want to check if the current string in the type column contains
+    # the word assistant
+    if(str_detect(referees$type[(i+1)], "assistant")){
+      # if so, we want to append a number 
+      # such that out of "assistant_referee" we make "assistant_referee_1",
+      # _2 and _3 depending on i with the modulo operator
+      referees$type[(i+1)] <- paste0(referees$type[(i+1)], "_", (i %% number_of_refs))
+    }
+  }
+  
+  # clean the referees frame
+  referees_clean <- referees %>%
+    # group by every n-th row depending on the number of referees (number_of_refs)
+    group_by(grp = rep(row_number(), length.out = n(), each = number_of_refs)) %>%
+    # transform the type column and create new columns for each referees id
+    # and name
+    pivot_wider(names_from = type, values_from = c(idReferee, refereeName)) %>%
+    ungroup() %>%
+    select(-grp)
+  
+  # bind the fixtures_frame and the cleaned referee frame together
+  fixtures_clean <- cbind(fixtures_frame, referees_clean)
+  
+  # return the cleaned fixtures frame
+  return(fixtures_clean)
+}
+
