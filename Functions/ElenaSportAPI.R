@@ -158,3 +158,64 @@ clean_fixtures_frame <- function(fixtures_frame){
   return(fixtures_clean)
 }
 
+
+# Function creates a data frame which contains the lineup for a given fixture_id
+get_lineups_by_fixture_id <- function(fixture_id){
+  # For this API one first have to get a token which is valid for one hour
+  # (this is done with a POST).
+  # This token then must be used instead of the API key when retrieving data
+  access_token_elena <- get_elena_access_token()
+  
+  # create a variable to control the paginated endpoint
+  page <- 1
+  
+  # create the url endpoint for the seasons 
+  url_lineup <- paste0("https://football.elenasport.io/v2/fixtures/",
+                       fixture_id, "/lineups?page=", page)
+  
+  # retrieve the data from the API
+  lineup_response <- GET(url_lineup, 
+                         add_headers('Authorization' = 
+                                       paste0("Bearer ", access_token_elena)))
+  
+  lineup_content <- content(lineup_response)
+  
+  # extract the content of the first page and store it as a data frame
+  lineup_frame <- list.stack(lineup_content$data)
+  
+  # extract information about whether there is a next page
+  has_next <- lineup_content$pagination$hasNextPage
+  
+  
+  # iterate through the pages as long as there is a next page
+  while(has_next){
+    # create the url endpoint for the current page 
+    url_lineup <- paste0("https://football.elenasport.io/v2/fixtures/",
+                         fixture_id, "/lineups?page=", page)
+    
+    # retrieve the data from the API
+    lineup_response <- GET(url_lineup, 
+                             add_headers('Authorization' = 
+                                           paste0("Bearer ", access_token_elena)))
+    
+    # extract the content of the response
+    lineup_content <- content(lineup_response)
+    
+    # reset the has_next variable 
+    has_next <- lineup_content$pagination$hasNextPage
+    
+    # extract the content of the current page and store it as a data frame
+    current_lineup_frame <- list.stack(lineup_content$data)
+    
+    # append the players of the current page to the frame of the previous pages
+    lineup_frame <- bind_rows(lineup_frame, current_lineup_frame)
+    
+    # increase the page counter
+    page <- page + 1
+    
+  }
+  
+  # return data frame which contains the lineup and the rotation substitute players
+  return(lineup_frame)
+  
+}
