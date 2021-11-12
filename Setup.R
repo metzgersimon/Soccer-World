@@ -1,7 +1,8 @@
 #### Loading libraries needed ####
 if (!require("binman")) install.packages("binman")
-if (!require("dplyr")) install.packages("dplyr")
+if (!require("dashboardthemes")) install.packages("dashboardthemes")
 if (!require("devtools")) install.packages("devtools")
+if (!require("dplyr")) install.packages("dplyr")
 if (!require("httr")) install.packages("httr")
 if (!require("lubridate")) install.packages("lubridate")
 if (!require("magrittr")) install.packages("magrittr")
@@ -18,11 +19,13 @@ if (!require("shinydashboard")) install.packages("shinydashboard")
 if (!require("shinythemes")) install.packages("shinythemes")
 if (!require("stringr")) install.packages("stringr")
 if (!require("tidyr")) install.packages("tidyr")
+if (!require("viridis")) install.packages("viridis")
 if (!require("xfun")) install.packages("xfun")
 if (!require("worldfootballR")) devtools::install_github("JaseZiv/worldfootballR")
 
 
 library(binman)
+library(dashboardthemes)
 library(dplyr)
 library(httr)
 library(lubridate)
@@ -39,6 +42,7 @@ library(shinydashboard)
 library(shinythemes)
 library(stringr)
 library(tidyr)
+library(viridis)
 library(worldfootballR)
 
 
