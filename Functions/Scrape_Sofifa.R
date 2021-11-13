@@ -82,7 +82,10 @@ get_team_stats_full <- function(){
         # and remove the uncessesary parantheses in the league column
         mutate(date = available_dates[j],
                fifa_vers = fifa_versions[i],
-               league = trimws(str_remove_all(league, pattern = "\\(.*\\)")))
+               league = trimws(str_remove_all(league, pattern = "\\(.*\\)"))) %>%
+        mutate(league = ifelse(str_detect(league, pattern = "1."),
+                               "Bundesliga", ifelse(str_detect(league, pattern = "2."),
+                                                    league, "3. Liga")))
         
         
       # append the newly extracted rows to the current data frame
