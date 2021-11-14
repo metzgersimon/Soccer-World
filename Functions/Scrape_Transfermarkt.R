@@ -224,11 +224,22 @@ get_running_table <- function(league, league_id, season){
     matchday_table <- matchday_table %>%
       mutate(goals_for = as.numeric(goals_for),
              goals_against = as.numeric(goals_against),
+             # add season and league information
              season_start_year = season,
              season_end_year = (season + 1),
              league = str_to_title(league)) 
     
+    # add cumulative points
+    cum_points <- matchday_table %>%
+      # group by club 
+      group_by(club) %>% 
+      # add up all points for a given club to a given matchday
+      summarize(cum_points = sum(points))
     
+    # join the two frames by clubname
+    matchday_table <- inner_join(matchday_table, cum_points,
+                                 by = "club")
+      
     # append the data frame of the current matchday to the data frame
     # of all matchdays
     table_over_time <- bind_rows(table_over_time,
