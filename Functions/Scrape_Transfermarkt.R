@@ -223,7 +223,10 @@ get_running_table <- function(league, league_id, season){
     # transform the goals columns into numeric variables
     matchday_table <- matchday_table %>%
       mutate(goals_for = as.numeric(goals_for),
-             goals_against = as.numeric(goals_against))
+             goals_against = as.numeric(goals_against),
+             season_start_year = season,
+             season_end_year = (season + 1),
+             league = str_to_title(league)) 
     
     
     # append the data frame of the current matchday to the data frame
