@@ -1,66 +1,67 @@
 ###################### transfermarkt ########################
 
-############## get_scoring_ratio_per_season ################# 
+############## get_scoring_ratio_per_season #################
 # inputs: league, league_id, season
-# outputs: should return a data frame for a given season in a certain league 
+# outputs: should return a data frame for a given season in a certain league
 # that contain information about the efficiency of the teams
 # example: how many goals a team scored in relation to the shots the team did
 
-get_scoring_ratio_per_season <- function(league, league_id, season) {
-  # create the url endpoint for the given season
-  url <- paste0(
-    "https://www.transfermarkt.com/",
-    league,
-    "/",
-    "chancenverwertung/wettbewerb/",
-    league_id,
-    "/sasion_id/",
-    season,
-    "/plus/1"
-  )
-  
-  # extract the content of the table into a data frame
-  chances_content <- read_html(url) %>%
-    # we only want to extract the body of the table
-    html_nodes(xpath = "//table/tbody") %>%
-    # convert it into a data frame
-    html_table() %>%
-    # drop the first element of the list because we do not need it
-    .[-1]
-  
-  # create the data frame with the second element of the list and drop
-  # the first column which is the wappen variable which we do not have
-  chances_frame <- as.data.frame(chances_content[[1]]) %>%
-    .[, -1] %>%
-    # rename the columns
-    rename(
-      club = X2,
-      total_shots = X3,
-      total_shots_on_goal = X4,
-      goals = X5,
-      conversion_rate = X6
+get_scoring_ratio_per_season <-
+  function(league, league_id, season) {
+    # create the url endpoint for the given season
+    url <- paste0(
+      "https://www.transfermarkt.com/",
+      league,
+      "/",
+      "chancenverwertung/wettbewerb/",
+      league_id,
+      "/sasion_id/",
+      season,
+      "/plus/1"
     )
-  
-  # drop the unnecessary information about the table position of the team
-  # by extracting only the club name and trim the whitespaces
-  chances_frame$club <- lapply(chances_frame$club,
-                               function(x)
-                                 (strsplit(x, "[0-9]+th position"))) %>%
-    unlist() %>%
-    trimws()
-  
-  # add an additional column for the season the information is for
-  chances_frame$season <-
-    rep(paste0(season, "/", (season + 1)), nrow(chances_frame))
-  
-  # return the data frame
-  return(chances_frame)
-  
-}
+    
+    # extract the content of the table into a data frame
+    chances_content <- read_html(url) %>%
+      # we only want to extract the body of the table
+      html_nodes(xpath = "//table/tbody") %>%
+      # convert it into a data frame
+      html_table() %>%
+      # drop the first element of the list because we do not need it
+      .[-1]
+    
+    # create the data frame with the second element of the list and drop
+    # the first column which is the wappen variable which we do not have
+    chances_frame <- as.data.frame(chances_content[[1]]) %>%
+      .[,-1] %>%
+      # rename the columns
+      rename(
+        club = X2,
+        total_shots = X3,
+        total_shots_on_goal = X4,
+        goals = X5,
+        conversion_rate = X6
+      )
+    
+    # drop the unnecessary information about the table position of the team
+    # by extracting only the club name and trim the whitespaces
+    chances_frame$club <- lapply(chances_frame$club,
+                                 function(x)
+                                   (strsplit(x, "[0-9]+th position"))) %>%
+      unlist() %>%
+      trimws()
+    
+    # add an additional column for the season the information is for
+    chances_frame$season <-
+      rep(paste0(season, "/", (season + 1)), nrow(chances_frame))
+    
+    # return the data frame
+    return(chances_frame)
+    
+  }
 
 
 
-############## get_ball_possession_per_season ################# 
+############## get_ball_possession_per_season #################
 # inputs: league, league_id, season
 # outputs: function should return a data frame for a given season in a certain league
 # that contain information about the ball possession of the teams
@@ -80,7 +81,7 @@ get_ball_possession_per_season <-
         season,
         "/plus/1"
       )
-  
+    
     # get the html of the url
     page_html <- read_html(url)
     
@@ -136,8 +137,9 @@ get_ball_possession_per_season <-
       )
     
     # join these two frames into one frame by the club columns
-    possession_frame <- inner_join(possession_frame, club_names_frame,
-                                   by = "club")
+    possession_frame <-
+      inner_join(possession_frame, club_names_frame,
+                 by = "club")
     
     # return the completed data frame
     return(possession_frame)
@@ -145,7 +147,7 @@ get_ball_possession_per_season <-
 
 
 
-############## get_market_values_over_time ################# 
+############## get_market_values_over_time #################
 # inputs: league, league_id
 # outputs: should return a data frame for a series of season in a certain league
 # that contain information about a teams market value development over time
@@ -238,17 +240,17 @@ get_market_values_over_time <- function(league, league_id) {
 
 
 
-############## get_market_values_player ################# 
+############## get_market_values_player #################
 # inputs: league, league_id
 # outputs: should return a data frame for players in a certain league
-# that contain information about player market value 
+# that contain information about player market value
 
 get_players_market_values <- function(league, league_id) {
   # create empty variable to store market values of players for one page
-  player_market_values <- as.data.frame(matrix(nrow=1,ncol = 5))
+  player_market_values <- as.data.frame(matrix(nrow = 1, ncol = 5))
   
   # create empty variable to store all market values of players
-  players_values <- as.data.frame(matrix(nrow=0,ncol = 5))
+  players_values <- as.data.frame(matrix(nrow = 0, ncol = 5))
   # create base url to extract the market values of players
   url <-
     paste0(
@@ -261,130 +263,53 @@ get_players_market_values <- function(league, league_id) {
     )
   
   page <- 1
-    while(page <= 4){
-      #create dynamic url_end with the page_counter variable 
-      url_end <- paste0("page/", page)
-      # paste the whole url together
-      final_url <- paste0(url, url_end)
-  
-      # extract all available market value for players
-      player_market_values <-
-        read_html(final_url) %>%
-        html_nodes(css = "#yw1 .even :nth-child(4) , #yw1 .even .zentriert:nth-child(1), #yw1 .inline-table tr:nth-child(2) td, #yw1 .inline-table tr:nth-child(2) td, #yw1 .odd .zentriert:nth-child(1), #yw1 .odd :nth-child(4), #yw1 .hauptlink") %>%
-        html_text()
-      
-      # convert it into a data frame
-      player_market_values <- player_market_values %>%　data.frame() %>% rename("value" = ".")
-      
-      # clean the data frame
-      player_market_values$variable <-
-        rep(
-          c("ranking", "player name", "position", "age", "market value"),
-          nrow(player_market_values) / 5
-        )
-      player_market_values <- player_market_values %>% unstack()
-      
-      player_market_values <-
-        player_market_values[, c("ranking", "player.name", "position", "age", "market.value")]
-      
-      player_market_values$ranking <-
-        as.numeric(player_market_values$ranking)
-      player_market_values$age <- as.numeric(player_market_values$age)
-      
-      # so far we only have the values
-      # but we also want to know which clubs they come from
-      # so we extract the information from logos included in the table
-      image_club_names <- read_html(final_url) %>%
-        html_nodes(css = "#yw1 a img") %>%
-        html_attr("alt") %>% as.data.frame() 
-      
-      player_market_values <- cbind(player_market_values, image_club_names)
-      player_market_values <- player_market_values %>%　rename("club" = ".")
-      
-      # append the data for the current page to the list which stores
-      # all pages
-      players_values <- rbind(players_values,
-                              player_market_values)
-      
-    
-  # increase page_counter by 1
-  page <- page + 1
-  
-  # wait for 5 seconds before scraping the next page
-    Sys.sleep(5)
-  }
-  
-  # return the full data frame of market values over time
-  return(players_values)
-}
-
-
-
-############## get_performance_players ################# 
-# inputs: league, league_id
-# outputs: should return a data frame for players which contains the 
-# information about the performance of players in one certain season
-# i.e. goals, assists, appearance, substitution on/off
-
-get_performance_players <- function(league, league_id, season) {
-  # create empty variable to store performance of players for one page
-  player_performance <- as.data.frame(matrix(nrow=1,ncol = 10))
-  
-  # create empty variable to store performance of players 
-  players_season_performance <- as.data.frame(matrix(nrow=0,ncol = 10))
-  
-  # create base url to extract the market values of players
-  url <-
-    paste0(
-      "https://www.transfermarkt.com/",
-      league,
-      "/scorerliste/",
-      "wettbewerb/",
-      league_id,
-      "/saison_id/",
-      season,
-      "/altersklasse/alle/plus/1"
-    )
-  
-  page <- 1
-  while(page <= 4){
-    #create dynamic url_end with the page variable 
-    url_end <- paste0("/page/", page)
-    
+  while (page <= 4) {
+    #create dynamic url_end with the page_counter variable
+    url_end <- paste0("page/", page)
     # paste the whole url together
     final_url <- paste0(url, url_end)
     
     # extract all available market value for players
-    player_performance <-
+    player_market_values <-
       read_html(final_url) %>%
-      html_nodes(css = ".even .zentriert:nth-child(1) , .even :nth-child(10), .even :nth-child(9), .even :nth-child(8), .even :nth-child(7), .even :nth-child(6), .even :nth-child(5), .hauptlink, .odd :nth-child(10), .odd :nth-child(9), .odd :nth-child(8), .odd :nth-child(7), .odd :nth-child(6), .odd :nth-child(5), .inline-table tr:nth-child(2) td, .hauptlink a, .odd .zentriert:nth-child(1)") %>%
-      html_text() %>% data.frame() 
+      html_nodes(css = "#yw1 .even :nth-child(4) , #yw1 .even .zentriert:nth-child(1), #yw1 .inline-table tr:nth-child(2) td, #yw1 .inline-table tr:nth-child(2) td, #yw1 .odd .zentriert:nth-child(1), #yw1 .odd :nth-child(4), #yw1 .hauptlink") %>%
+      html_text()
+    
+    # convert it into a data frame
+    player_market_values <-
+      player_market_values %>%　data.frame() %>% rename("value" = ".")
     
     # clean the data frame
-    player_performance$variable <-
+    player_market_values$variable <-
       rep(
-        c("ranking", "player name1", "player name","position", "age", "appearances", "substitution on", "substitution off", "goals", "assists", "total points"),
-        nrow(player_performance) / 11
+        c("ranking", "player name", "position", "age", "market value"),
+        nrow(player_market_values) / 5
       )
-    player_performance <- player_performance %>% unstack()
-    player_performance <- player_performance[,-6]
+    player_market_values <- player_market_values %>% unstack()
     
+    player_market_values <-
+      player_market_values[, c("ranking",
+                               "player.name",
+                               "position",
+                               "age",
+                               "market.value")]
     
-    player_performance <-
-      player_performance[, c("ranking", "player.name", "position", "age", "appearances", "substitution.on", "substitution.off", "goals", "assists", "total.points")]
-    
-    cols.num <- c("ranking","age", "appearances", "substitution.on", "substitution.off", "goals", "assists", "total.points")
-    player_performance[cols.num] <- sapply(player_performance[cols.num],as.numeric)
+    player_market_values$ranking <-
+      as.numeric(player_market_values$ranking)
+    player_market_values$age <-
+      as.numeric(player_market_values$age)
     
     # so far we only have the values
     # but we also want to know which clubs they come from
     # so we extract the information from logos included in the table
     image_club_names <- read_html(final_url) %>%
-      html_nodes(css = "#yw1 td:nth-child(3)") %>%
-      html_attr("image") %>% as.data.frame() 
+      html_nodes(css = "#yw1 a img") %>%
+      html_attr("alt") %>% as.data.frame()
     
-    player_market_values <- cbind(player_market_values, image_club_names)
-    player_market_values <- player_market_values %>%　rename("club" = ".")
+    player_market_values <-
+      cbind(player_market_values, image_club_names)
+    player_market_values <-
+      player_market_values %>%　rename("club" = ".")
     
     # append the data for the current page to the list which stores
     # all pages
@@ -401,6 +326,130 @@ get_performance_players <- function(league, league_id, season) {
   
   # return the full data frame of market values over time
   return(players_values)
+}
+
+
+
+############## get_performance_players #################
+# inputs: league, league_id
+# outputs: should return a data frame for players which contains the
+# information about the performance of players in one certain season
+# i.e. goals, assists, appearance, substitution on/off
+
+get_performance_players <- function(league, league_id, season) {
+  # create empty variable to store performance of players for one page
+  player_performance <- as.data.frame(matrix(nrow = 1, ncol = 10))
+  
+  # create empty variable to store performance of players
+  players_season_performance <-
+    as.data.frame(matrix(nrow = 0, ncol = 10))
+  
+  # create base url to extract the market values of players
+  url <-
+    paste0(
+      "https://www.transfermarkt.com/",
+      league,
+      "/scorerliste/",
+      "wettbewerb/",
+      league_id,
+      "/saison_id/",
+      season,
+      "/altersklasse/alle/plus/1"
+    )
+  
+  page <- 1
+  while (TRUE) {
+    #create dynamic url_end with the page variable
+    url_end <- paste0("/page/", page)
+    
+    # paste the whole url together
+    final_url <- paste0(url, url_end)
+    
+    # extract all available market value for players
+    player_performance <-
+      read_html(final_url) %>%
+      html_nodes(css = ".even .zentriert:nth-child(1) , .even :nth-child(10), .even :nth-child(9), .even :nth-child(8), .even :nth-child(7), .even :nth-child(6), .even :nth-child(5), .hauptlink, .odd :nth-child(10), .odd :nth-child(9), .odd :nth-child(8), .odd :nth-child(7), .odd :nth-child(6), .odd :nth-child(5), .inline-table tr:nth-child(2) td, .hauptlink a, .odd .zentriert:nth-child(1)") %>%
+      html_text() %>% data.frame()
+    
+    # clean the data frame
+    player_performance$variable <-
+      rep(
+        c(
+          "ranking",
+          "player name1",
+          "player name",
+          "position",
+          "age",
+          "appearances",
+          "substitution on",
+          "substitution off",
+          "goals",
+          "assists",
+          "total points"
+        ),
+        nrow(player_performance) / 11
+      )
+    player_performance <- player_performance %>% unstack()
+    player_performance <- player_performance[, -6]
+    
+    
+    player_performance <-
+      player_performance[, c(
+        "ranking",
+        "player.name",
+        "position",
+        "age",
+        "appearances",
+        "substitution.on",
+        "substitution.off",
+        "goals",
+        "assists",
+        "total.points"
+      )]
+    
+    cols.num <-
+      c(
+        "ranking",
+        "age",
+        "appearances",
+        "substitution.on",
+        "substitution.off",
+        "goals",
+        "assists",
+        "total.points"
+      )
+    player_performance[cols.num] <-
+      sapply(player_performance[cols.num], as.numeric)
+    
+    # so far we only have the values
+    # but we also want to know which clubs they come from
+    # so we extract the information from logos included in the table
+    #image_club_names <- read_html(final_url) %>%
+    #html_nodes(xpath = "//a[@title]") %>%
+    #html_attr("title") %>% as.data.frame()
+    
+    #image_club_names <- image_club_names[c(3:55),]
+    #player_performance <- cbind(player_performance, image_club_names)
+    #player_performance <- player_performance %>%　rename("club" = ".")
+    
+    # append the data for the current page to the list which stores
+    # all pages
+    players_season_performance <-
+      rbind(players_season_performance,
+            player_performance)
+    
+    if (nrow(player_performance) < 25) {
+      break
+    }
+    # increase page_counter by 1
+    page <- page + 1
+    
+    # wait for 5 seconds before scraping the next page
+    Sys.sleep(5)
+  }
+  
+  # return the full data frame of market values over time
+  return(players_season_performance)
 }
 
 
