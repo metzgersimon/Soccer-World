@@ -242,8 +242,8 @@ get_market_values_over_time <- function(league, league_id) {
 
 ############## get_market_values_player #################
 # inputs: league, league_id
-# outputs: should return a data frame for players in a certain league
-# that contain information about player market value
+# outputs: should return a data frame in a certain league
+# that contain information about player market value for top 100 players
 
 get_players_market_values <- function(league, league_id) {
   # create empty variable to store market values of players for one page
@@ -251,6 +251,7 @@ get_players_market_values <- function(league, league_id) {
   
   # create empty variable to store all market values of players
   players_values <- as.data.frame(matrix(nrow = 0, ncol = 5))
+  
   # create base url to extract the market values of players
   url <-
     paste0(
@@ -264,8 +265,8 @@ get_players_market_values <- function(league, league_id) {
   
   page <- 1
   while (page <= 4) {
-    #create dynamic url_end with the page_counter variable
     url_end <- paste0("page/", page)
+    
     # paste the whole url together
     final_url <- paste0(url, url_end)
     
@@ -316,15 +317,14 @@ get_players_market_values <- function(league, league_id) {
     players_values <- rbind(players_values,
                             player_market_values)
     
-    
-    # increase page_counter by 1
+    # increase page by 1
     page <- page + 1
     
     # wait for 5 seconds before scraping the next page
     Sys.sleep(5)
   }
   
-  # return the full data frame of market values over time
+  # return the full data frame of market values
   return(players_values)
 }
 
@@ -392,7 +392,6 @@ get_performance_players <- function(league, league_id, season) {
     player_performance <- player_performance %>% unstack()
     player_performance <- player_performance[, -6]
     
-    
     player_performance <-
       player_performance[, c(
         "ranking",
@@ -407,6 +406,7 @@ get_performance_players <- function(league, league_id, season) {
         "total.points"
       )]
     
+    # convert to numeric type
     cols.num <-
       c(
         "ranking",
@@ -432,23 +432,26 @@ get_performance_players <- function(league, league_id, season) {
     #player_performance <- cbind(player_performance, image_club_names)
     #player_performance <- player_performance %>%　rename("club" = ".")
     
-    # append the data for the current page to the list which stores
+    # append the data for the current page to the data frame which stores
     # all pages
     players_season_performance <-
       rbind(players_season_performance,
             player_performance)
     
+    # if last page, then stop
     if (nrow(player_performance) < 25) {
       break
     }
-    # increase page_counter by 1
+    
+    # increase page by 1
     page <- page + 1
     
     # wait for 5 seconds before scraping the next page
     Sys.sleep(5)
+    
   }
   
-  # return the full data frame of market values over time
+  # return the full data frame of player performance over time
   return(players_season_performance)
 }
 
