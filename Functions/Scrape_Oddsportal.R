@@ -1,5 +1,5 @@
 # ############## get_number_of_teams_in_season #################
-# inputs: root_url, league, season
+# inputs: sport, country, league, season, port
 # outputs: should return a list which contains the
 # information about the past odd results for every game played in a given season
 # for a given sport in a given country in a given league
