@@ -22,6 +22,7 @@ if (!require("tidyr")) install.packages("tidyr")
 if (!require("viridis")) install.packages("viridis")
 if (!require("xfun")) install.packages("xfun")
 if (!require("worldfootballR")) devtools::install_github("JaseZiv/worldfootballR")
+if (!require("janitor")) install.packages("janitor")
 
 
 library(binman)
@@ -44,7 +45,7 @@ library(stringr)
 library(tidyr)
 library(viridis)
 library(worldfootballR)
-
+library(janitor)
 
 # Source script containing all API keys needed
 source("API_keys.R")
