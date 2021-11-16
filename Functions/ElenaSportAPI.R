@@ -1,18 +1,22 @@
-# Function get all seasons for a given league which is passed on as a parameter
-# through an ID
-get_seasons_by_league_id <- function(league_id){
+# ############## get_seasons_by_league_id #################
+# inputs: league_id
+# outputs: should return a data frame for a given league ID in all seasons
+# which is passed on as a parameter through an ID
+
+get_seasons_by_league_id <- function(league_id) {
   # For this API one first have to get a token which is valid for one hour
   # (this is done with a POST).
   # This token then must be used instead of the API key when retrieving data
   access_token_elena <- get_elena_access_token()
   
-  # create the url endpoint for the seasons 
+  # create the url endpoint for the seasons
   url_season <- paste0("https://football.elenasport.io/v2/leagues/",
-                       league_id, "/seasons")
+                       league_id,
+                       "/seasons")
   
   # retrieve the data from the API
-  season_response <- GET(url_season, 
-                         add_headers('Authorization' = 
+  season_response <- GET(url_season,
+                         add_headers('Authorization' =
                                        paste0("Bearer ", access_token_elena)))
   
   # extract the content
@@ -25,9 +29,13 @@ get_seasons_by_league_id <- function(league_id){
 }
 
 
-# function to get all fixtures of a season which is passed to the function
-# via a season_id
-get_fixtures_by_season_id <- function(season_id){
+
+# ############## get_fixtures_by_season_id #################
+# inputs: season_id
+# outputs: should return a data frame which contains the information about
+# all fixtures of a season 
+
+get_fixtures_by_season_id <- function(season_id) {
   # For this API one first have to get a token which is valid for one hour
   # (this is done with a POST).
   # This token then must be used instead of the API key when retrieving data
@@ -35,15 +43,19 @@ get_fixtures_by_season_id <- function(season_id){
   
   # create a variable to control the paginated endpoint
   page <- 1
- 
-  # create the url endpoint for the paginated fixtures 
-  url_fixtures <- paste0("https://football.elenasport.io/v2/",
-                         "seasons/", season_id, "/fixtures?page=",
-                         page)
+  
+  # create the url endpoint for the paginated fixtures
+  url_fixtures <- paste0(
+    "https://football.elenasport.io/v2/",
+    "seasons/",
+    season_id,
+    "/fixtures?page=",
+    page
+  )
   
   # retrieve the data from the API
-  fixtures_response <- GET(url_fixtures, 
-                           add_headers('Authorization' = 
+  fixtures_response <- GET(url_fixtures,
+                           add_headers('Authorization' =
                                          paste0("Bearer ", access_token_elena)))
   
   # extract the content of the response
@@ -59,24 +71,26 @@ get_fixtures_by_season_id <- function(season_id){
   # extract information about whether there is a next page
   has_next <- fixtures_content$pagination$hasNextPage
   
-  
   # iterate through the pages as long as there is a next page
-  while(has_next){
-    
-    # create the url endpoint for the current page 
-    url_fixtures <- paste0("https://football.elenasport.io/v2/",
-                           "seasons/", season_id, "/fixtures?page=",
-                           page)
+  while (has_next) {
+    # create the url endpoint for the current page
+    url_fixtures <- paste0(
+      "https://football.elenasport.io/v2/",
+      "seasons/",
+      season_id,
+      "/fixtures?page=",
+      page
+    )
     
     # retrieve the data from the API
-    fixtures_response <- GET(url_fixtures, 
-                             add_headers('Authorization' = 
+    fixtures_response <- GET(url_fixtures,
+                             add_headers('Authorization' =
                                            paste0("Bearer ", access_token_elena)))
     
     # extract the content of the response
     fixtures_content <- content(fixtures_response)
     
-    # reset the has_next variable 
+    # reset the has_next variable
     has_next <- fixtures_content$pagination$hasNextPage
     
     # extract the content of the current page and store it as a data frame
@@ -84,14 +98,15 @@ get_fixtures_by_season_id <- function(season_id){
     
     # use the helper function clean_fixtures_frame to extract the list of referees
     # from the current_fixtures_frame and store them as new variables in the frame
-    current_fixtures <- fixtures_by_season_helper(current_fixtures_frame)
+    current_fixtures <-
+      fixtures_by_season_helper(current_fixtures_frame)
     
     # append the fixtures of the current page to the frame of the previous pages
     fixtures_frame <- bind_rows(fixtures_frame, current_fixtures)
     
     # increase the page counter
     page <- page + 1
-  
+    
   }
   
   # return the fixtures_frame 
@@ -99,14 +114,18 @@ get_fixtures_by_season_id <- function(season_id){
   
 }
   
-# helper function extracts the list of referee information from 
-# a column in the fixtures_frame and merge all information together
-clean_fixtures_frame <- function(fixtures_frame){
-  
-  # extract the number of referees (should be always 4 but maybe there is some 
+
+
+############### clean_fixtures_frame #################
+# inputs: fixtures_frame
+# outputs: should return a data frame which extracts the list of referee information 
+# from a column in the fixtures_frame and merge all information together
+
+clean_fixtures_frame <- function(fixtures_frame) {
+  # extract the number of referees (should be always 4 but maybe there is some
   # mistake in the data)
-  number_of_refs <- current_fixtures_frame %>% 
-    group_by(id) %>% 
+  number_of_refs <- current_fixtures_frame %>%
+    group_by(id) %>%
     count() %>%
     ungroup() %>%
     select(n) %>%
@@ -124,20 +143,27 @@ clean_fixtures_frame <- function(fixtures_frame){
   # rows (after dropping the referees column there is only one row per fixture
   # instead of 4 available)
   fixtures_frame <- fixtures_frame %>%
-    select(-c(elapsed, elapsedPlus, eventsHash, lineupsHash, statsHash,
-              referees)) %>%
+    select(-c(
+      elapsed,
+      elapsedPlus,
+      eventsHash,
+      lineupsHash,
+      statsHash,
+      referees
+    )) %>%
     unique()
   
   # iterate through the referees frame starting with 0 (instead of 1)
   # in order to use this method
-  for(i in 0:(nrow(referees)-1)){
+  for (i in 0:(nrow(referees) - 1)) {
     # we want to check if the current string in the type column contains
     # the word assistant
-    if(str_detect(referees$type[(i+1)], "assistant")){
-      # if so, we want to append a number 
+    if (str_detect(referees$type[(i + 1)], "assistant")) {
+      # if so, we want to append a number
       # such that out of "assistant_referee" we make "assistant_referee_1",
       # _2 and _3 depending on i with the modulo operator
-      referees$type[(i+1)] <- paste0(referees$type[(i+1)], "_", (i %% number_of_refs))
+      referees$type[(i + 1)] <-
+        paste0(referees$type[(i + 1)], "_", (i %% number_of_refs))
     }
   }
   
@@ -147,7 +173,8 @@ clean_fixtures_frame <- function(fixtures_frame){
     group_by(grp = rep(row_number(), length.out = n(), each = number_of_refs)) %>%
     # transform the type column and create new columns for each referees id
     # and name
-    pivot_wider(names_from = type, values_from = c(idReferee, refereeName)) %>%
+    pivot_wider(names_from = type,
+                values_from = c(idReferee, refereeName)) %>%
     ungroup() %>%
     select(-grp)
   
@@ -156,11 +183,16 @@ clean_fixtures_frame <- function(fixtures_frame){
   
   # return the cleaned fixtures frame
   return(fixtures_clean)
+  
 }
 
 
-# Function creates a data frame which contains the lineup for a given fixture_id
-get_lineups_by_fixture_id <- function(fixture_id){
+
+############### get_lineups_by_fixture_id #################
+# inputs: fixture_id
+# outputs: should return a data frame which contains the lineup for a given fixture_id
+
+get_lineups_by_fixture_id <- function(fixture_id) {
   # For this API one first have to get a token which is valid for one hour
   # (this is done with a POST).
   # This token then must be used instead of the API key when retrieving data
@@ -169,13 +201,18 @@ get_lineups_by_fixture_id <- function(fixture_id){
   # create a variable to control the paginated endpoint
   page <- 1
   
-  # create the url endpoint for the seasons 
-  url_lineup <- paste0("https://football.elenasport.io/v2/fixtures/",
-                       fixture_id, "/lineups?page=", page)
+  # create the url endpoint for the seasons
+  url_lineup <-
+    paste0(
+      "https://football.elenasport.io/v2/fixtures/",
+      fixture_id,
+      "/lineups?page=",
+      page
+    )
   
   # retrieve the data from the API
-  lineup_response <- GET(url_lineup, 
-                         add_headers('Authorization' = 
+  lineup_response <- GET(url_lineup,
+                         add_headers('Authorization' =
                                        paste0("Bearer ", access_token_elena)))
   
   lineup_content <- content(lineup_response)
@@ -186,22 +223,26 @@ get_lineups_by_fixture_id <- function(fixture_id){
   # extract information about whether there is a next page
   has_next <- lineup_content$pagination$hasNextPage
   
-  
   # iterate through the pages as long as there is a next page
-  while(has_next){
-    # create the url endpoint for the current page 
-    url_lineup <- paste0("https://football.elenasport.io/v2/fixtures/",
-                         fixture_id, "/lineups?page=", page)
+  while (has_next) {
+    # create the url endpoint for the current page
+    url_lineup <-
+      paste0(
+        "https://football.elenasport.io/v2/fixtures/",
+        fixture_id,
+        "/lineups?page=",
+        page
+      )
     
     # retrieve the data from the API
-    lineup_response <- GET(url_lineup, 
-                             add_headers('Authorization' = 
-                                           paste0("Bearer ", access_token_elena)))
+    lineup_response <- GET(url_lineup,
+                           add_headers('Authorization' =
+                                         paste0("Bearer ", access_token_elena)))
     
     # extract the content of the response
     lineup_content <- content(lineup_response)
     
-    # reset the has_next variable 
+    # reset the has_next variable
     has_next <- lineup_content$pagination$hasNextPage
     
     # extract the content of the current page and store it as a data frame

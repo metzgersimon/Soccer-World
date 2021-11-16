@@ -1,3 +1,6 @@
+############## get_current_odds #################
+# inputs: keys
+# outputs: should return a list for current odds data
 
 get_current_odds <- function(keys){
   current_odds_data <- vector(mode = "list", length = length(keys))

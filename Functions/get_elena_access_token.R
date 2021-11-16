@@ -1,5 +1,7 @@
-# Function returns an access token which is needed in order to be able 
-# to retrieve data from the ElenaSportAPI
+############## get_elena_access_token #################
+# inputs
+# outputs: should return a list extracting the access token from the request
+
 get_elena_access_token <- function(){
   # execute a POST request with the API key to retrieve the access token
   post_request <- POST("https://oauth2.elenasport.io/oauth2/token",
