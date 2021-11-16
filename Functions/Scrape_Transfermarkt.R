@@ -156,7 +156,6 @@ get_market_values_over_time <- function(league, league_id) {
   # create empty variable to store all market values
   market_values_over_time <- NULL
   
-  # cutt_off_dates_15 <- seq()
   # create base url to extract the market values
   url <-
     paste0(
@@ -237,6 +236,7 @@ get_market_values_over_time <- function(league, league_id) {
   return(market_values_over_time)
   
 }
+
 
 
 
@@ -457,4 +457,83 @@ get_performance_players <- function(league, league_id, season) {
 
 
 
+
+
+# function should return a data frame for a running league table over the season
+# where the league and the season are given 
+get_running_table <- function(league, league_id, season){
+  # create empty variable to store the league table over time
+  table_over_time <- NULL
+  
+  # create base url to extract the market values
+  url <- paste0("https://www.transfermarkt.com/", league, "/spieltagtabelle/",
+                "wettbewerb/", league_id, "?saison_id=", season)
+  
+  # extract the number of matchdays dynamically
+  number_matchdays <- read_html(url) %>%
+    html_nodes(xpath = "//select[@name='spieltag']/option[@value]") %>%
+    html_attrs() %>%
+    length()
+  
+  # extract the actual content in a loop
+  for(i in 1:number_matchdays){
+    # create the final url with the current matchday 
+    final_url <- paste0(url, "&spieltag=", i)
+    
+    # extract the matchday table and clean it
+    matchday_table <- read_html(final_url) %>%
+      html_nodes(xpath = "//table") %>%
+      # creates a list of data frames
+      html_table() %>%
+      # select the last data frame which contains the wanted table
+      .[[5]] %>%
+      # drop the second column
+      .[, -2] %>%
+      # separate the column Goals (e.g., 8:2, i.e., the team scored 8 goals and
+      # got 2 goals against it) into a column goals_for and goals_against
+      # by the separator :
+      separate(col = Goals, into = c("goals_for", "goals_against"),
+               sep = ":")
+    
+    # to be able to mutate the newly created columns into numeric variables
+    # we have to change the colnames because the matchday column has now name
+    # up to this point
+    colnames(matchday_table) <- c("rank", "club", "matchday", "wins",
+                                  "draws", "losses", "goals_for", "goals_against",
+                                  "goal_diff", "points")
+    
+    # transform the goals columns into numeric variables
+    matchday_table <- matchday_table %>%
+      mutate(goals_for = as.numeric(goals_for),
+             goals_against = as.numeric(goals_against),
+             # add season and league information
+             season_start_year = season,
+             season_end_year = (season + 1),
+             league = str_to_title(league)) 
+    
+    # add cumulative points
+    cum_points <- matchday_table %>%
+      # group by club 
+      group_by(club) %>% 
+      # add up all points for a given club to a given matchday
+      summarize(cum_points = sum(points))
+    
+    # join the two frames by clubname
+    matchday_table <- inner_join(matchday_table, cum_points,
+                                 by = "club")
+      
+    # append the data frame of the current matchday to the data frame
+    # of all matchdays
+    table_over_time <- bind_rows(table_over_time,
+                                 matchday_table)
+      
+    # wait for 2 seconds before scraping the next page
+    Sys.sleep(2)
+    
+  }
+  
+  # return the table which contains all matchdays
+  return(table_over_time)
+  
+}
 
