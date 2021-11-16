@@ -277,8 +277,10 @@ get_players_market_values <- function(league, league_id) {
       html_text()
     
     # convert it into a data frame
-    player_market_values <-
-      player_market_values %>%　data.frame() %>% rename("value" = ".")
+    player_market_values <- 
+      player_market_values %>%
+      data.frame() %>% 
+      rename("value" = ".")
     
     # clean the data frame
     player_market_values$variable <-
@@ -290,10 +292,10 @@ get_players_market_values <- function(league, league_id) {
     
     player_market_values <-
       player_market_values[, c("ranking",
-                               "player.name",
+                               "player_name",
                                "position",
                                "age",
-                               "market.value")]
+                               "market_value")]
     
     player_market_values$ranking <-
       as.numeric(player_market_values$ranking)
@@ -309,8 +311,9 @@ get_players_market_values <- function(league, league_id) {
     
     player_market_values <-
       cbind(player_market_values, image_club_names)
-    player_market_values <-
-      player_market_values %>%　rename("club" = ".")
+    player_market_values <- player_market_values %>%
+      data.frame() %>% 
+      rename("club" = ".")
     
     # append the data for the current page to the list which stores
     # all pages
@@ -395,15 +398,15 @@ get_performance_players <- function(league, league_id, season) {
     player_performance <-
       player_performance[, c(
         "ranking",
-        "player.name",
+        "player_name",
         "position",
         "age",
         "appearances",
-        "substitution.on",
-        "substitution.off",
+        "substitution_on",
+        "substitution_off",
         "goals",
         "assists",
-        "total.points"
+        "total_points"
       )]
     
     # convert to numeric type
@@ -412,11 +415,11 @@ get_performance_players <- function(league, league_id, season) {
         "ranking",
         "age",
         "appearances",
-        "substitution.on",
-        "substitution.off",
+        "substitution_on",
+        "substitution_off",
         "goals",
         "assists",
-        "total.points"
+        "total_points"
       )
     player_performance[cols.num] <-
       sapply(player_performance[cols.num], as.numeric)
