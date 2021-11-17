@@ -278,7 +278,7 @@ get_players_market_values <- function(league, league_id) {
     
     # convert it into a data frame
     player_market_values <-
-      player_market_values %>%　data.frame() %>% rename("value" = ".")
+      player_market_values %>%data.frame() %>% rename("value" = ".")
     
     # clean the data frame
     player_market_values$variable <-
@@ -310,7 +310,7 @@ get_players_market_values <- function(league, league_id) {
     player_market_values <-
       cbind(player_market_values, image_club_names)
     player_market_values <-
-      player_market_values %>%　rename("club" = ".")
+      player_market_values %>%rename("club" = ".")
     
     # append the data for the current page to the list which stores
     # all pages
