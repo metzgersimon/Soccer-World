@@ -204,12 +204,12 @@ get_team_information_in_league <- function(league_id, season){
 
 
 
-############## get_team_squads_current_saison #################
+############## get_team_squads_current_season #################
 # inputs: league_id
 # outputs: should return a data frame containing information about all
 # team squads in the current season for the given league_id
 # example: squad of Dortmund when the bundesliga id is given
-get_team_squads_current_saison <- function(league_id){
+get_team_squads_current_season <- function(league_id){
   
   # call the get_team_information_in_league function with
   # the given league_id and the current season to get all team ids
