@@ -662,7 +662,7 @@ get_squads_by_season <- function(league, league_id, season){
                                              replacement = ".")),
              joining_date = mdy(joining_date),
              contract_date = mdy(contract_date),
-             market_value = str_trim(str_remove(market_value, pattern = "€"))) #%>%
+             market_value = str_trim(str_remove(market_value, pattern = "\u20ac"))) #%>%
     
     full_squad_frame_clean <- full_squad_frame_clean %>%
       mutate(market_value_in_million_euro = ifelse(endsWith(market_value, "m"),
