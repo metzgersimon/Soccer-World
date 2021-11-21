@@ -1,11 +1,13 @@
 #### Loading libraries needed ####
 if (!require("binman")) install.packages("binman")
 if (!require("dashboardthemes")) install.packages("dashboardthemes")
+if (!require("data.table")) install.packages("data.table")
 if (!require("devtools")) install.packages("devtools")
 if (!require("dplyr")) install.packages("dplyr")
 if (!require("fuzzyjoin")) install.packages("fuzzyjoin")
 if (!require("httr")) install.packages("httr")
 if (!require("janitor")) install.packages("janitor")
+if (!require("kableExtra")) install.packages("kableExtra")
 if (!require("lubridate")) install.packages("lubridate")
 if (!require("magrittr")) install.packages("magrittr")
 if (!require("miceadds")) install.packages("miceadds")
@@ -25,16 +27,18 @@ if (!require("stringr")) install.packages("stringr")
 if (!require("tidyr")) install.packages("tidyr")
 if (!require("viridis")) install.packages("viridis")
 if (!require("xfun")) install.packages("xfun")
-if (!require("worldfootballR")) devtools::install_github("JaseZiv/worldfootballR")
-if (!require("janitor")) install.packages("janitor")
+# if (!require("worldfootballR")) devtools::install_github("JaseZiv/worldfootballR",
+#                                                          force = TRUE)
 
 
 library(binman)
 library(dashboardthemes)
+library(data.table)
 library(dplyr)
 library(fuzzyjoin)
 library(httr)
 library(janitor)
+library(kableExtra)
 library(lubridate)
 library(miceadds)
 library(netstat)
@@ -52,8 +56,7 @@ library(shinythemes)
 library(stringr)
 library(tidyr)
 library(viridis)
-library(worldfootballR)
-library(janitor)
+# library(worldfootballR)
 
 # Source script containing all API keys needed
 source("API_keys.R")
@@ -61,6 +64,8 @@ source("API_keys.R")
 source.all("Functions/External Functions/", grepstring="\\.R")
 # Source all R-files in the Functions folder
 source.all("Functions/", grepstring="\\.R")
+# Source all in data subfolders
+source.all("Data/Mapping Tables", grepstring="\\.R")
 # Source all R files in the Shiny folder
 source.all("Shiny/", grepstring="\\.R")
 # list all RData files in the Data folder
