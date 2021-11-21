@@ -540,13 +540,27 @@ get_running_table <- function(league, league_id, season){
   
 }
 
+get_club_squad_urls <- function(league, league_id, season){
+  final_url <- paste0("https://www.transfermarkt.com/", league,
+                      "/startseite/wettbewerb/", league_id,
+                      "/saison_id/", season)
+  
+  league_clubs <- read_html(final_url) %>%
+    html_nodes(xpath = "//table/tbody/tr/td/a") %>%
+    html_attr("href") %>%
+    unique() %>%
+    .[grep(pattern = "kader", .)]
+  
+  return(league_clubs)
+}
+
 # league <- "bundesliga"
 # league_id <- "L1"
 # season <- 2020
-get_squad_over_time <- function(league, league_id, season){
+get_squads_by_season <- function(league, league_id, season){
   # use the fuzzyjoin package to join the given team_name
   # to the url-name extracted from the get_club_urls function
-  club_names_url <- get_club_urls(league, league_id, season) #%>%
+  club_names_url <- get_club_squad_urls(league, league_id, season) #%>%
   # str_extract(pattern = "/.*/startseite") %>%
   # str_remove_all(pattern = "startseite") %>%
   # str_remove_all(pattern = "/") %>%
@@ -558,45 +572,154 @@ get_squad_over_time <- function(league, league_id, season){
   #                                    by = c("url" = "team"),
   #                                    max_dist = 10)
   
+  all_squads_in_season <- NULL
+  
   for(i in 1:length(club_names_url)){
-    squad_url <- str_replace(club_names_url[i], pattern = "startseite",
-                             replacement = "kader")
-    final_url <- paste0("https://www.transfermarkt.com", squad_url,
+    final_url <- paste0("https://www.transfermarkt.com", club_names_url[i],
                         "/plus/1")
     
-    club_page <- read_html(final_url) %>%
-      html_nodes(xpath = "//table[@class='items']") %>%
-      html_table() %>%
+    print(i)
+    
+    curr_club <- club_names_url[i] %>%
+      str_extract(., pattern = "/.*/kader") %>%
+      str_remove(., pattern = "kader") %>%
+      str_remove_all(., pattern = "\\/") %>%
+      str_replace_all(., pattern = "-", replacement = " ") %>%
+      str_to_title()
+    # club_page <- read_html(final_url) %>%
+    #   # html_nodes(xpath = "//table[@class='items']") %>%
+    #   html_nodes(css = "td") %>%
+    #   html_table() %>%
+    #   data.frame()
+    #   
+    # name_additional_infos <- read_html(final_url) %>%
+    #   html_nodes(xpath = paste0(#"//td[@class='hauptlink']/div[1]/span/a[@title]",
+    #     "//*[@id='yw1']/table/tbody/tr[1]/td[2]/table/tbody/tr[2]/td"))
+    #                            # "//table[@class='inline-table']/tbody/tr[2]/td/text()"))
+    
+    
+    name_and_nationality <- read_html(final_url) %>%
+      html_nodes(xpath = paste0("//td[@class='hauptlink']/div[1]/span/a", " | ",
+                                "//table[@class='items']/tbody/tr/td[4]/img[1]")) %>%
+      # "//table/tbody/tr[@class='odd' or @class='even']/td[5]/a",
+      #"(//table/tbody/tr[@class='odd' or @class='even']/td)[not(a)]")) %>%
+      html_attr("title")
+    
+    Sys.sleep(2)
+    
+    
+    name_and_nationality <- as.data.frame(matrix(name_and_nationality, ncol = 2, byrow = TRUE))
+    
+    
+    position <- read_html(final_url) %>%
+      html_nodes(css = ".inline-table tr:nth-child(2) td") %>%
+      # html_nodes(xpath = "//table[@class='inline-table']/tbody/tr[2]/td") %>%
+      # html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[2]/table/tbody/tr[2]/td/text()") %>%
+      html_text() %>%
       data.frame()
     
-    test <- read_html(final_url) %>%
-      html_nodes(xpath = paste0("//table[@class='inline-table']/tbody/tr/td[@class='hauptlink']",
-                                "/div/span[@class='hide-for-small']/a",
-                                " | ", "//table/tbody/tr/td/img",
-                                " | ", "//table/tbody/tr/td/a")) %>%
-      html_attr("title")
+    name_nation_pos <- bind_cols(name_and_nationality,
+                                 position)
     
+    Sys.sleep(2)
     
-    test2 <- read_html(final_url) %>%
-      html_nodes(xpath = "//a") %>%
-      html_attr("title") %>%
-      .[!is.na(.)] %>%
-      unique()
-    
-    
-    player_test <- read_html(final_url) %>%
-      html_nodes(xpath = ".flaggenrahmen , .nowrap a") %>%
+    name_and_other_information <- read_html(final_url) %>%
+      html_nodes(xpath = paste0("//td[@class='hauptlink']/div[1]/span[@class='hide-for-small']/a/text()|",
+                                "//*[@id='yw1']/table/tbody/tr/td[3]|",
+                                "//*[@id='yw1']/table/tbody/tr/td[6]|",
+                                "//*[@id='yw1']/table/tbody/tr/td[8]|",
+                                "//*[@id='yw1']/table/tbody/tr/td[10]|",
+                                "//*[@id='yw1']/table/tbody/tr/td[11]/text()")) %>%
       html_text()
     
-    nationality <- read_html(final_url) %>%
-      html_nodes(xpath = "//table[@class='items']/tbody/tr/td/img") %>%
-      html_attr("alt")
+    Sys.sleep(2)
     
-    former_club <- read_html(final_url) %>%
-      html_nodes(xpath = "//table[@class='items']/tbody/tr/td/a") %>%
-      html_attr("title")
+    name_and_other_information <- as.data.frame(matrix(name_and_other_information, ncol = 6, byrow = TRUE))
+    
+    
+    full_squad_frame <- inner_join(name_nation_pos,
+                                   name_and_other_information,
+                                   by = "V1") 
+    
+    #### cleaning the frame ####
+    full_squad_frame_clean <- full_squad_frame %>%
+      rename(., 
+             player_name = V1,
+             country = `V2.x`,
+             position = `.`,
+             birth_date_age = `V2.y`,
+             height = V3,
+             joining_date = V4,
+             contract_date = V5,
+             market_value = V6) %>%
+      separate(col = birth_date_age,
+               into = c("birth_date", "age"),
+               sep = " \\(|\\)") %>%
+      mutate(birth_date = mdy(birth_date),
+             age = as.integer(age),
+             height = as.numeric(str_replace(str_remove(height, pattern = " m"), 
+                                             pattern = ",",
+                                             replacement = ".")),
+             joining_date = mdy(joining_date),
+             contract_date = mdy(contract_date),
+             market_value = str_trim(str_remove(market_value, pattern = "€"))) #%>%
+    
+    full_squad_frame_clean <- full_squad_frame_clean %>%
+      mutate(market_value_in_million_euro = ifelse(endsWith(market_value, "m"),
+                                                   as.numeric(str_remove(market_value, pattern = "m")),
+                                                   as.numeric(str_remove(market_value, pattern = "Th."))/1000),
+             club_name = curr_club,
+             season = season) %>%
+      select(-market_value)
+    
+    
+    all_squads_in_season <- bind_rows(all_squads_in_season,
+                                      full_squad_frame_clean)
+    
+    
+    
+    # birth_ <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[3]") %>%
+    #   html_text()
+    # 
+    # height_ <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[6]") %>%
+    #   html_text()
+    # 
+    # joined_ <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[8]") %>%
+    #   html_text()
+    # 
+    # contract_ <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[10]") %>%
+    #   html_text()
+    # 
+    # market_value_ <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[11]/text()") %>%
+    #   html_text()
+    
+    
+    
+    # test2 <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//a") %>%
+    #   html_attr("title") %>%
+    #   .[!is.na(.)] %>%
+    #   unique()
+    # 
+    # 
+    # player_test <- read_html(final_url) %>%
+    #   html_nodes(xpath = ".flaggenrahmen , .nowrap a") %>%
+    #   html_text()
+    # 
+    # nationality <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//table[@class='items']/tbody/tr/td/img") %>%
+    #   html_attr("alt")
+    # 
+    # former_club <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//table[@class='items']/tbody/tr/td/a") %>%
+    #   html_attr("title")
   }
   
+  return(all_squads_in_season)
   
 }
-
