@@ -543,7 +543,7 @@ get_running_table <- function(league, league_id, season){
 # league <- "bundesliga"
 # league_id <- "L1"
 # season <- 2020
-get_squad_over_time <- function(league, league_id, season, team){
+get_squad_over_time <- function(league, league_id, season){
   # use the fuzzyjoin package to join the given team_name
   # to the url-name extracted from the get_club_urls function
   club_names_url <- get_club_urls(league, league_id, season) #%>%
