@@ -234,9 +234,6 @@ get_team_squads_current_season <- function(league_id){
                     add_headers('x-apisports-key' = football_api_key),
                     query = list(team = all_teams_in_league[i]))
     
-    response <- GET(endpoint, 
-                    add_headers('x-apisports-key' = football_api_key),
-                    query = list(team = id))
     
     # check if the request was successful and only then go on with the 
     # transformation of the data
@@ -269,6 +266,195 @@ get_team_squads_current_season <- function(league_id){
   # return the data frame containing information about all squads
   # of the teams
   return(team_squads)
+}
+
+
+
+############## get_fixtures_in_league_by_season #################
+# inputs: league_id, season
+# outputs: should return a data frame which contains all available
+# fixtures in a league for a given season
+# example: 
+get_fixtures_in_league_by_season <- function(league_id, season){
+  # set the endpoint of the API
+  endpoint <- "https://v3.football.api-sports.io/fixtures"
+  
+  # create a get request to that API with the API key
+  # and the selected parameter (league given by its id and the season)
+  response <- GET(endpoint, 
+                  add_headers('x-apisports-key' = football_api_key),
+                  query = list(league = league_id,
+                               season = season))
+  
+  # check if the request was successful and only then go on with the 
+  # transformation of the data
+  if(status_code(response) >= 200 & status_code(response) < 300){
+    
+    # extract the content from the response
+    content <- content(response)$response
+    
+    # pre-allocate the data frame to store all the fixtures
+    all_fixture_information <- data.frame(fixture_id = integer(length(content)),
+                                          referee = character(length(content)),
+                                          timezone = character(length(content)),
+                                          date = character(length(content)),
+                                          timestamp = integer(length(content)),
+                                          periods_first = integer(length(content)),
+                                          periods_second = integer(length(content)),
+                                          venue_id = integer(length(content)),
+                                          venue_name = character(length(content)),
+                                          venue_city = character(length(content)),
+                                          status_long = character(length(content)),
+                                          status_short = character(length(content)),
+                                          status_elapsed = integer(length(content)),
+                                          league_id = integer(length(content)),
+                                          league_name = character(length(content)),
+                                          league_country = character(length(content)),
+                                          league_logo = character(length(content)),
+                                          league_flag = character(length(content)),
+                                          league_season = integer(length(content)),
+                                          league_round = character(length(content)),
+                                          club_id_home = integer(length(content)),
+                                          club_id_away = integer(length(content)),
+                                          club_name_home = character(length(content)),
+                                          club_name_away = character(length(content)),
+                                          club_logo_home = character(length(content)),
+                                          club_logo_away = character(length(content)),
+                                          is_winner_home = logical(length(content)),
+                                          is_winner_away = logical(length(content)),
+                                          halftime_score_home = integer(length(content)),
+                                          fulltime_score_home = integer(length(content)),
+                                          extratime_score_home = integer(length(content)),
+                                          penalty_score_home = integer(length(content)),
+                                          halftime_score_away = integer(length(content)),
+                                          fulltime_score_away = integer(length(content)),
+                                          extratime_score_away = integer(length(content)),
+                                          penalty_score_away = integer(length(content))
+    )
+    
+    # iterate through all 
+    for(i in 1:length(content)){
+      # extract fixture information with the enframe function
+      # to convert the fixture list into a tibble
+      fixture_general_info <- enframe(content[[i]]$fixture) %>%
+        # use pivot_wider to transform the tibble from long to wide
+        # so that we only got 1 row with multiple columns
+        pivot_wider(names_from = name, values_from = value,
+                    names_glue = "{name}") %>%
+        # use unnest_wider to extract the lists in specific columns
+        # and integrate the values as new columns
+        unnest_wider(col = periods, names_sep = "_") %>%
+        unnest_wider(col = venue, names_sep = "_") %>%
+        unnest_wider(col = status, names_sep = "_") %>%
+        # rename the id and select the rest without manipulation
+        select(fixture_id = id, everything())
+      
+      
+      # fixture_ref <- list.stack(content[[i]]$fixture$referee)
+      # fixture_date <- list.stack(content[[i]]$fixture$date)
+      # fixture_timezone <- list.stack(content[[i]]$fixture$timezone)
+      # fixture_timestamp <- list.stack(content[[i]]$fixture$timestamp)
+      # fixture_period1 <- list.stack(content[[i]]$fixture$periods$first)
+      # fixture_period2 <- list.stack(content[[i]]$fixture$periods$second)
+      
+      # extract fixture information with the enframe function
+      # to convert the league list into a tibble
+      fixture_league_info <- enframe(content[[i]]$league) %>%
+        # use pivot_wider to transform the tibble from long to wide
+        # so that we only got 1 row with multiple columns
+        pivot_wider(names_from = name, values_from = value,
+                    names_glue = "league_{name}")
+      
+      # fixture_league_id <- content[[i]]$league$id
+      # fixture_league_name <- content[[i]]$league$name
+      # fixture_league_country <- content[[i]]$league$country
+      # fixture_season <- content[[i]]$league$season
+      # fixture_matchday <- content[[i]]$league$round
+      
+      # extract fixture information with the enframe function
+      # to convert the league list into a tibble
+      fixture_team_info <- enframe(content[[i]]$teams) %>%
+        # use unnest_wider to extract the lists in specific columns
+        # and integrate the values as new columns
+        unnest_wider(value, names_sep = "_") 
+      
+      # if the result of the match was a draw, there is no value_winner column
+      # so we have to check if there is one
+      if("value_winner" %in% colnames(fixture_team_info)){
+        # if so, we just rename the columns
+        fixture_team_info <- fixture_team_info %>%
+          rename(type_of_team = name,
+                 club_id = value_id,
+                 club_name = value_name,
+                 club_logo = value_logo,
+                 is_winner = value_winner)
+      } else {
+        # if there is none, we rename all the other columns
+        # and add a new column is_winner and set both values to FALSE (draw)
+        fixture_team_info <- fixture_team_info %>%
+          rename(type_of_team = name,
+                 club_id = value_id,
+                 club_name = value_name,
+                 club_logo = value_logo) %>%
+          mutate(is_winner = FALSE)
+      }
+      
+      
+      fixture_team_info <- fixture_team_info %>%
+        # then use pivot_wider to transform the tibble from long to wide
+        # so that we only got 1 row with multiple columns
+        pivot_wider(names_from = type_of_team, values_from = c(club_id, club_name,
+                                                               club_logo, is_winner))
+      
+      # fixture_goals <- tibble::enframe(content[[i]]$goals) %>%
+      #   pivot_wider(names_from = name, values_from = value,
+      #               names_glue = "{name}") %>%
+      #   select(league_id = id, everything())
+      
+      # extract fixture information with the enframe function
+      # to convert the score list into a tibble
+      fixture_score_info <- enframe(content[[i]]$score) %>%
+        # use unnest_wider to extract the lists in specific columns
+        # and integrate the values as new columns
+        unnest_wider(value) %>%
+        # use pivot_wider to transform the tibble from long to wide
+        # so that we only got 1 row with multiple columns and
+        # set the name accordingly
+        pivot_wider(names_from = name, values_from = c(home, away),
+                    names_glue = "{name}_score_{.value}")
+        
+      
+      # all_fixture_information <- bind_rows(all_fixture_information,
+      #                                      bind_cols(fixture_general_info, 
+      #                                                fixture_league_info,
+      #                                                fixture_team_info, 
+      #                                                fixture_score_info
+      #                                                
+      #                                      )
+      # )
+      
+      # bind all information gathered above to one row and insert this
+      # row into the data frame created earlier
+      all_fixture_information[i, ] <- bind_cols(fixture_general_info, 
+                                                fixture_league_info,
+                                                fixture_team_info, 
+                                                fixture_score_info
+                                                     
+                                           )
+
+      
+    }
+    
+    # if the request was not successful print an error 
+  } else {
+    print(paste0("Error: The request was not successful. \nStatus code: ",
+                 status_code(response)))
+  }
+  
+  # return the data frame containing information about all fixtures
+  # for the given league and season
+  return(all_fixture_information)
+
 }
 # 
 # get_team_stats <- function(league_id, number_of_teams){
