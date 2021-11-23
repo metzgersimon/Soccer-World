@@ -28,6 +28,8 @@ if (!require("tibble")) install.packages("tibble")
 if (!require("tidyr")) install.packages("tidyr")
 if (!require("viridis")) install.packages("viridis")
 if (!require("xfun")) install.packages("xfun")
+if (!require("XML")) install.packages("XML")
+if (!require("xml2")) install.packages("xml2")
 # if (!require("worldfootballR")) devtools::install_github("JaseZiv/worldfootballR",
 #                                                          force = TRUE)
 
@@ -58,6 +60,8 @@ library(stringr)
 library(tibble)
 library(tidyr)
 library(viridis)
+library(XML)
+library(xml2)
 # library(worldfootballR)
 
 # Source script containing all API keys needed
