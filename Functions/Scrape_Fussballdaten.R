@@ -148,3 +148,40 @@ get_results_for_season <-
     
   }
 
+
+
+############## get_team_audience #################
+# inputs: league, season
+# outputs: should return a data frame which contains the
+# information about audience for the given season
+get_team_audience <- function(league, season){
+  # create url to extract
+  url <-
+    paste0(
+      "https://www.fussballdaten.de/",
+      league,
+      "/",
+      season,
+      "/zuschauer/"
+    )
+  
+  # create a data frame with the important information for a given date
+  audience_table <- read_html(url) %>%
+    # extract only the body of the table
+    html_nodes(xpath = "//table/tbody") %>%
+    # convert the extracted nodes into a table
+    html_table() %>% as.data.frame() %>%
+    rename(
+      ranking = X1,
+      club = X2,
+      average_audience = X3,
+      capacity = X4,
+      total = X5
+    ) 
+  
+  return(audience_table)
+  
+}
+
+
+
