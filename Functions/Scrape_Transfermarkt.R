@@ -156,7 +156,6 @@ get_market_values_over_time <- function(league, league_id) {
   # create empty variable to store all market values
   market_values_over_time <- NULL
   
-  # cutt_off_dates_15 <- seq()
   # create base url to extract the market values
   url <-
     paste0(
@@ -240,6 +239,7 @@ get_market_values_over_time <- function(league, league_id) {
 
 
 
+
 ############## get_market_values_player #################
 # inputs: league, league_id
 # outputs: should return a data frame in a certain league
@@ -277,8 +277,16 @@ get_players_market_values <- function(league, league_id) {
       html_text()
     
     # convert it into a data frame
-    player_market_values <-
-      player_market_values %>%data.frame() %>% rename("value" = ".")
+ 
+    player_market_values <- 
+      player_market_values %>%
+      data.frame() %>%
+      rename("value" = ".")
+
+    player_market_values <- 
+      player_market_values %>%
+      data.frame() %>%
+      rename("value" = ".")
     
     # clean the data frame
     player_market_values$variable <-
@@ -290,10 +298,10 @@ get_players_market_values <- function(league, league_id) {
     
     player_market_values <-
       player_market_values[, c("ranking",
-                               "player.name",
+                               "player_name",
                                "position",
                                "age",
-                               "market.value")]
+                               "market_value")]
     
     player_market_values$ranking <-
       as.numeric(player_market_values$ranking)
@@ -309,8 +317,15 @@ get_players_market_values <- function(league, league_id) {
     
     player_market_values <-
       cbind(player_market_values, image_club_names)
-    player_market_values <-
-      player_market_values %>%rename("club" = ".")
+ 
+    player_market_values <- player_market_values %>%
+      data.frame() %>%
+      rename("club" = ".")
+
+    player_market_values <- player_market_values %>%
+      data.frame() %>%
+      rename("club" = ".")
+ 
     
     # append the data for the current page to the list which stores
     # all pages
@@ -395,15 +410,15 @@ get_performance_players <- function(league, league_id, season) {
     player_performance <-
       player_performance[, c(
         "ranking",
-        "player.name",
+        "player_name",
         "position",
         "age",
         "appearances",
-        "substitution.on",
-        "substitution.off",
+        "substitution_on",
+        "substitution_off",
         "goals",
         "assists",
-        "total.points"
+        "total_points"
       )]
     
     # convert to numeric type
@@ -412,11 +427,11 @@ get_performance_players <- function(league, league_id, season) {
         "ranking",
         "age",
         "appearances",
-        "substitution.on",
-        "substitution.off",
+        "substitution_on",
+        "substitution_off",
         "goals",
         "assists",
-        "total.points"
+        "total_points"
       )
     player_performance[cols.num] <-
       sapply(player_performance[cols.num], as.numeric)
@@ -458,3 +473,265 @@ get_performance_players <- function(league, league_id, season) {
 
 
 
+
+# function should return a data frame for a running league table over the season
+# where the league and the season are given 
+get_running_table <- function(league, league_id, season){
+  # create empty variable to store the league table over time
+  table_over_time <- NULL
+  
+  # create base url to extract the market values
+  url <- paste0("https://www.transfermarkt.com/", league, "/spieltagtabelle/",
+                "wettbewerb/", league_id, "?saison_id=", season)
+  
+  # extract the number of matchdays dynamically
+  number_matchdays <- read_html(url) %>%
+    html_nodes(xpath = "//select[@name='spieltag']/option[@value]") %>%
+    html_attrs() %>%
+    length()
+  
+  # extract the actual content in a loop
+  for(i in 1:number_matchdays){
+    # create the final url with the current matchday 
+    final_url <- paste0(url, "&spieltag=", i)
+    
+    # extract the matchday table and clean it
+    matchday_table <- read_html(final_url) %>%
+      html_nodes(xpath = "//table") %>%
+      # creates a list of data frames
+      html_table() %>%
+      # select the last data frame which contains the wanted table
+      .[[5]] %>%
+      # drop the second column
+      .[, -2] %>%
+      # separate the column Goals (e.g., 8:2, i.e., the team scored 8 goals and
+      # got 2 goals against it) into a column goals_for and goals_against
+      # by the separator :
+      separate(col = Goals, into = c("goals_for", "goals_against"),
+               sep = ":")
+    
+    # to be able to mutate the newly created columns into numeric variables
+    # we have to change the colnames because the matchday column has now name
+    # up to this point
+    colnames(matchday_table) <- c("rank", "club", "matchday", "wins",
+                                  "draws", "losses", "goals_for", "goals_against",
+                                  "goal_diff", "points")
+    
+    # transform the goals columns into numeric variables
+    matchday_table <- matchday_table %>%
+      mutate(goals_for = as.numeric(goals_for),
+             goals_against = as.numeric(goals_against),
+             # add season and league information
+             season_start_year = season,
+             season_end_year = (season + 1),
+             league = str_to_title(league)) 
+    
+    # add cumulative points
+    cum_points <- matchday_table %>%
+      # group by club 
+      group_by(club) %>% 
+      # add up all points for a given club to a given matchday
+      summarize(cum_points = sum(points))
+    
+    # join the two frames by clubname
+    matchday_table <- inner_join(matchday_table, cum_points,
+                                 by = "club")
+      
+    # append the data frame of the current matchday to the data frame
+    # of all matchdays
+    table_over_time <- bind_rows(table_over_time,
+                                 matchday_table)
+      
+    # wait for 2 seconds before scraping the next page
+    Sys.sleep(2)
+    
+  }
+  
+  # return the table which contains all matchdays
+  return(table_over_time)
+  
+}
+
+get_club_squad_urls <- function(league, league_id, season){
+  final_url <- paste0("https://www.transfermarkt.com/", league,
+                      "/startseite/wettbewerb/", league_id,
+                      "/saison_id/", season)
+  
+  league_clubs <- read_html(final_url) %>%
+    html_nodes(xpath = "//table/tbody/tr/td/a") %>%
+    html_attr("href") %>%
+    unique() %>%
+    .[grep(pattern = "kader", .)]
+  
+  return(league_clubs)
+}
+
+# league <- "bundesliga"
+# league_id <- "L1"
+# season <- 2020
+get_squads_by_season <- function(league, league_id, season){
+  # use the fuzzyjoin package to join the given team_name
+  # to the url-name extracted from the get_club_urls function
+  club_names_url <- get_club_squad_urls(league, league_id, season) #%>%
+  # str_extract(pattern = "/.*/startseite") %>%
+  # str_remove_all(pattern = "startseite") %>%
+  # str_remove_all(pattern = "/") %>%
+  # data.frame("url" = .)
+  
+  # team <- data.frame("team" = team)
+  # 
+  # url_name_join <- stringdist_inner_join(club_names_url, team,
+  #                                    by = c("url" = "team"),
+  #                                    max_dist = 10)
+  
+  all_squads_in_season <- NULL
+  
+  for(i in 1:length(club_names_url)){
+    final_url <- paste0("https://www.transfermarkt.com", club_names_url[i],
+                        "/plus/1")
+    
+    print(i)
+    
+    curr_club <- club_names_url[i] %>%
+      str_extract(., pattern = "/.*/kader") %>%
+      str_remove(., pattern = "kader") %>%
+      str_remove_all(., pattern = "\\/") %>%
+      str_replace_all(., pattern = "-", replacement = " ") %>%
+      str_to_title()
+    # club_page <- read_html(final_url) %>%
+    #   # html_nodes(xpath = "//table[@class='items']") %>%
+    #   html_nodes(css = "td") %>%
+    #   html_table() %>%
+    #   data.frame()
+    #   
+    # name_additional_infos <- read_html(final_url) %>%
+    #   html_nodes(xpath = paste0(#"//td[@class='hauptlink']/div[1]/span/a[@title]",
+    #     "//*[@id='yw1']/table/tbody/tr[1]/td[2]/table/tbody/tr[2]/td"))
+    #                            # "//table[@class='inline-table']/tbody/tr[2]/td/text()"))
+    
+    
+    name_and_nationality <- read_html(final_url) %>%
+      html_nodes(xpath = paste0("//td[@class='hauptlink']/div[1]/span/a", " | ",
+                                "//table[@class='items']/tbody/tr/td[4]/img[1]")) %>%
+      # "//table/tbody/tr[@class='odd' or @class='even']/td[5]/a",
+      #"(//table/tbody/tr[@class='odd' or @class='even']/td)[not(a)]")) %>%
+      html_attr("title")
+    
+    Sys.sleep(2)
+    
+    
+    name_and_nationality <- as.data.frame(matrix(name_and_nationality, ncol = 2, byrow = TRUE))
+    
+    
+    position <- read_html(final_url) %>%
+      html_nodes(css = ".inline-table tr:nth-child(2) td") %>%
+      # html_nodes(xpath = "//table[@class='inline-table']/tbody/tr[2]/td") %>%
+      # html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[2]/table/tbody/tr[2]/td/text()") %>%
+      html_text() %>%
+      data.frame()
+    
+    name_nation_pos <- bind_cols(name_and_nationality,
+                                 position)
+    
+    Sys.sleep(2)
+    
+    name_and_other_information <- read_html(final_url) %>%
+      html_nodes(xpath = paste0("//td[@class='hauptlink']/div[1]/span[@class='hide-for-small']/a/text()|",
+                                "//*[@id='yw1']/table/tbody/tr/td[3]|",
+                                "//*[@id='yw1']/table/tbody/tr/td[6]|",
+                                "//*[@id='yw1']/table/tbody/tr/td[8]|",
+                                "//*[@id='yw1']/table/tbody/tr/td[10]|",
+                                "//*[@id='yw1']/table/tbody/tr/td[11]/text()")) %>%
+      html_text()
+    
+    Sys.sleep(2)
+    
+    name_and_other_information <- as.data.frame(matrix(name_and_other_information, ncol = 6, byrow = TRUE))
+    
+    
+    full_squad_frame <- inner_join(name_nation_pos,
+                                   name_and_other_information,
+                                   by = "V1") 
+    
+    #### cleaning the frame ####
+    full_squad_frame_clean <- full_squad_frame %>%
+      rename(., 
+             player_name = V1,
+             country = `V2.x`,
+             position = `.`,
+             birth_date_age = `V2.y`,
+             height = V3,
+             joining_date = V4,
+             contract_date = V5,
+             market_value = V6) %>%
+      separate(col = birth_date_age,
+               into = c("birth_date", "age"),
+               sep = " \\(|\\)") %>%
+      mutate(birth_date = mdy(birth_date),
+             age = as.integer(age),
+             height = as.numeric(str_replace(str_remove(height, pattern = " m"), 
+                                             pattern = ",",
+                                             replacement = ".")),
+             joining_date = mdy(joining_date),
+             contract_date = mdy(contract_date),
+             market_value = str_trim(str_remove(market_value, pattern = "\u20ac"))) #%>%
+    
+    full_squad_frame_clean <- full_squad_frame_clean %>%
+      mutate(market_value_in_million_euro = ifelse(endsWith(market_value, "m"),
+                                                   as.numeric(str_remove(market_value, pattern = "m")),
+                                                   as.numeric(str_remove(market_value, pattern = "Th."))/1000),
+             club_name = curr_club,
+             season = season) %>%
+      select(-market_value)
+    
+    
+    all_squads_in_season <- bind_rows(all_squads_in_season,
+                                      full_squad_frame_clean)
+    
+    
+    
+    # birth_ <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[3]") %>%
+    #   html_text()
+    # 
+    # height_ <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[6]") %>%
+    #   html_text()
+    # 
+    # joined_ <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[8]") %>%
+    #   html_text()
+    # 
+    # contract_ <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[10]") %>%
+    #   html_text()
+    # 
+    # market_value_ <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[11]/text()") %>%
+    #   html_text()
+    
+    
+    
+    # test2 <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//a") %>%
+    #   html_attr("title") %>%
+    #   .[!is.na(.)] %>%
+    #   unique()
+    # 
+    # 
+    # player_test <- read_html(final_url) %>%
+    #   html_nodes(xpath = ".flaggenrahmen , .nowrap a") %>%
+    #   html_text()
+    # 
+    # nationality <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//table[@class='items']/tbody/tr/td/img") %>%
+    #   html_attr("alt")
+    # 
+    # former_club <- read_html(final_url) %>%
+    #   html_nodes(xpath = "//table[@class='items']/tbody/tr/td/a") %>%
+    #   html_attr("title")
+  }
+  
+  return(all_squads_in_season)
+  
+}
