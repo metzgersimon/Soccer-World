@@ -3,19 +3,59 @@ information_league_server <- function(input, output, session){
   
   # create an observer to display for the club selection
   # only those clubs that are present in the selected league
+  # observeEvent(input$information_league_season_selection_start, {
+  #   updateSelectizeInput(session, 
+  #                        inputId = "information_league_team_selection",
+  #                        choices = c("All", unique(
+  #                          all_seasons_scoring_ratio %>%
+  #                            filter(season == input$information_league_season_selection_start) %>%
+  #                            select(club) %>%
+  #                            unlist() %>%
+  #                            unname()
+  #                        ))
+  #   )
+  #   
+  # })
+  
+  # create an observer to display for the club selection
+  # only those clubs that are present in the selected league
   observeEvent(input$information_league_season_selection_start, {
+    print(input$information_league_season_selection_start)
+    data <- fixtures_bundesliga_2010_2021 %>%
+      filter(league_season == 
+               as.numeric(str_split(
+                 input$information_league_season_selection_start,
+                 pattern = "/")[[1]][1]
+               ),
+             !is.na(status_elapsed)) %>%
+      select(league_round) %>%
+      unlist() %>%
+      unname() %>%
+      unique()
+    
     updateSelectizeInput(session, 
-                         inputId = "information_league_team_selection",
+                         inputId = "information_league_matchday_selection",
                          choices = c("All", unique(
-                           all_seasons_scoring_ratio %>%
-                             filter(season == input$information_league_season_selection_start) %>%
-                             select(club) %>%
-                             unlist() %>%
-                             unname()
-                         ))
+                           data 
+                         )),
+                         selected = max(data) ### IMMER MAX MATCHDAY AUSWÄHLEN ###
+                         # BEI PAAR SAISONS FUNKTIONIER MAX NICHT, PASST FORMAT NICHT?
+                         # CLUB NOCH ALS LISTE VORHANDEN
     )
     
   })
+  
+  # test <- all_fixtures_bundesliga_2010_2021 %>%
+  #   filter(league_season == 
+  #            as.numeric(str_split(
+  #              season,
+  #              pattern = "/")[[1]][1]
+  #            ),
+  #          !is.na(status_elapsed)) %>%
+  #   select(league_round) %>%
+  #   unlist() %>%
+  #   unname() %>%
+  #   unique()
   
   
   ########### NOT READY TO USE ###########
@@ -60,15 +100,15 @@ information_league_server <- function(input, output, session){
   # if the checkbox multiple seasons is not selected, there is only
   # one select field to select the season
   # otherwise, the user can select a range of seasons
-  observeEvent(input$information_league_multiple_seasons, {
-    if(input$information_league_multiple_seasons){
-      # if multiple selected, show the field
-      shinyjs::show(id = "information_league_season_selection_end")
-    } else {
-      # otherwise, hide the field (default is not selected)
-      shinyjs::hide(id = "information_league_season_selection_end")
-    }
-  })
+  # observeEvent(input$information_league_multiple_seasons, {
+  #   if(input$information_league_multiple_seasons){
+  #     # if multiple selected, show the field
+  #     shinyjs::show(id = "information_league_season_selection_end")
+  #   } else {
+  #     # otherwise, hide the field (default is not selected)
+  #     shinyjs::hide(id = "information_league_season_selection_end")
+  #   }
+  # })
   
   
   # create the output for the table on the overview page
@@ -174,6 +214,59 @@ information_league_server <- function(input, output, session){
     
     
   }
+  
+  
+  
+  
+  output$information_league_matchday_fixtures <- renderReactable({
+    fixtures_bundesliga_2010_2021 %>%
+      filter(league_season == 
+               as.numeric(str_split(
+                 input$information_league_season_selection_start,
+                 pattern = "/")[[1]][1]
+               ),
+             league_round == as.numeric(input$information_league_matchday_selection)) %>%
+      mutate(game_score = paste0(fulltime_score_home, ":", 
+                                 fulltime_score_away)) %>%
+      select(fixture_date, fixture_time, club_name_home,
+             game_score,
+             club_name_away) %>%
+      arrange(fixture_date, fixture_time) %>%
+      # create the actual table
+      reactable(
+        # set general options for the table
+        # such as the possibility to filter or sort the table
+        # but also insert a search field
+        sortable = TRUE,
+        # searchable = TRUE,
+        highlight = TRUE,
+        borderless = TRUE, 
+        # set the theme for the table
+        theme = reactableTheme(
+          borderColor = "#000000",
+          color = "#000000",
+          backgroundColor = "#004157",
+          highlightColor = "#2f829e",
+          cellPadding = "8px 12px",
+          style = list(color = "white"),
+          # searchInputStyle = list(width = "100%")
+        ), 
+        # modify the layout and names of the columns
+        columns = list(
+          fixture_date = colDef(name = "Date",
+                             align = "left"),
+          fixture_time = colDef(name = "Time",
+                                align = "center"),
+          club_name_home = colDef(name = "Club",
+                               align = "center"),
+          game_score = colDef(name = "Result",
+                              align = "center"),
+          club_name_away = colDef(name = "Club",
+                                  align = "center")
+          
+        ))
+    
+  })
   
   
   
@@ -309,22 +402,22 @@ information_league_server <- function(input, output, session){
  
   # create a plot for a selected season
   # to show the points over the season for all clubs
-  output$one_season_over_time <- renderPlotly({
-    # convert the selected season into a number
-    selected_season <- as.numeric(str_split(input$information_league_season_selection, 
-                                            pattern = "/")[[1]][1])
-    # create the data
-    all_seasons_running_table %>%
-      # filter the data to only contain data for the selected season
-      filter(season_start_year == selected_season) %>%
-      # create actual plot
-      plot_ly(x = ~matchday, y = ~cum_points, color = ~club,
-              colors = colors) %>%
-      add_lines() %>%
-      layout(title = paste0("Cumulative points in season "), 
-                            #input$information_league_season_selection),
-             xaxis = list(title = "Matchday"),
-             yaxis = list(title = "Cumulative points"))
-  })
+  # output$one_season_over_time <- renderPlotly({
+  #   # convert the selected season into a number
+  #   selected_season <- as.numeric(str_split(input$information_league_season_selection, 
+  #                                           pattern = "/")[[1]][1])
+  #   # create the data
+  #   all_seasons_running_table %>%
+  #     # filter the data to only contain data for the selected season
+  #     filter(season_start_year == selected_season) %>%
+  #     # create actual plot
+  #     plot_ly(x = ~matchday, y = ~cum_points, color = ~club,
+  #             colors = colors) %>%
+  #     add_lines() %>%
+  #     layout(title = paste0("Cumulative points in season "), 
+  #                           #input$information_league_season_selection),
+  #            xaxis = list(title = "Matchday"),
+  #            yaxis = list(title = "Cumulative points"))
+  # })
   
 }

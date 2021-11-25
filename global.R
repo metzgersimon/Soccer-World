@@ -6,23 +6,32 @@ source("Setup.R")
 # set a color scheme
 colors <- viridis_pal(option = "D")(30)
 # create the seasons
-seasons <- c(paste0(sort(c(1995:2021), 
+seasons <- c(paste0(sort(c(2015:2021), 
                          decreasing = TRUE),
-                    "/", sort(c(1996:2022), 
+                    "/", sort(c(2016:2022), 
                               decreasing = TRUE))
 )
 
 # map all club names in all available data frames 
 # with the mapping function club_name_mapping we created
 # to be able to join over the names
-all_seasons_running_table$club <- lapply(all_seasons_running_table$club, 
+all_seasons_running_table$club <- sapply(all_seasons_running_table$club, 
                                          club_name_mapping)
 
-bundesliga_2020_infos$team_name <- lapply(bundesliga_2020_infos$team_name, 
+bundesliga_2020_infos$team_name <- sapply(bundesliga_2020_infos$team_name, 
                                          club_name_mapping)
 
-squads_season_2020$club_name <- lapply(squads_season_2020$club_name, 
+squads_season_2020$club_name <- sapply(squads_season_2020$club_name, 
                                           club_name_mapping)
+
+fixtures_bundesliga_2010_2021$club_name_home <- 
+  sapply(fixtures_bundesliga_2010_2021$club_name_home,
+         club_name_mapping)
+
+fixtures_bundesliga_2010_2021$club_name_away <- 
+  sapply(fixtures_bundesliga_2010_2021$club_name_away,
+         club_name_mapping)
+
 
 
 # combine all data frames together
