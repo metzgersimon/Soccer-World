@@ -21,8 +21,19 @@ tab_information_team_ui <- function(){
                                     )
                                   ), 
                    
+                   ),
+            # create one column with an offset of 5 (to be next to the club 
+            # selection) for the selection of the season
+            column(width = 3,
+                   align = "center",
+                   selectInput(
+                     "info_team_season_selection", 
+                     label = "Season",
+                     choices = seasons,
+                     selected = seasons[1]
                    )
-            ),
+            )
+          ), 
           # creat different tabs to divide the data into appropriate pages
           tabsetPanel(
             # create the overview tab which contains 
@@ -50,7 +61,24 @@ tab_information_team_ui <- function(){
             ),
             # season tab which should contain information about the current season
             # such as form, previous matches, future matches, etc.
-            tabPanel("Season"),
+            tabPanel("Season",
+                     fluidRow(
+                       column(width = 5,
+                              align = "center",
+                              div(style = "border: solid 1px #000000; margin-top: 20px;",
+                                  tableOutput("info_team_next_match")
+                              )
+                       )
+                     ),
+                     fluidRow(
+                       column(width = 12,
+                              align = "center",
+                              div(style = "border: solid 1px #000000; margin-top: 20px;",
+                                  reactableOutput("info_team_season")
+                              )
+                       )
+                     )
+            ), 
             # squad panel to see the current squad of the club
             tabPanel("Squad",
                      reactableOutput("info_team_squad")

@@ -45,7 +45,7 @@ club_name_mapping <- function(club_name){
   } else if(str_detect(club_name, ".*bochum")){
     return("VfL Bochum")
   } else if(str_detect(club_name, ".*greuther.*f.*rth")){
-    return("SpVgg Greuther Fürth")
+    return("SpVgg Greuther F\u00fcrth")
   } 
   
   # currently 2. bundesliga or lower
@@ -62,7 +62,7 @@ club_name_mapping <- function(club_name){
   } else if(str_detect(club_name, ".*karlsruher.*")){
     return("Karlsruher SC")
   } else if(str_detect(club_name, "f.*d.sseldorf")){
-    return("Fortuna Düsseldorf")
+    return("Fortuna D\u00fcsseldorf")
   } else if(str_detect(club_name, ".*k.*lautern")){
     return("1. FC Kaiserslautern")
   } else if(str_detect(club_name, ".*uerdingen.*")){
@@ -76,7 +76,7 @@ club_name_mapping <- function(club_name){
   } else if(str_detect(club_name, ".*duisburg")){
     return("MSV Duisburg")
   } else if(str_detect(club_name, ".*n[u\u00fc]r(em|n)berg")){
-    return("1. FC Nürnberg")
+    return("1. FC N\u00fcrnberg")
   } else if(str_detect(club_name, ".*ulm.18.*")){
     return("SSV Ulm 1846")
   } else if(str_detect(club_name, ".*unterhach.*")){
