@@ -436,16 +436,6 @@ get_performance_players <- function(league, league_id, season) {
     player_performance[cols.num] <-
       sapply(player_performance[cols.num], as.numeric)
     
-    # so far we only have the values
-    # but we also want to know which clubs they come from
-    # so we extract the information from logos included in the table
-    #image_club_names <- read_html(final_url) %>%
-    #html_nodes(xpath = "//a[@title]") %>%
-    #html_attr("title") %>% as.data.frame()
-    
-    #image_club_names <- image_club_names[c(3:55),]
-    #player_performance <- cbind(player_performance, image_club_names)
-    #player_performance <- player_performance %>%　rename("club" = ".")
     
     # append the data for the current page to the data frame which stores
     # all pages
@@ -552,90 +542,100 @@ get_running_table <- function(league, league_id, season){
   
 }
 
+
+
+############## get_club_squad_urls #################
+# inputs: league, league_id, season
+# outputs: returns the url to the page of every club available
+# for the given league and season on transfermarkt
+
 get_club_squad_urls <- function(league, league_id, season){
+  # paste whole url together
   final_url <- paste0("https://www.transfermarkt.com/", league,
                       "/startseite/wettbewerb/", league_id,
                       "/saison_id/", season)
   
+  # extract the urls from the page
   league_clubs <- read_html(final_url) %>%
     html_nodes(xpath = "//table/tbody/tr/td/a") %>%
+    # get the hyperlinks stored in the page
     html_attr("href") %>%
+    # get only unique links
     unique() %>%
+    # get only those where the string "kader" is contained
     .[grep(pattern = "kader", .)]
   
+  # return all available club urls
   return(league_clubs)
 }
 
-# league <- "bundesliga"
-# league_id <- "L1"
-# season <- 2020
+
+
+############## get_squads_by_season #################
+# inputs: league, league_id, season
+# outputs: returns all squads for every club in a given league and season
+
 get_squads_by_season <- function(league, league_id, season){
-  # use the fuzzyjoin package to join the given team_name
-  # to the url-name extracted from the get_club_urls function
-  club_names_url <- get_club_squad_urls(league, league_id, season) #%>%
-  # str_extract(pattern = "/.*/startseite") %>%
-  # str_remove_all(pattern = "startseite") %>%
-  # str_remove_all(pattern = "/") %>%
-  # data.frame("url" = .)
+  # use the helper function get_club_squad_urls
+  # to get all urls for the clubs to use them to iterate through
+  club_names_url <- get_club_squad_urls(league, league_id, season)
   
-  # team <- data.frame("team" = team)
-  # 
-  # url_name_join <- stringdist_inner_join(club_names_url, team,
-  #                                    by = c("url" = "team"),
-  #                                    max_dist = 10)
-  
+  # create empty variable to store the information later
   all_squads_in_season <- NULL
   
+  # iterate through all club urls
   for(i in 1:length(club_names_url)){
+    # paste the final url together
     final_url <- paste0("https://www.transfermarkt.com", club_names_url[i],
                         "/plus/1")
     
+    # store the page once to do not have to scrape it all the time
+    page_html <- read_html(final_url)
+    
+    # print the current iteration for debugging
     print(i)
     
+    # extract the current club name from the url
     curr_club <- club_names_url[i] %>%
       str_extract(., pattern = "/.*/kader") %>%
       str_remove(., pattern = "kader") %>%
       str_remove_all(., pattern = "\\/") %>%
       str_replace_all(., pattern = "-", replacement = " ") %>%
       str_to_title()
-    # club_page <- read_html(final_url) %>%
-    #   # html_nodes(xpath = "//table[@class='items']") %>%
-    #   html_nodes(css = "td") %>%
-    #   html_table() %>%
-    #   data.frame()
-    #   
-    # name_additional_infos <- read_html(final_url) %>%
-    #   html_nodes(xpath = paste0(#"//td[@class='hauptlink']/div[1]/span/a[@title]",
-    #     "//*[@id='yw1']/table/tbody/tr[1]/td[2]/table/tbody/tr[2]/td"))
-    #                            # "//table[@class='inline-table']/tbody/tr[2]/td/text()"))
-    
-    
-    name_and_nationality <- read_html(final_url) %>%
+                    
+    # extract the name and nationality of the players playing
+    # in the current club
+    name_and_nationality <- page_html %>%
       html_nodes(xpath = paste0("//td[@class='hauptlink']/div[1]/span/a", " | ",
                                 "//table[@class='items']/tbody/tr/td[4]/img[1]")) %>%
-      # "//table/tbody/tr[@class='odd' or @class='even']/td[5]/a",
-      #"(//table/tbody/tr[@class='odd' or @class='even']/td)[not(a)]")) %>%
       html_attr("title")
     
-    Sys.sleep(2)
+    # convert the name and nationality in a data frame
+    # with 2 columns
+    name_and_nationality <- as.data.frame(
+      matrix(name_and_nationality, 
+             ncol = 2,
+             byrow = TRUE)
+      )
     
-    
-    name_and_nationality <- as.data.frame(matrix(name_and_nationality, ncol = 2, byrow = TRUE))
-    
-    
-    position <- read_html(final_url) %>%
+    # extract the positions of the players and store it
+    # into a data frame
+    position <- page_html %>%
       html_nodes(css = ".inline-table tr:nth-child(2) td") %>%
-      # html_nodes(xpath = "//table[@class='inline-table']/tbody/tr[2]/td") %>%
-      # html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[2]/table/tbody/tr[2]/td/text()") %>%
       html_text() %>%
       data.frame()
     
+    # bind the name, nationality and position into
+    # one data frame
     name_nation_pos <- bind_cols(name_and_nationality,
                                  position)
     
-    Sys.sleep(2)
     
-    name_and_other_information <- read_html(final_url) %>%
+    # extract the name and additional information
+    # such as birth date or height
+    # and again also the name of the player to be able to join
+    # using it as key
+    name_and_other_information <- page_html %>%
       html_nodes(xpath = paste0("//td[@class='hauptlink']/div[1]/span[@class='hide-for-small']/a/text()|",
                                 "//*[@id='yw1']/table/tbody/tr/td[3]|",
                                 "//*[@id='yw1']/table/tbody/tr/td[6]|",
@@ -644,17 +644,23 @@ get_squads_by_season <- function(league, league_id, season){
                                 "//*[@id='yw1']/table/tbody/tr/td[11]/text()")) %>%
       html_text()
     
-    Sys.sleep(2)
+    # convert it from a vector into a data frame
+    # with 6 columns
+    name_and_other_information <- 
+      as.data.frame(matrix(name_and_other_information, 
+                           ncol = 6, 
+                           byrow = TRUE))
     
-    name_and_other_information <- as.data.frame(matrix(name_and_other_information, ncol = 6, byrow = TRUE))
-    
-    
+    # join the name_nation_pos and the scraped
+    # name and other information together by player name
+    # (here given by the column V1)
     full_squad_frame <- inner_join(name_nation_pos,
                                    name_and_other_information,
                                    by = "V1") 
     
     #### cleaning the frame ####
     full_squad_frame_clean <- full_squad_frame %>%
+      # renaming all columns
       rename(., 
              player_name = V1,
              country = `V2.x`,
@@ -664,74 +670,291 @@ get_squads_by_season <- function(league, league_id, season){
              joining_date = V4,
              contract_date = V5,
              market_value = V6) %>%
+      # separate the birth_date_age column
+      # where the age is in the birth_date column in parantheses
+      # into two separate columns birth_date and age
       separate(col = birth_date_age,
                into = c("birth_date", "age"),
                sep = " \\(|\\)") %>%
+      # transform various columns
       mutate(birth_date = mdy(birth_date),
              age = as.integer(age),
              height = as.numeric(str_replace(str_remove(height, pattern = " m"), 
                                              pattern = ",",
                                              replacement = ".")),
+             # dates in appropriate format
              joining_date = mdy(joining_date),
              contract_date = mdy(contract_date),
-             market_value = str_trim(str_remove(market_value, pattern = "\u20ac"))) #%>%
+             # remove euro sign from market value
+             market_value = str_trim(str_remove(market_value, pattern = "\u20ac"))) 
     
+    # final cleaning
     full_squad_frame_clean <- full_squad_frame_clean %>%
+      # market value to market value in million euro by removing m (millions)
+      # or Th. (thousands)
       mutate(market_value_in_million_euro = ifelse(endsWith(market_value, "m"),
-                                                   as.numeric(str_remove(market_value, pattern = "m")),
-                                                   as.numeric(str_remove(market_value, pattern = "Th."))/1000),
+                                                   as.numeric(str_remove(market_value, 
+                                                                         pattern = "m")),
+                                                   as.numeric(str_remove(market_value, 
+                                                                         pattern = "Th."))/1000),
              club_name = curr_club,
              season = season) %>%
+      # drop previous market value
       select(-market_value)
     
-    
+    # bind all together into the earlier created variable
+    # by bind_rows (more flexible than rbind)
     all_squads_in_season <- bind_rows(all_squads_in_season,
                                       full_squad_frame_clean)
-    
-    
-    
-    # birth_ <- read_html(final_url) %>%
-    #   html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[3]") %>%
-    #   html_text()
-    # 
-    # height_ <- read_html(final_url) %>%
-    #   html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[6]") %>%
-    #   html_text()
-    # 
-    # joined_ <- read_html(final_url) %>%
-    #   html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[8]") %>%
-    #   html_text()
-    # 
-    # contract_ <- read_html(final_url) %>%
-    #   html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[10]") %>%
-    #   html_text()
-    # 
-    # market_value_ <- read_html(final_url) %>%
-    #   html_nodes(xpath = "//*[@id='yw1']/table/tbody/tr/td[11]/text()") %>%
-    #   html_text()
-    
-    
-    
-    # test2 <- read_html(final_url) %>%
-    #   html_nodes(xpath = "//a") %>%
-    #   html_attr("title") %>%
-    #   .[!is.na(.)] %>%
-    #   unique()
-    # 
-    # 
-    # player_test <- read_html(final_url) %>%
-    #   html_nodes(xpath = ".flaggenrahmen , .nowrap a") %>%
-    #   html_text()
-    # 
-    # nationality <- read_html(final_url) %>%
-    #   html_nodes(xpath = "//table[@class='items']/tbody/tr/td/img") %>%
-    #   html_attr("alt")
-    # 
-    # former_club <- read_html(final_url) %>%
-    #   html_nodes(xpath = "//table[@class='items']/tbody/tr/td/a") %>%
-    #   html_attr("title")
   }
   
+  # return all squads for this season
   return(all_squads_in_season)
+  
+}
+
+
+
+############## get_lineups_all_ended_fixture_by_season #################
+# inputs: league, league_id, season
+# outputs: returns all lineups for ended fixtures in a given season
+
+get_lineups_all_ended_fixture_by_season <- function(league, league_id, season){
+  # paste together the url we want to scrape
+  url <- paste0("https://www.transfermarkt.com/", league, "/spieltagtabelle",
+                      "/wettbewerb/", league_id, "?saison_id=",
+                      season)
+  
+  # create an empty list to store our information
+  lineup_information <- list()
+  
+  # create a driver from Rselenium
+  rD <- rsDriver(browser = "firefox", port = 2652L)
+  
+  # get the client
+  remDr <- rD$client
+  
+  # navigate to the created url
+  remDr$navigate(url)
+  
+  # extract the html for the given url
+  page_html <- read_html(remDr$getPageSource()[[1]])
+  
+  # extract the number of matchdays by getting the length
+  # of the elements
+  number_matchdays <- page_html %>%
+    html_nodes(xpath = "//select[@name='spieltag']/option[@value]") %>%
+    html_attrs() %>%
+    length()
+  
+  # iterate through all matchdays
+  for(i in 1:number_matchdays){
+    # print for debugging
+    print(paste0("Matchday ", i))
+    
+    # create an empty list
+    current_matchday_info <- list()
+    
+    # paste together the final url
+    final_url <- paste0(url, "&spieltag=", i)
+
+    # navigate to the final url
+    remDr$navigate(final_url)
+    
+    # extract the html for the given url
+    page_html <- read_html(remDr$getPageSource()[[1]])
+    
+    # get the urls for all matches taking place at the
+    # given matchday
+    matchday_refs <- page_html %>%
+      html_nodes(xpath = "//a[@title='Match report']") %>%
+      html_attr("href")
+    
+    # iterate through all matches
+    for(j in 1:length(matchday_refs)){
+      # print for debugging
+      print(paste0("Match_number ", j))
+      
+      # paste the url we want to scrape data from
+      match_url <- paste0("https://www.transfermarkt.com",
+                          matchday_refs[j])
+      
+      # navigate to the url of the specific match
+      remDr$navigate(match_url)
+      
+      # store the webpage
+      page_html <- read_html(remDr$getPageSource()[[1]])
+      
+      # extract the formations for each team
+      formations <- page_html %>%
+        html_nodes(xpath = paste0("//div[@class='large-7 aufstellung-vereinsseite",
+                                  " columns small-12 unterueberschrift ",
+                                  "aufstellung-unterueberschrift']")) %>%
+        html_text(trim = TRUE)
+ 
+      # find the button which leads to the lineup page     
+      elem <- remDr$findElement(using = "xpath", "//*[@id='line-ups']/a")
+      # click the button
+      elem$clickElement()
+      
+      # extract the html for the given url
+      page_html <- read_html(remDr$getPageSource()[[1]])
+      
+      # store the team names
+      team_names <- page_html %>%
+        html_nodes(xpath = paste0("//div[@class='sb-team sb-heim']/a[1]",
+                                  "|", "//div[@class='sb-team sb-gast']/a[1]")) %>%
+        html_attr("title") %>%
+        # map the names with my own mapping function club_name_mapping
+        sapply(., club_name_mapping) %>%
+        unname()
+      
+      # store the date information
+      date_information <- page_html %>%
+        # extract nodes
+        html_nodes(xpath = paste0("//div[@class='sb-spieldaten']",
+                                  "/p[@class='sb-datum hide-for-small']/a[2]",
+                                  "|", 
+                                  "//div[@class='sb-spieldaten']",
+                                  "/p[@class='sb-datum hide-for-small']/text()[3]")) %>%
+        html_text(trim = TRUE) %>%
+        # split the string by the "|"
+        str_split(" \\|") %>%
+        # remove all "|"
+        str_remove_all(., pattern = "\\|") %>%
+        # paste the string together
+        paste(., collapse = "")
+      
+      
+      # extract starting line ups 
+      starting_line_ups <- page_html %>%
+        # extract the nodes
+        html_nodes(xpath = paste0("//*[@class='row sb-formation'][1]//",
+                                  "table[@class='items']//a[@class='wichtig']",
+                                  "|//*[@class='row sb-formation'][1]",
+                                  "//table[@class='inline-table']//tr[2]/td/text()[1]")) %>%
+        html_text(trim = TRUE) %>%
+        str_remove_all(., pattern = ",.*") %>%
+        str_trim() %>%
+        # convert the data into a matrix (2 columns)
+        # and then into a data frame
+        matrix(., ncol = 2,
+               byrow = TRUE) %>%
+        data.frame()
+      
+      # get the home lineup (11 players)
+      starting_line_ups_home <- starting_line_ups %>%
+        .[1:11,]
+      
+      # get the away lineup (11 players)
+      starting_line_ups_away <- starting_line_ups %>%
+        .[12:22,]
+      
+      # bind the home and away lineups together
+      starting_line_ups_clean <- bind_cols(starting_line_ups_home,
+                                           starting_line_ups_away)
+      
+      # set the colnames appropriately
+      colnames(starting_line_ups_clean) <- c("player_name_home",
+                                             "player_position_home",
+                                             "player_name_away",
+                                             "player_position_away")
+      
+      # substitute players 
+      substitute_line_ups <- page_html %>%
+        # extract the nodes
+        html_nodes(xpath = paste0("//*[@class='row sb-formation'][2]//",
+                                  "table[@class='items']//a[@class='wichtig']",
+                                  "|//*[@class='row sb-formation'][2]",
+                                  "//table[@class='inline-table']//tr[2]/td/text()[1]")) %>%
+        # convert it into strings
+        html_text(trim = TRUE) %>%
+        # remove the ","
+        str_remove_all(., pattern = ",.*") %>%
+        # trim the whitespaces
+        str_trim() %>%
+        # convert it into a matrix with 2 columns
+        # and then into a data frame
+        matrix(., ncol = 2, byrow = TRUE) %>%
+        data.frame()
+      
+      # set the colnames of the substitutes accordingly
+      colnames(substitute_line_ups) <- c("player_name",
+                                         "player_position")
+      
+      # club_names for perfect dynamic function later
+      
+      # club_names <- sapply(substitute_line_ups$player_name,
+      #                      get_club_by_player_name,
+      #                      league = league,
+      #                      season_start = season) %>%
+      #   unlist() %>%
+      #   unname() %>%
+      #   unique()
+      
+      # get the club name for a given player by using
+      # the function get_club_by_player_name
+      substitute_line_ups$club_name <- sapply(substitute_line_ups$player_name,
+                                                get_club_by_player_name,
+                                                league = league,
+                                                season_start = season)
+      
+      # check if for one player there are multiple clubs available, 
+      # i.e., the player transfered from one club to the other in one season
+      # indices <- lapply(enframe(substitute_line_ups$club_name)$value,
+      #                   length) %>%
+      #   which.max()
+      #   
+      # 
+      # for(index in indices){
+      #   clubs <- unlist(substitute_line_ups[index, ]$club_name)
+      #   clubs <- sapply(clubs,
+      #                   club_name_mapping) %>%
+      #     unname()
+      #   
+      #   substitute_line_ups[index, ]$club_name <-
+      #     clubs[clubs %in% team_names]
+      # }
+      # 
+      # substitute_line_ups$club_name <- sapply(substitute_line_ups$club_name,
+      #                                         club_name_mapping) %>%
+      #   unlist()
+      # 
+      
+      # create a list of the current match by
+      # storing all the information into it
+      current_match_info <- list(
+        "matchday" = i,
+        "formations" = formations,
+        "team_names" = team_names,
+        "date_info" = date_information,
+        "starting_lineups" = starting_line_ups_clean,
+        "substitute_lineups" = substitute_line_ups
+      )
+      
+      # store the data of the current match as a list
+      # into a list containing data of all matches
+      current_matchday_info <- append(
+        current_matchday_info,
+        list(current_match_info)
+      )
+      
+      # wait for 2 seconds before continuing
+      Sys.sleep(2)
+      
+    }
+    
+    # store the data of the whole matchday into 
+    # the overall list of all matchdays
+    lineup_information <- append(
+      lineup_information,
+      list(current_matchday_info)
+    )
+      
+  }
+    
+  # returns the list containing all lineups for every match
+  # on every matchday
+  return(lineup_information)
   
 }
