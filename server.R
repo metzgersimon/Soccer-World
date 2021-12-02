@@ -9,5 +9,7 @@ server <- function(input, output, session){
   
   information_player_server(input, output, session)
   
+  information_match_server(input, output, session)
+  
 
 }
