@@ -32,6 +32,13 @@ fixtures_bundesliga_2010_2021$club_name_away <-
   sapply(fixtures_bundesliga_2010_2021$club_name_away,
          club_name_mapping)
 
+# buli_2021_first90_fixture_stats$team_name <-
+#   sapply(buli_2021_first90_fixture_stats$team_name,
+#          club_name_mapping)
+
+squads_by_season_2010_2021$club_name <- 
+  sapply(squads_by_season_2010_2021$club_name,
+         club_name_mapping)
 
 
 # combine all data frames together
@@ -41,3 +48,12 @@ season_players_joined <- all_seasons_running_table %>%
                     "season_start_year" = "season")) %>%
   inner_join(bundesliga_2020_infos,
              by = c("club" = "team_name"))
+
+# fixtures_with_stats 2021
+fixtures_with_stats_2021 <- buli_2021_first100_fixture_stats  %>%
+  left_join(fixtures_bundesliga_2010_2021, by = "fixture_id")
+
+fixtures_with_stats_2021$team_name <- sapply(fixtures_with_stats_2021$team_name,
+                                             club_name_mapping)
+
+
