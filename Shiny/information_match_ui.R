@@ -15,8 +15,8 @@ tab_information_match_ui <- function(){
             column(width = 3,
                    align = "center",
                    div(style = "margin-top: 20px;",
-                       selectInput("info_match_home_team",
-                                   "Home Team",
+                       selectInput("info_match_team1",
+                                   "Team",
                                    choices = c("", "Borussia Dortmund"),
                                    selected = NULL
                        )
@@ -25,8 +25,8 @@ tab_information_match_ui <- function(){
             column(width = 3,
                    align = "center",
                    div(style = "margin-top: 20px;",
-                       selectInput("info_match_away_team",
-                                   "Away Team",
+                       selectInput("info_match_team2",
+                                   "Team",
                                    choices = c("", "FC Schalke 04"),
                                    selected = NULL
                        )
@@ -43,15 +43,21 @@ tab_information_match_ui <- function(){
                    )
             )
           ),
-          fluidRow(
-            column(width = 12,
-                   align = "center",
-                   div(style = "border: solid 2px #000000; margin-top: 20px;",
-                       plotlyOutput("info_match_match_stats") %>%
-                         withSpinner(color = "blue")
-                   )
-            )
+          tabsetPanel(
+            tabPanel("Match stats",
+                     fluidRow(
+                       column(width = 12,
+                              align = "center",
+                              div(style = "border: solid 2px #000000; margin-top: 20px;",
+                                  plotlyOutput("info_match_match_stats") %>%
+                                    withSpinner(color = "blue")
+                              )
+                       )
+                     )
+            ),
+            tabPanel("Lineups")
           )
+          
   )
   
 }

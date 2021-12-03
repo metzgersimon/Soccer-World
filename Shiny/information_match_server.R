@@ -12,9 +12,9 @@ information_match_server <- function(input, output, session){
   # only those clubs that are present for the selected season
   observeEvent(input$info_match_season, {
     updateSelectInput(session, 
-                      inputId = "info_match_home_team",
+                      inputId = "info_match_team1",
                       choices = c("",
-                                  unique(fixtures_bundesliga_2010_2021 %>%
+                                  unique(fixtures_with_stats_2021 %>%
                                            filter(league_season == 
                                                     as.numeric(
                                                       str_split(input$info_match_season,
@@ -32,9 +32,9 @@ information_match_server <- function(input, output, session){
   # only those clubs that are present for the selected season
   observeEvent(input$info_match_season, {
     updateSelectInput(session, 
-                      inputId = "info_match_away_team",
+                      inputId = "info_match_team2",
                       choices = c("",
-                                  unique(fixtures_bundesliga_2010_2021 %>%
+                                  unique(fixtures_with_stats_2021 %>%
                                            filter(league_season == 
                                                     as.numeric(
                                                       str_split(input$info_match_season,
@@ -92,12 +92,12 @@ information_match_server <- function(input, output, session){
   # plot
   matches_reactive <- reactive({
     req(input$info_match_season)
-    req(input$info_match_home_team)
-    req(input$info_match_away_team)
+    req(input$info_match_team1)
+    req(input$info_match_team2)
     
     season_half_selection <- input$info_match_season_half
     
-    number_of_rounds <- max(fixtures_bundesliga_2010_2021$league_round,
+    number_of_rounds <- max(fixtures_with_stats_2021$league_round,
                             na.rm = TRUE)
     
     rounds_segment <- number_of_rounds / 2
@@ -108,10 +108,10 @@ information_match_server <- function(input, output, session){
                as.numeric(
                  str_split(input$info_match_season,
                            pattern = "/")[[1]][1]),
-             club_name_home %in% c(input$info_match_home_team,
-                                   input$info_match_away_team),
-             club_name_away %in% c(input$info_match_home_team,
-                                   input$info_match_away_team))
+             club_name_home %in% c(input$info_match_team1,
+                                   input$info_match_team2),
+             club_name_away %in% c(input$info_match_team1,
+                                   input$info_match_team2))
     
     if(season_half_selection == "First half"){
       fixture_stats <- fixture_stats %>%
@@ -121,9 +121,8 @@ information_match_server <- function(input, output, session){
         filter(league_round > rounds_segment)
     }
     
-    print("HAHA")
+
     if(nrow(fixture_stats) == 0){
-      print("I AM IN HERE")
       shinyalert(title = "Error: no data avilable for your selection!",
                  text = paste0("Probably the match for the selected teams is not ",
                                "yet played in the given season half."),
@@ -163,7 +162,15 @@ information_match_server <- function(input, output, session){
       spread(key = team_name,
              value = values) %>%
       rename(team_1 := !!club_name_home,
-             team_2 := !!club_name_away) %>%
+             team_2 := !!club_name_away) 
+    
+    
+    colnames(fixture_plot_data) <- c("fixture_date","fixture_time","venue_name","venue_city",
+                         "league_round","referee","club_name_home","club_name_away","halftime_score_home",
+                         "halftime_score_away",       "fulltime_score_home",       "fulltime_score_away",      
+                         "statistic","team_1", "team_2")
+    
+    fixture_plot_data <- fixture_plot_data %>%
       mutate(values_team_1_rel = team_1 / (team_1 + team_2),
              values_team_2_rel = team_2 / (team_1 + team_2)) %>%
       replace(is.na(.), 0)
@@ -180,7 +187,6 @@ information_match_server <- function(input, output, session){
     fixture_plot_data <- matches_reactive()
     
     if(nrow(fixture_plot_data) == 0){
-      print("I AM IN HERE 2")
       return()
     }
     
