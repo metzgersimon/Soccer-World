@@ -133,6 +133,91 @@ get_all_available_leagues_by_country <- function(country){
 
 
 
+############## get_standing_by_season #################
+# inputs: league_id, season
+# outputs: should return a data frame containing information about the 
+# current standing in a league for the given season
+get_standing_by_season <- function(league_id, season){
+  # set the endpoint of the API
+  endpoint <- "https://v3.football.api-sports.io/standings"
+  
+  # create a get request to that API with the API key
+  # and the selected parameters (league and season)
+  response <- GET(endpoint, 
+                  add_headers('x-apisports-key' = football_api_key),
+                  query = list(league = league_id,
+                               season = season))
+  
+  # check if the request was successful and only then go on with the 
+  # transformation of the data
+  if(status_code(response) >= 200 & status_code(response) < 300){
+    # extract the content from the response
+    content <- content(response)$response[[1]]$league
+    
+    # extract the plain strings from the content
+    league_id <- content$id
+    league_name <- content$name
+    league_country <- content$country
+    league_logo <- content$logo
+    league_season <- content$season
+    
+    # extract the ranking of the season
+    ranking_content <- content$standings[[1]]
+    # get the length of the content
+    ranking_length <- length(ranking_content)
+    
+    # pre-allocate data frame to store the ranking
+    ranking_frame <- data.frame(matrix(nrow = ranking_length,
+                                       ncol = 29))
+    
+    # create an empty variable to store the current info
+    current_rank <- NULL
+    
+    # iterate through all the positions in the ranking
+    for(rank in 1:ranking_length){
+      # use the helper function to get the current ranking information
+      # in an appropriate form
+      current_rank <- get_content_for_list_element(ranking_content,
+                                                   rank, 
+                                                   name_elem = "")
+      
+      # deal with missing columns in the data by using
+      # the helper function "api_football_complete_checks"
+      current_rank <- api_football_fixtures_general_complete_check(current_rank,
+                                                                   "standing")
+      
+      # save the current info at the correct position in the
+      # data frame
+      ranking_frame[rank, ] <- current_rank
+      
+    }
+    
+    # set the column names appropriately
+    colnames(ranking_frame) <- colnames(current_rank)
+    
+    # bind the information extracted above regarding the league
+    # at the beginning of the data frame
+    ranking_frame <- cbind(league_id,
+                           league_name,
+                           league_country,
+                           league_logo,
+                           league_season,
+                           ranking_frame
+                           )
+      
+    
+    # if the request was not successful print an error  
+  } else {
+    print(paste0("Error: The request was not successful. \nStatus code: ",
+                 status_code(response)))
+  }
+  
+  return(ranking_frame)
+   
+}
+
+
+
 ############## get_team_information_in_league #################
 # inputs: league_id, season
 # outputs: should return a data frame containing information about all
@@ -200,6 +285,106 @@ get_team_information_in_league <- function(league_id, season){
   # return the data frame containing information about all teams
   # in the league for the given season
   return(team_info_frame)
+}
+
+
+
+############## get_team_stats_in_league_by_season #################
+# inputs: league_id, team_id, season
+# outputs: should return a list where each element represents a statistic about
+# a given team in a given league and season
+# example: form of the team, average goals, etc.
+get_team_stats_in_league_by_season <- function(league_id, team_id, season){
+  
+  # set the endpoint of the API
+  endpoint <- "https://v3.football.api-sports.io/teams/statistics"
+  
+  # create a get request to that API with the API key
+  # and the selected parameters (league via league_id and season)
+  response <- GET(endpoint, 
+                  add_headers('x-apisports-key' = football_api_key),
+                  query = list(league = league_id,
+                               team = team_id,
+                               season = season))
+  
+  # check if the request was successful and only then go on with the 
+  # transformation of the data
+  if(status_code(response) >= 200 & status_code(response) < 300){
+    # extract the content from the response
+    content <- content(response)$response
+    
+    # extract the league information by using the helper function
+    # get_content_for_list_element
+    league_info <- get_content_for_list_element(content, "league")
+    
+    # extract the team information by using the helper function
+    # get_content_for_list_element
+    team_info <- get_content_for_list_element(content, "team")
+    
+    # extract the form of the team
+    form_info <- content$form
+    
+    # extract the fixture information by using the helper function
+    # get_content_for_list_element
+    fixtures_info <- get_content_for_list_element(content, "fixtures")
+      
+    # extract the goal information by using the helper function
+    # get_content_for_list_element
+    goal_info <- get_content_for_list_element(content, "goals")
+    
+    # extract the biggest information by using the helper function
+    # get_content_for_list_element
+    biggest_info <- get_content_for_list_element(content, "biggest")
+    
+    # extract the clean_sheet information by using the helper function
+    # get_content_for_list_element
+    clean_sheet_info <- get_content_for_list_element(content, "clean_sheet")
+      
+    # extract the failed_to_score information by using the helper function
+    # get_content_for_list_element
+    failed_to_score_info <- get_content_for_list_element(content,
+                                                         "failed_to_score")
+      
+    # extract the penalty information by using the helper function
+    # get_content_for_list_element
+    penalty_info <- get_content_for_list_element(content, "penalty")
+    
+    # extract the lineups information by using the helper function
+    # get_content_for_list_element
+    lineups_info <- get_content_for_list_element(content, "lineups",
+                                                 piv_wider = FALSE)
+    
+    # extract the cards information by using the helper function
+    # get_content_for_list_element
+    cards_info <- get_content_for_list_element(content, "cards")
+  
+    
+    # create a list containing all information
+    team_info_complete <- list(
+      "season" = season,
+      "league" = league_info,
+      "team" = team_info,
+      "form" = form_info,
+      "fixtures" = fixtures_info,
+      "goals" = goal_info,
+      "biggest" = biggest_info,
+      "clean_sheet" = clean_sheet_info,
+      "failed_to_score" = failed_to_score_info,
+      "penalty" = penalty_info,
+      "lineups" = lineups_info,
+      "cards" = cards_info
+    )
+    
+    # if the request was not successful print an error 
+  } else {
+    print(paste0("Error: The request was not successful. \nStatus code: ",
+                 status_code(response)))
+  }
+  
+  # return the list containing statistics about the given team
+  # in the league for the given season
+  return(team_info_complete)
+  
 }
 
 
@@ -653,8 +838,78 @@ get_fixture_stats <- function(fixture_id){
 
 
 
+############## get_fixture_events #################
+# inputs: fixture_id
+# outputs: should return a data frame which contains all available
+# information about the events happening in a selected fixture
+# example: goals, cards, etc.
+get_fixture_events <- function(fixture_id){
+  # set the endpoint of the API
+  endpoint <- "https://v3.football.api-sports.io/fixtures/events"
+  
+  # create a get request to that API with the API key
+  # and the selected parameter (the selected fixture via its id)
+  response <- GET(endpoint, 
+                  add_headers('x-apisports-key' = football_api_key),
+                  query = list(fixture = fixture_id))
 
+  
+  # check if the request was successful and only then go on with the 
+  # transformation of the data
+  if(status_code(response) >= 200 & status_code(response) < 300){
+    
+    # extract the content from the response
+    content <- content(response)$response
+    
+    # pre-allocate a data frame with all necessary variables
+    fixture_events <- data.frame(time_elapsed = rep(NA, length(content)),
+                                 time_extra = rep(NA, length(content)),
+                                 team_id = rep(NA, length(content)),
+                                 team_name = rep(NA, length(content)),
+                                 team_logo = rep(NA, length(content)),
+                                 player_id = rep(NA, length(content)),
+                                 player_name = rep(NA, length(content)),
+                                 assist_id = rep(NA, length(content)),
+                                 assist_name = rep(NA, length(content)),
+                                 type = rep(NA, length(content)),
+                                 detail = rep(NA, length(content)),
+                                 comments = rep(NA, length(content)))
+    
+    # iterate over all the events
+    for(i in 1:length(content)){
+      # use the helper function get_content_for_list_element
+      # to extract the needed content 
+      curr_events <- get_content_for_list_element(content,
+                                                  i,
+                                                  name_elem = "")
+      
+      # use the helper function to add columns that are not currently 
+      # present in the data 
+      curr_events <- api_football_fixtures_general_complete_check(curr_events,
+                                                                  "fixture_events")
+      
+      # insert the current data in the data frame pre-allocated above
+      fixture_events[i, ] <- curr_events
 
+    }
+    
+    # give the time_elapsed variable the appropriate data type
+    # (numeric) and add an additional variable for the fixture_id
+    # as the first variable
+    fixture_events <- fixture_events %>%
+      mutate(time_elapsed = as.numeric(time_elapsed)) %>%
+      add_column(fixture_id, .before = 1)
+    
+    # if the request was not successful print an error 
+  } else {
+    print(paste0("Error: The request was not successful. \nStatus code: ",
+                 status_code(response)))
+  }
+  
+  # return a data frame containing all events of a fixture
+  return(fixture_events)
+
+}
 
 
 
@@ -787,4 +1042,194 @@ get_fixture_lineups <- function(fixture_id){
   # return the lineups for the fixture
   return(fixture_lineups)
   
+}
+
+
+
+############## get_player_stats #################
+# inputs: fixture_id
+# outputs: should return a data frame which contains all available
+# statistics about the the players of a selected fixture
+get_player_stats <- function(fixture_id){
+  # set the endpoint of the API
+  endpoint <- "https://v3.football.api-sports.io/fixtures/players"
+
+  # create a get request to that API with the API key
+  # and the selected parameter (the selected fixture via its id)
+  response <- GET(endpoint, 
+                  add_headers('x-apisports-key' = football_api_key),
+                  query = list(fixture = fixture_id))
+  
+  
+  # check if the request was successful and only then go on with the 
+  # transformation of the data
+  if(status_code(response) >= 200 & status_code(response) < 300){
+    
+    # extract the content from the response
+    content <- content(response)$response
+    
+    # create an empty variable to store all player stats
+    players_all <- NULL
+    
+    # iterate over both team statistics
+    for(i in 1:length(content)){
+      team_info <- enframe(unlist(content[[i]]$team))
+      player_list <- content[[i]]$players
+      
+      # create an empty variable to store all player stats
+      # of the current team
+      players_current_team <- NULL
+      
+      # iterate through all players in the current team
+      for(player in 1:length(player_list)){
+        # extract the player info of the current player
+        player_info <- player_list[[player]]$player
+        # extract its statistics
+        player_stats <- player_list[[player]]$statistics[[1]]
+        
+        # get game stats
+        game_stats <- get_content_for_list_element(player_stats, "games")
+        
+        # get offside stats
+        offside_stats <- get_content_for_list_element(player_stats, "offsides")
+        # colnames(offside_stats) <- "offsides"
+        
+        # get shot stats
+        shot_stats <- get_content_for_list_element(player_stats, "shots")
+        
+        # get goal stats
+        goal_stats <- get_content_for_list_element(player_stats, "goals")
+        
+        # get pass stats
+        pass_stats <- get_content_for_list_element(player_stats, "passes")
+        
+        # get tackle stats
+        tackle_stats <- get_content_for_list_element(player_stats, "tackles")
+        # colnames(tackle_stats) <- "tackles"
+        
+        # get duel stats
+        duel_stats <- get_content_for_list_element(player_stats, "duels")
+        
+        # get dribbles stats
+        dribble_stats <- get_content_for_list_element(player_stats, "dribbles")
+        # colnames(tackle_stats) <- "dribbles"
+        
+        # get foul stats
+        foul_stats <- get_content_for_list_element(player_stats, "fouls")
+        
+        # get card stats
+        card_stats <- get_content_for_list_element(player_stats, "cards")
+        
+        # get penalty stats
+        penalty_stats <- get_content_for_list_element(player_stats, "penalties")
+        # colnames(penalty_stats) <- "penalties"
+        
+        # bind all information together into a data frame
+        current_player <- c(
+          game_stats,
+          offside_stats,
+          shot_stats,
+          goal_stats,
+          pass_stats,
+          tackle_stats,
+          duel_stats,
+          dribble_stats,
+          foul_stats,
+          card_stats,
+          penalty_stats
+        ) %>%
+          unlist() %>%
+          data.frame()
+        
+        current_player <- rownames_to_column(current_player,
+                                             var = "stat")
+        
+        current_player <- current_player %>%
+          pivot_wider(names_from = "stat",
+                      values_from = ".")
+        
+        # drop the columns that are created if a given info is not
+        # in the data frame
+        # current_player <- select(current_player,
+        #                          -contains("value"))
+        
+        # use the helper function to clean the data frame of the current player
+        # by adding the missing columns and filling them with NA values
+        current_player_compl <- api_football_fixtures_general_complete_check(
+          current_player,
+          "player_stats"
+        )
+        
+        # add the current player to the players_current_team frame
+        players_current_team <- bind_rows(
+          players_current_team,
+          current_player_compl
+        )
+      }
+      
+      # add the player stats of the current team to the frame
+      # players_all
+      players_all <- bind_rows(
+        players_all,
+        players_current_team
+      )
+      
+    }
+    
+    # if the request was not successful print an error 
+  } else {
+    print(paste0("Error: The request was not successful. \nStatus code: ",
+                 status_code(response)))
+  }
+  
+  # return the stats of all players for the given fixture
+  return(players_all)
+  
+}
+
+
+
+###################### HELPERS ###################### 
+############## get_content_for_list_element #################
+# inputs: fixture_id
+# outputs: should return a data frame which contains all available
+# information about the lineups of a selected fixture
+# example: coach, formation, starting grid, etc.
+
+get_content_for_list_element <- function(content_list, list_element,
+                                         piv_wider = TRUE,
+                                         name_elem = NULL){
+  # convert the clean_sheet-list in content into a named string
+  # and then with enframe into a tibble with 2 columns (name and value)
+  content_for_list_element <- 
+    enframe(unlist(content_list[[list_element]])) %>%
+    data.frame() %>%
+    # rename all values (later the variables) of the name column
+    # to have an underscore instead of a point to separate
+    mutate(name = str_replace_all(name, pattern = "\\.",
+                                  replacement = "_"))
+  
+  if(piv_wider){
+    if(is.null(name_elem)){
+      content_for_list_element <- content_for_list_element %>%
+        # use pivot_wider to spread the first column (name) with the second
+        # column (value) as values. use names_glue to convert the names
+        # of the variables into "clean_sheet_{name_of_variable}"
+        pivot_wider(names_from = name,
+                    values_from = value,
+                    names_glue = paste0(list_element, "_{name}"))
+    } else {
+      content_for_list_element <- content_for_list_element %>%
+        # use pivot_wider to spread the first column (name) with the second
+        # column (value) as values. use names_glue to convert the names
+        # of the variables into "clean_sheet_{name_of_variable}"
+        pivot_wider(names_from = name,
+                    values_from = value,
+                    names_glue = paste0(name_elem, "{name}"))
+    }
+    
+  }
+    
+  
+  return(content_for_list_element)
 }
