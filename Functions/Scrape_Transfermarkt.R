@@ -638,18 +638,24 @@ get_squads_by_season <- function(league, league_id, season){
     name_and_other_information <- page_html %>%
       html_nodes(xpath = paste0("//td[@class='hauptlink']/div[1]/span[@class='hide-for-small']/a/text()|",
                                 "//*[@id='yw1']/table/tbody/tr/td[3]|",
+                                "//*[@id='yw1']/table/tbody/tr/td[5]|",
                                 "//*[@id='yw1']/table/tbody/tr/td[6]|",
+                                "//*[@id='yw1']/table/tbody/tr/td[7]|",
                                 "//*[@id='yw1']/table/tbody/tr/td[8]|",
+                                "//*[@id='yw1']/table/tbody/tr/td[9]|",
                                 "//*[@id='yw1']/table/tbody/tr/td[10]|",
                                 "//*[@id='yw1']/table/tbody/tr/td[11]/text()")) %>%
+      
       html_text()
     
     # convert it from a vector into a data frame
     # with 6 columns
     name_and_other_information <- 
       as.data.frame(matrix(name_and_other_information, 
-                           ncol = 6, 
-                           byrow = TRUE))
+                           ncol = 8, 
+                           byrow = TRUE)) %>%
+      select(-6)
+    
     
     # join the name_nation_pos and the scraped
     # name and other information together by player name
@@ -667,9 +673,10 @@ get_squads_by_season <- function(league, league_id, season){
              position = `.`,
              birth_date_age = `V2.y`,
              height = V3,
-             joining_date = V4,
-             contract_date = V5,
-             market_value = V6) %>%
+             foot = V4,
+             joining_date = V5,
+             contract_date = V7,
+             market_value = V8) %>%
       # separate the birth_date_age column
       # where the age is in the birth_date column in parantheses
       # into two separate columns birth_date and age
@@ -719,7 +726,8 @@ get_squads_by_season <- function(league, league_id, season){
 # inputs: league, league_id, season
 # outputs: returns all lineups for ended fixtures in a given season
 
-get_lineups_all_ended_fixture_by_season <- function(league, league_id, season){
+get_lineups_all_ended_fixture_by_season <- function(league, league_id, season,
+                                                    port = NULL){
   # paste together the url we want to scrape
   url <- paste0("https://www.transfermarkt.com/", league, "/spieltagtabelle",
                       "/wettbewerb/", league_id, "?saison_id=",
@@ -729,13 +737,33 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season){
   lineup_information <- list()
   
   # create a driver from Rselenium
-  rD <- rsDriver(browser = "firefox", port = 2652L)
+  rD <- rsDriver(browser = "chrome", port = port, chromever = get_stable_chrome_version())
   
   # get the client
   remDr <- rD$client
   
   # navigate to the created url
   remDr$navigate(url)
+  
+  Sys.sleep(5)
+  
+  # switch to the pop-up cookies frame
+  remDr$switchToFrame(remDr$findElement(using = "xpath",
+                                        "//iframe[@title='SP Consent Message']"))
+  
+  Sys.sleep(3)
+  
+  # access the "ACCEPT ALL" button
+  cookie_elem <- remDr$findElement(using = "xpath", 
+                                   "//button[@title='ACCEPT ALL']")
+  
+  Sys.sleep(3)
+  
+  # click it
+  cookie_elem$clickElement()
+  
+  # after that we have to switch back to the default frame
+  remDr$switchToFrame(NA)
   
   # extract the html for the given url
   page_html <- read_html(remDr$getPageSource()[[1]])
@@ -748,7 +776,7 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season){
     length()
   
   # iterate through all matchdays
-  for(i in 1:number_matchdays){
+  for(i in 1:34){#length(number_matchdays)){
     # print for debugging
     print(paste0("Matchday ", i))
     
@@ -769,6 +797,13 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season){
     matchday_refs <- page_html %>%
       html_nodes(xpath = "//a[@title='Match report']") %>%
       html_attr("href")
+  
+    if(length(matchday_refs) == 0){
+      return(lineup_information)
+    }
+    
+    
+    Sys.sleep(1)
     
     # iterate through all matches
     for(j in 1:length(matchday_refs)){
@@ -785,15 +820,20 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season){
       # store the webpage
       page_html <- read_html(remDr$getPageSource()[[1]])
       
+      Sys.sleep(1)
+      
       # extract the formations for each team
       formations <- page_html %>%
         html_nodes(xpath = paste0("//div[@class='large-7 aufstellung-vereinsseite",
                                   " columns small-12 unterueberschrift ",
                                   "aufstellung-unterueberschrift']")) %>%
         html_text(trim = TRUE)
+      
+      Sys.sleep(2)
  
       # find the button which leads to the lineup page     
       elem <- remDr$findElement(using = "xpath", "//*[@id='line-ups']/a")
+      
       # click the button
       elem$clickElement()
       
@@ -823,7 +863,17 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season){
         # remove all "|"
         str_remove_all(., pattern = "\\|") %>%
         # paste the string together
-        paste(., collapse = "")
+        paste(., collapse = "") %>%
+        str_remove(pattern = ".*, ") %>%
+        str_split("\\s")
+      
+      date <- date_information[[1]][1] %>%
+        mdy()
+      
+      time_12h <- paste(date_information[[1]][3], date_information[[1]][4], collapse = "")
+      time <- format(strptime(time_12h, "%I:%M %p"), "%H:%M")
+     
+      Sys.sleep(3)
       
       
       # extract starting line ups 
@@ -896,7 +946,7 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season){
       # the function get_club_by_player_name
       substitute_line_ups$club_name <- sapply(substitute_line_ups$player_name,
                                                 get_club_by_player_name,
-                                                league = league,
+                                                # league = league,
                                                 season_start = season)
       
       # check if for one player there are multiple clubs available, 
@@ -927,7 +977,8 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season){
         "matchday" = i,
         "formations" = formations,
         "team_names" = team_names,
-        "date_info" = date_information,
+        "date" = date,
+        "time" = time,
         "starting_lineups" = starting_line_ups_clean,
         "substitute_lineups" = substitute_line_ups
       )
@@ -952,9 +1003,218 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season){
     )
       
   }
+  
+  # close the driver (client) and the server
+  remDr$close()
+  rD$server$stop()
+  rm(rD)
+  gc()
     
   # returns the list containing all lineups for every match
   # on every matchday
   return(lineup_information)
   
+}
+
+
+
+############## get_fixture_stats #################
+# inputs: league, league_id, season
+# outputs: returns all stats available for the games played in a given season
+# for a given league
+
+get_fixture_stats_tm <- function(league, league_id, season, port = 4321L){
+  # paste together the url we want to scrape
+  url <- paste0("https://www.transfermarkt.com/", league, "/spieltagtabelle",
+                "/wettbewerb/", league_id, "?saison_id=",
+                season)
+  
+  # create an empty list to store our information
+  fixture_stats_all_season <- NULL
+  
+  # create a driver from Rselenium
+  rD <- rsDriver(browser = "firefox", port = port)
+  
+  # get the client
+  remDr <- rD$client
+  
+  # navigate to the created url
+  remDr$navigate(url)
+  
+  Sys.sleep(5)
+  
+  # switch to the pop-up cookies frame
+  remDr$switchToFrame(remDr$findElement(using = "xpath",
+                                        "//iframe[@title='SP Consent Message']"))
+  
+  Sys.sleep(3)
+  
+  # access the "ACCEPT ALL" button
+  cookie_elem <- remDr$findElement(using = "xpath", 
+                                   "//button[@title='ACCEPT ALL']")
+  
+  Sys.sleep(3)
+  
+  # click it
+  cookie_elem$clickElement()
+  
+  # after that we have to switch back to the default frame
+  remDr$switchToFrame(NA)
+  
+  # extract the html for the given url
+  page_html <- read_html(remDr$getPageSource()[[1]])
+  
+  # extract the number of matchdays by getting the length
+  # of the elements
+  number_matchdays <- page_html %>%
+    html_nodes(xpath = "//select[@name='spieltag']/option[@value]") %>%
+    html_attrs() %>%
+    length()
+  
+  # iterate through all matchdays
+  for(i in 1:length(number_matchdays)){
+    # print for debugging
+    print(paste0("Matchday ", i))
+    
+    # create an empty variable
+    current_matchday_stats <- NULL
+    
+    # paste together the final url
+    final_url <- paste0(url, "&spieltag=", i)
+    
+    # navigate to the final url
+    remDr$navigate(final_url)
+    
+    # extract the html for the given url
+    page_html <- read_html(remDr$getPageSource()[[1]])
+    
+    # get the urls for all matches taking place at the
+    # given matchday
+    matchday_refs <- page_html %>%
+      html_nodes(xpath = "//a[@title='Match report']") %>%
+      html_attr("href")
+    
+    if(length(matchday_refs) == 0){
+      return(lineup_information)
+    }
+    
+    
+    Sys.sleep(1)
+    
+    # iterate through all matches
+    for(j in 1:length(matchday_refs)){
+      # print for debugging
+      print(paste0("Match_number ", j))
+      
+      # paste the url we want to scrape data from
+      match_url <- paste0("https://www.transfermarkt.com",
+                          matchday_refs[j])
+      
+      # navigate to the url of the specific match
+      remDr$navigate(match_url)
+      
+      # store the webpage
+      page_html <- read_html(remDr$getPageSource()[[1]])
+      
+      Sys.sleep(2)
+      
+      # find the button which leads to the statistics page     
+      elem <- remDr$findElement(using = "css", "#statistics .megamenu")
+      
+      Sys.sleep(2)
+      
+      # click the button
+      elem$clickElement()
+      
+      # extract the html for the given url
+      page_html <- read_html(remDr$getPageSource()[[1]])
+      
+      # store the team names
+      team_names <- page_html %>%
+        html_nodes(xpath = paste0("//div[@class='sb-team sb-heim']/a[1]",
+                                  "|", "//div[@class='sb-team sb-gast']/a[1]")) %>%
+        html_attr("title") %>%
+        # map the names with my own mapping function club_name_mapping
+        sapply(., club_name_mapping) %>%
+        unname()
+      
+      # store the date information
+      date_information <- page_html %>%
+        # extract nodes
+        html_nodes(xpath = paste0("//div[@class='sb-spieldaten']",
+                                  "/p[@class='sb-datum hide-for-small']/a[2]",
+                                  "|", 
+                                  "//div[@class='sb-spieldaten']",
+                                  "/p[@class='sb-datum hide-for-small']/text()[3]")) %>%
+        html_text(trim = TRUE) %>%
+        # split the string by the "|"
+        str_split(" \\|") %>%
+        # remove all "|"
+        str_remove_all(., pattern = "\\|") %>%
+        # paste the string together
+        paste(., collapse = "") %>%
+        str_remove(pattern = ".*, ") %>%
+        str_split("\\s")
+      
+      date <- date_information[[1]][1] %>%
+        mdy()
+      
+      time_12h <- paste(date_information[[1]][3], date_information[[1]][4], collapse = "")
+      time <- format(strptime(time_12h, "%I:%M %p"), "%H:%M")
+      
+      Sys.sleep(3)
+      
+      # extract the actual statistics
+      current_match_stats <- page_html %>%
+        # get the xpaths for the different information
+        html_nodes(xpath = paste0("//div[@class='large-8 columns']//div[@class='unterueberschrift']",
+                                  "|",
+                                  "//div[@class='sb-statistik-zahl']")) %>%
+        # convert them into strings
+        html_text(trim = TRUE) %>%
+        # drop the first element
+        .[-1] %>%
+        # convert it into a data frame with 3 columns
+        matrix(ncol = 3, byrow = TRUE) %>%
+        data.frame() %>%
+        # transform the data frame to convert rows into columns
+        t() %>%
+        data.frame() %>%
+        .[-1, ]
+      
+      # set new column names
+      colnames(current_match_stats) <- c("total_shots", "shots_off_target",
+                                         "shots_saved", "corners",
+                                         "free_kicks", "fouls", "offsides")
+      
+      # create new variables for the early extracted team names
+      # and date information
+      current_match_stats <- current_match_stats %>%
+        mutate(team = team_names,
+               fixture_date = date,
+               fixture_time = time) %>%
+        select(fixture_date, fixture_time,
+               team, everything())
+      
+    
+      # add the data extracted for the match to the frame
+      # containing all stats for all matches on that matchday
+      current_matchday_stats <- bind_rows(
+        current_matchday_stats,
+        current_match_stats
+      )
+      
+    }
+    
+    # add data from the current matchday to the frame
+    # of all matchdays
+    fixture_stats_all_season <- bind_rows(
+      fixture_stats_all_season,
+      current_matchday_stats
+    )
+    
+  }
+  
+  return(fixture_stats_all_season)
+      
 }
