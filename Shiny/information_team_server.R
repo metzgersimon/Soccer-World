@@ -124,9 +124,12 @@ information_team_server <- function(input, output, session){
       input$info_team_season_selection,
       pattern = "/")[[1]][1]
     )
+    
+    # selected_club <- "FC Bayern Munich"
+    # selected_season <- 2021
     next_match <- get_next_fixture_by_team(league_id = 78,
-                                           selected_club,
-                                           selected_season) %>%
+                                           team_name = selected_club,
+                                           season = selected_season) %>%
       # only select important columns
       select(c(fixture_date, fixture_time,
                venue_name, venue_city,
@@ -135,7 +138,13 @@ information_team_server <- function(input, output, session){
     
     fixture_test <- paste(as.character(next_match$fixture_date),
                           "\n",
-                          next_match$fixture_time)
+                          next_match$fixture_time,
+                          "\n\n")
+    
+    fixture_test2 <- paste(next_match$venue_name,
+                          "\n",
+                          next_match$venue_city)
+    
     fixture_time <- next_match$fixture_time
     venue_name <- next_match$venue_name
     venue_city <- next_match$venue_city
@@ -147,37 +156,17 @@ information_team_server <- function(input, output, session){
     # create a kable table with the data
     next_match %>%
       select(-c(fixture_date,
-                fixture_time)) %>%
+                fixture_time,
+                venue_name,
+                venue_city,
+                league_round)) %>% 
+      as.matrix() %>%
       kableExtra::kable("html", row.names = FALSE, col.names = NULL
       ) %>%
       #kable_minimal()
-      kable_styling(full_width = F) %>%
-      add_header_above(., c(setNames(5, fixture_test))) %>%
-      add_footnote(c(venue_name,
-                     venue_city),
-                   threeparttable = FALSE)
+      kable_styling(full_width = F, ) %>%
+      add_header_above(., c(setNames(2, fixture_test)))
     
-    # next_match %>%
-    #   select(-c(fixture_date,
-    #             fixture_time,
-    #             venue_name,
-    #             venue_city)) %>%
-    #   gt() %>%
-    #   tab_header(
-    #     title = fixture_date,
-    #     subtitle = fixture_time) %>%
-    #   opt_table_lines(extent = "none") %>%
-    #   tab_source_note(source_note = venue_name) %>%
-    #   tab_source_note(source_note = venue_city) %>%
-    #   tab_options(column_labels.hidden = TRUE)
-    
-    
-    #%>%
-      # tab_spanner(label = paste0(date_time), 
-      #             columns =  c(venue_name, venue_city,
-      #                          league_round, club_name_home,
-      #                          club_name_away)
-      #             )
       
    
   })
@@ -189,11 +178,13 @@ information_team_server <- function(input, output, session){
     req(input$info_team_club_selection)
     
     selected_club <- input$info_team_club_selection
+    # convert the season in a number one can work with
     selected_season <- as.numeric(str_split(
       input$info_team_season_selection,
       pattern = "/")[[1]][1]
     )
       
+    # filter the data for the clubs and the season
     fixtures_bundesliga_2010_2021 %>%
       filter(club_name_home == selected_club |
                club_name_away == selected_club,
@@ -238,6 +229,193 @@ information_team_server <- function(input, output, session){
           
         ))
   })
+  
+  
+  # reactive to prepare the data
+  squad_reactive <- reactive({
+    # needs the inputs for club and season
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
+    club <- input$info_team_club_selection
+    # convert the season in a number one can work with
+    season_selection <- as.numeric(str_split(
+      input$info_team_season_selection,
+      pattern = "/")[[1]][1]
+    )
+    
+    # filter the data for the season and the club that are selected
+    squads_filtered <- 
+      all_seasons_from_2010_squads %>%
+      filter(club_name == club,
+             season == season_selection)
+    
+    return(squads_filtered)
+    
+  })
+  
+  # function to filter the data for the selected area
+  # e.g., defense, order it and return it 
+  get_data_for_reactables <- function(position_area){
+    req(squad_reactive())
+    
+    squad <- squad_reactive()
+    
+    squad_for_positions <- squad %>%
+      filter(str_detect(position, position_area)) %>%
+      select(player_name, country, position, age,
+             market_value_in_million_euro) %>%
+      arrange(desc(position), 
+              desc(market_value_in_million_euro))
+    
+    return(squad_for_positions)
+    
+  }
+  
+  
+  
+  
+  # attack table
+  output$info_team_squad_attack <- renderReactable({
+    midfield_squad <- get_data_for_reactables("Striker|Winger|Forward")
+    
+    reactable(midfield_squad,
+              columns = list(
+                player_name = colDef(name = "Name"),
+                country = colDef(name = "Nationality"),
+                position = colDef(name = "Position"),
+                age = colDef(name = "Age"),
+                market_value_in_million_euro = colDef(name = "Market value",
+                                                      format = colFormat(
+                                                        prefix = "\u20ac",
+                                                        suffix = "M"
+                                                      )
+                )
+              ),
+              defaultPageSize = 5,
+              sortable = TRUE,
+              # searchable = TRUE,
+              highlight = TRUE,
+              borderless = TRUE, 
+              # set the theme for the table
+              theme = reactableTheme(
+                borderColor = "#000000",
+                color = "#000000",
+                backgroundColor = "#004157",
+                highlightColor = "#2f829e",
+                cellPadding = "8px 12px",
+                style = list(color = "white")
+              )
+    )
+    
+  })
+  
+  
+  # midfield table
+  output$info_team_squad_midfield <- renderReactable({
+    midfield_squad <- get_data_for_reactables("Midfield")
+    
+    reactable(midfield_squad,
+              columns = list(
+                player_name = colDef(name = "Name"),
+                country = colDef(name = "Nationality"),
+                position = colDef(name = "Position"),
+                age = colDef(name = "Age"),
+                market_value_in_million_euro = colDef(name = "Market value",
+                                                      format = colFormat(
+                                                        prefix = "\u20ac",
+                                                        suffix = "M"
+                                                      )
+                )
+              ),
+              defaultPageSize = 5,
+              sortable = TRUE,
+              # searchable = TRUE,
+              highlight = TRUE,
+              borderless = TRUE, 
+              # set the theme for the table
+              theme = reactableTheme(
+                borderColor = "#000000",
+                color = "#000000",
+                backgroundColor = "#004157",
+                highlightColor = "#2f829e",
+                cellPadding = "8px 12px",
+                style = list(color = "white")
+              )
+    )
+    
+  })
+  
+  # defense table
+  output$info_team_squad_defense <- renderReactable({
+    defense_squad <- get_data_for_reactables("Back")
+    
+    reactable(defense_squad,
+              columns = list(
+                player_name = colDef(name = "Name"),
+                country = colDef(name = "Nationality"),
+                position = colDef(name = "Position"),
+                age = colDef(name = "Age"),
+                market_value_in_million_euro = colDef(name = "Market value",
+                                                      format = colFormat(
+                                                        prefix = "\u20ac",
+                                                        suffix = "M"
+                                                      )
+                )
+              ),
+              defaultPageSize = 5,
+              sortable = TRUE,
+              # searchable = TRUE,
+              highlight = TRUE,
+              borderless = TRUE, 
+              # set the theme for the table
+              theme = reactableTheme(
+                borderColor = "#000000",
+                color = "#000000",
+                backgroundColor = "#004157",
+                highlightColor = "#2f829e",
+                cellPadding = "8px 12px",
+                style = list(color = "white")
+              )
+    )
+    
+  })
+  
+  # goalkeeper table
+  output$info_team_squad_goalkeepers <- renderReactable({
+    keeper_squad <- get_data_for_reactables("Goalkeeper")
+    
+    reactable(keeper_squad,
+              columns = list(
+                player_name = colDef(name = "Name"),
+                country = colDef(name = "Nationality"),
+                position = colDef(name = "Position"),
+                age = colDef(name = "Age"),
+                market_value_in_million_euro = colDef(name = "Market value",
+                                                      format = colFormat(
+                                                        prefix = "\u20ac",
+                                                        suffix = "M"
+                                                      )
+                )
+              ), 
+              defaultPageSize = 5,
+              sortable = TRUE,
+              # searchable = TRUE,
+              highlight = TRUE,
+              borderless = TRUE, 
+              # set the theme for the table
+              theme = reactableTheme(
+                borderColor = "#000000",
+                color = "#000000",
+                backgroundColor = "#004157",
+                highlightColor = "#2f829e",
+                cellPadding = "8px 12px",
+                style = list(color = "white")
+                )
+              )
+      
+  })
+  
   
   
   # create the table for the squad
@@ -287,7 +465,13 @@ information_team_server <- function(input, output, session){
           contract_date = colDef(name = "Contract till",
                                  align = "center"),
           market_value_in_million_euro = colDef(name = "Market value",
-                                                align = "right")
-        ))
+                                                format = colFormat(
+                                                  prefix = "\u20ac",
+                                                  suffix = "M",
+                                                ),
+                                                align = "right"
+          )
+        )
+      )
   })
 }
