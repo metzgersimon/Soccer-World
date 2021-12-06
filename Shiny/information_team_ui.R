@@ -81,7 +81,66 @@ tab_information_team_ui <- function(){
             ), 
             # squad panel to see the current squad of the club
             tabPanel("Squad",
-                     reactableOutput("info_team_squad")
+                     #reactableOutput("info_team_squad")
+                     fluidRow(
+                       column(width = 8,
+                              offset = 2,
+                              align = "center",
+                              div(style = paste0("border: solid 1px #000000;",
+                                                 "margin-top: 20px;",
+                                                 "background-color: #004157;"),
+                                  p("Attack", style = paste0("background-color: #004157;",
+                                                             "color: white;",
+                                                             "font-size: 16px;",
+                                                             "font-weight: bold;")),
+                                  reactableOutput("info_team_squad_attack")
+                                  )
+                              )),
+                     fluidRow(
+                       column(width = 8,
+                              offset = 2,
+                              align = "center",
+                              div(style = paste0("border: solid 1px #000000;",
+                                                 "margin-top: 20px;",
+                                                 "background-color: #004157;"
+                                                 ),
+                                  p("Midfield", style = paste0("background-color: #004157;",
+                                                               "color: white;",
+                                                               "font-size: 16px;",
+                                                               "font-weight: bold;")),
+                                  reactableOutput("info_team_squad_midfield")
+                                  )
+                              )
+                       ),
+                     fluidRow(
+                       column(width = 8,
+                              offset = 2,
+                              align = "center",
+                              div(style = paste0("border: solid 1px #000000;",
+                                                 "margin-top: 20px;",
+                                                 "background-color: #004157;"),
+                                  p("Defense", style = paste0("background-color: #004157;",
+                                                              "color: white;",
+                                                              "font-size: 16px;",
+                                                              "font-weight: bold;")),
+                                  reactableOutput("info_team_squad_defense")
+                              )
+                       )),
+                    fluidRow(
+                       column(width = 8,
+                              offset = 2,
+                              align = "center",
+                              div(style = paste0("border: solid 1px #000000;",
+                                                 "margin-top: 20px;",
+                                                 "background-color: #004157;"),
+                                  p("Goal", style = paste0("background-color: #004157;",
+                                                           "color: white;",
+                                                           "font-size: 16px;",
+                                                           "font-weight: bold;")),
+                                  reactableOutput("info_team_squad_goalkeepers")
+                                  )
+                              )
+                       )
                      )
             
           )

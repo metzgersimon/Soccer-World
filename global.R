@@ -32,6 +32,10 @@ fixtures_bundesliga_2010_2021$club_name_away <-
   sapply(fixtures_bundesliga_2010_2021$club_name_away,
          club_name_mapping)
 
+all_seasons_from_2010_squads$club_name <- 
+  sapply(all_seasons_from_2010_squads$club_name,
+         club_name_mapping)
+
 # buli_2021_first90_fixture_stats$team_name <-
 #   sapply(buli_2021_first90_fixture_stats$team_name,
 #          club_name_mapping)
@@ -54,6 +58,12 @@ fixtures_with_stats_2021 <- buli_2021_first100_fixture_stats  %>%
   left_join(fixtures_bundesliga_2010_2021, by = "fixture_id")
 
 fixtures_with_stats_2021$team_name <- sapply(fixtures_with_stats_2021$team_name,
+                                             club_name_mapping)
+
+fixtures_with_stats_2021$club_name_home <- sapply(fixtures_with_stats_2021$club_name_home,
+                                             club_name_mapping)
+
+fixtures_with_stats_2021$club_name_away <- sapply(fixtures_with_stats_2021$club_name_away,
                                              club_name_mapping)
 
 
