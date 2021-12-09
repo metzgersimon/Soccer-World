@@ -737,7 +737,7 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season,
   lineup_information <- list()
   
   # create a driver from Rselenium
-  rD <- rsDriver(browser = "chrome", port = port, chromever = get_stable_chrome_version())
+  rD <- rsDriver(browser = "firefox", port = port)
   
   # get the client
   remDr <- rD$client
@@ -878,17 +878,19 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season,
       
       # extract starting line ups 
       starting_line_ups <- page_html %>%
-        # extract the nodes
+        # extract the nodes for the player name, position and number
         html_nodes(xpath = paste0("//*[@class='row sb-formation'][1]//",
                                   "table[@class='items']//a[@class='wichtig']",
                                   "|//*[@class='row sb-formation'][1]",
-                                  "//table[@class='inline-table']//tr[2]/td/text()[1]")) %>%
+                                  "//table[@class='inline-table']//tr[2]/td/text()[1]",
+                                  "|//*[@class='row sb-formation'][1]//",
+                                  "div[@class='rn_nummer']")) %>%
         html_text(trim = TRUE) %>%
         str_remove_all(., pattern = ",.*") %>%
         str_trim() %>%
-        # convert the data into a matrix (2 columns)
+        # convert the data into a matrix (3 columns)
         # and then into a data frame
-        matrix(., ncol = 2,
+        matrix(., ncol = 3,
                byrow = TRUE) %>%
         data.frame()
       
@@ -905,8 +907,10 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season,
                                            starting_line_ups_away)
       
       # set the colnames appropriately
-      colnames(starting_line_ups_clean) <- c("player_name_home",
+      colnames(starting_line_ups_clean) <- c("player_number_home",
+                                             "player_name_home",
                                              "player_position_home",
+                                             "player_number_away",
                                              "player_name_away",
                                              "player_position_away")
       
@@ -916,20 +920,23 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season,
         html_nodes(xpath = paste0("//*[@class='row sb-formation'][2]//",
                                   "table[@class='items']//a[@class='wichtig']",
                                   "|//*[@class='row sb-formation'][2]",
-                                  "//table[@class='inline-table']//tr[2]/td/text()[1]")) %>%
+                                  "//table[@class='inline-table']//tr[2]/td/text()[1]",
+                                  "|//*[@class='row sb-formation'][2]//",
+                                  "div[@class='rn_nummer']")) %>%
         # convert it into strings
         html_text(trim = TRUE) %>%
         # remove the ","
         str_remove_all(., pattern = ",.*") %>%
         # trim the whitespaces
         str_trim() %>%
-        # convert it into a matrix with 2 columns
+        # convert it into a matrix with 3 columns
         # and then into a data frame
-        matrix(., ncol = 2, byrow = TRUE) %>%
+        matrix(., ncol = 3, byrow = TRUE) %>%
         data.frame()
       
       # set the colnames of the substitutes accordingly
-      colnames(substitute_line_ups) <- c("player_name",
+      colnames(substitute_line_ups) <- c("player_number",
+                                         "player_name",
                                          "player_position")
       
       # club_names for perfect dynamic function later
