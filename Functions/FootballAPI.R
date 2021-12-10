@@ -1189,6 +1189,260 @@ get_player_stats <- function(fixture_id){
 
 
 
+############## get_player_transfers #################
+# inputs: player_id
+# outputs: data frame with all transfers of a given player
+get_player_transfers <- function(player_id){
+  # set the endpoint of the API
+  endpoint <- "https://v3.football.api-sports.io/transfers"
+  
+  # create a get request to that API with the API key
+  # and the selected parameter (player_id)
+  response <- GET(endpoint, 
+                  add_headers('x-apisports-key' = football_api_key),
+                  query = list(player = player_id))
+  
+  # check if the request was successful and only then go on with the 
+  # transformation of the data
+  if(status_code(response) >= 200 & status_code(response) < 300){
+    
+    # extract the content from the response
+    content <- content(response)$response
+    
+    # extract the transfer content of the player
+    player_infos <- get_content_for_list_element(content[[1]],
+                                                 "player",
+                                                 piv_wider = TRUE,
+                                                 name_elem = "player_")
+    
+    # update <- content[[1]]$update
+    
+    transfer_infos <- content[[1]]$transfers
+    
+    transfer_frame <- NULL
+    
+    # iterate over all transfers the player had
+    for(transfer in 1:length(transfer_infos)){
+      # get the transfer of the current iteration
+      curr_transfer <- transfer_infos[[transfer]]
+      # extract the date of the transfer and convert it into a data frame
+      date <- curr_transfer$date %>%
+        data.frame("date" = .)
+      
+      # extract the type of the transfer and convert it into a data frame
+      type <- curr_transfer$type 
+      
+      # deal with the case that there is no "type" data available
+      # if there is no type information, we create a data frame and fill it with NA
+      # otherwise, we create a data frame and fill it with the type data
+      if(is.null(type)){
+        type <- data.frame("type" = NA)
+      } else {
+        type <- data.frame("type" = type)
+      }
+      
+      # the information about the team the player transfered from
+      # using the helper function get_content_for_list_element to extract the
+      # content and return it in a proper format
+      team_infos_from <- get_content_for_list_element(curr_transfer$teams,
+                                                    "out",
+                                                    piv_wider = TRUE,
+                                                    name_elem = "from_team_") %>%
+        data.frame()
+      
+      # the information about the team the player transfered to
+      # using the helper function get_content_for_list_element to extract the
+      # content and return it in a proper format
+      team_infos_to <- get_content_for_list_element(curr_transfer$teams,
+                                                      "in",
+                                                      piv_wider = TRUE,
+                                                      name_elem = "to_team_") %>%
+        data.frame()
+      
+      # combine all information into one data frame
+      curr_transfer_infos <- cbind(date, type, team_infos_from,
+                               team_infos_to)
+      
+      # now combine the data extracted for the current transfer with the
+      # data collected earlier into one frame by binding rows
+      transfer_frame <- bind_rows(
+        transfer_frame,
+        curr_transfer_infos
+      )
+    }
+    
+    # lastly, add a the two columns regarding the player at the beginning 
+    # of the frame
+    transfer_frame <- bind_cols(player_infos,
+                                transfer_frame)
+    
+    # if the request was not successful print an error 
+  } else {
+    print(paste0("Error: The request was not successful. \nStatus code: ",
+                 status_code(response)))
+  }
+  
+  # return the transfers a player had during his career
+  return(transfer_frame)
+}
+
+
+ 
+############## get_team_transfers #################
+# inputs: team_id
+# outputs: data frame with all transfers of a given team
+get_team_transfers <- function(team_id){
+  # set the endpoint of the API
+  endpoint <- "https://v3.football.api-sports.io/transfers"
+  
+  # create a get request to that API with the API key
+  # and the selected parameter (team_id)
+  response <- GET(endpoint, 
+                  add_headers('x-apisports-key' = football_api_key),
+                  query = list(team = team_id))
+  
+  # check if the request was successful and only then go on with the 
+  # transformation of the data
+  if(status_code(response) >= 200 & status_code(response) < 300){
+    
+    # extract the content from the response
+    content <- content(response)$response
+    
+    # get the content of all transfers of the club
+    transfer_infos <- content
+    
+    # create a variable to store all the transfers
+    transfer_frame <- NULL
+    
+    # iterate over all transfers the player had
+    for(transfer in 1:length(transfer_infos)){
+      # extract the player information of the transfer
+      player_infos <- get_content_for_list_element(transfer_infos[[transfer]],
+                                                   "player",
+                                                   piv_wider = TRUE,
+                                                   name_elem = "player_") %>%
+        data.frame()
+    
+    
+      # extract the date of the transfer and convert it into a data frame
+      date <- transfer_infos[[transfer]]$transfers[[1]]$date %>%
+        data.frame("date" = .)
+      
+      # extract the type of the transfer and convert it into a data frame
+      type <- transfer_infos[[transfer]]$transfers[[1]]$type 
+      
+      # deal with the case that there is no "type" data available
+      # if there is no type information, we create a data frame and fill it with NA
+      # otherwise, we create a data frame and fill it with the type data
+      if(is.null(type)){
+        type <- data.frame("type" = NA)
+      } else {
+        type <- data.frame("type" = type)
+      }
+        
+      # extract the information about the teams involved in the transfer
+      # the information about the team the player transfered from
+      # using the helper function get_content_for_list_element to extract the
+      # content and return it in a proper format
+      team_infos_from <- 
+        get_content_for_list_element(transfer_infos[[transfer]]$transfers[[1]]$teams,
+                                     "out",
+                                     piv_wider = TRUE,
+                                     name_elem = "from_team_") %>%
+        data.frame()
+      
+      # the information about the team the player transfered to
+      # using the helper function get_content_for_list_element to extract the
+      # content and return it in a proper format
+      team_infos_to <-  
+        get_content_for_list_element(transfer_infos[[transfer]]$transfers[[1]]$teams,
+                                     "in",
+                                     piv_wider = TRUE,
+                                     name_elem = "to_team_") %>%
+        data.frame()
+      
+      
+      # combine all information into one data frame
+      curr_transfer_infos <- cbind(player_infos, date, type, team_infos_from,
+                                   team_infos_to)
+      
+      # now combine the data extracted for the current transfer with the
+      # data collected earlier into one frame by binding rows
+      transfer_frame <- bind_rows(
+        transfer_frame,
+        curr_transfer_infos
+      )
+    }
+    
+    # lastly, add a column at the beginning of the frame for the team id
+    transfer_frame <- bind_cols(data.frame(team_id),
+                                transfer_frame)
+    
+    
+    
+    # if the request was not successful print an error 
+  } else {
+    print(paste0("Error: The request was not successful. \nStatus code: ",
+                 status_code(response)))
+  }
+  
+  # return all the transfers of the club
+  return(transfer_frame)
+} 
+
+
+
+############## get_trophies #################
+# inputs: id (player or coach id), is_player
+# outputs: data frame containing all information about the trophies
+# a player or coach won durin his career
+get_trophies_for_player_or_coach <- function(id, is_player = TRUE){
+  # set the endpoint of the API
+  endpoint <- "https://v3.football.api-sports.io/trophies"
+  
+  # create a get request to that API with the API key
+  # and the selected parameter (player or coach id)
+  if(is_player){
+    response <- GET(endpoint, 
+                    add_headers('x-apisports-key' = football_api_key),
+                    query = list(player = id))
+  } else {
+    response <- GET(endpoint, 
+                    add_headers('x-apisports-key' = football_api_key),
+                    query = list(coach = id))
+  }
+  
+  # check if the request was successful and only then go on with the 
+  # transformation of the data
+  if(status_code(response) >= 200 & status_code(response) < 300){
+    
+    # extract the content from the response
+    content <- content(response)$response
+    
+    # extract the list of contents into a data frame
+    trophies <- list.stack(content) %>%
+      # clean the season column
+      mutate(season = str_extract(season, pattern = "[0-9]+"),
+             # add a column for the player/coach id
+             id = id,
+             # add a column to verify if it is a player 
+             is_player = is_player) %>%
+      # order the columns. First the id and then the rest
+      select(id, is_player, everything())
+    
+    # if the request was not successful print an error 
+  } else {
+    print(paste0("Error: The request was not successful. \nStatus code: ",
+                 status_code(response)))
+  }
+  
+  # return the trophies a player or coach won during his career
+  return(trophies)
+  
+}
+
+
+
 ###################### HELPERS ###################### 
 ############## get_content_for_list_element #################
 # inputs: fixture_id
