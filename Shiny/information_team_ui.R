@@ -62,22 +62,41 @@ tab_information_team_ui <- function(){
             # season tab which should contain information about the current season
             # such as form, previous matches, future matches, etc.
             tabPanel("Season",
-                     fluidRow(
-                       column(width = 5,
-                              align = "center",
-                              div(style = "border: solid 1px #000000; margin-top: 20px;",
-                                  tableOutput("info_team_next_match")
-                              )
-                       )
-                     ),
-                     fluidRow(
-                       column(width = 12,
-                              align = "center",
-                              div(style = "border: solid 1px #000000; margin-top: 20px;",
-                                  reactableOutput("info_team_season")
-                              )
+                     tabsetPanel(
+                       type = "pills",
+                       tabPanel(
+                         "Matches",
+                         fluidRow(
+                           column(width = 5,
+                                  align = "center",
+                                  div(style = "border: solid 1px #000000; margin-top: 20px;",
+                                      tableOutput("info_team_next_match")
+                                  )
+                           )
+                         ),
+                         fluidRow(
+                           column(width = 12,
+                                  align = "center",
+                                  div(style = "border: solid 1px #000000; margin-top: 20px;",
+                                      reactableOutput("info_team_season")
+                                  )
+                           )
+                         )
+                       ),
+                       tabPanel(
+                         "Statistics",
+                         fluidRow(
+                           column(width = 8,
+                                  offset = 2,
+                                  align = "center",
+                                  div(style = "margin-top: 20px;",
+                                      reactableOutput("info_team_stats")
+                                  )
+                           )
+                         )
                        )
                      )
+                     
             ), 
             # squad panel to see the current squad of the club
             tabPanel("Squad",
@@ -141,9 +160,39 @@ tab_information_team_ui <- function(){
                                   )
                               )
                        )
-                     )
-            
-          )
-          
+                     ),
+            tabPanel(
+              "Over time",
+              tabsetPanel(
+                type = "pills",
+                tabPanel(
+                  "Market value",
+                  fluidRow(
+                    column(width = 12,
+                           align = "center",
+                           div(style = paste0("border: solid 1px #000000;",
+                                              "margin-top: 20px;"),
+                               plotlyOutput("info_team_market_value_over_time") %>%
+                                 withSpinner(color = "blue")
+                               )
+                           )
+                    )
+                  ),
+                tabPanel(
+                  "Transfers",
+                  fluidRow(
+                    column(width = 12,
+                           align = "center",
+                           div(style = paste0("border: solid 1px #000000;",
+                                              "margin-top: 20px;"),
+                               reactableOutput("info_team_transfers_over_time") %>%
+                                 withSpinner(color = "blue")
+                               )
+                           )
+                    )
+                  ) 
+                )
+              )
+            )
   )
 }

@@ -4,10 +4,17 @@ information_team_server <- function(input, output, session){
   output$info_team_team_name <- function(){
     # there has to be a club selected
     req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
+    # convert the season in a format we can work with
+    season_year <- as.numeric(str_split(input$info_team_season_selection,
+                                        pattern = "/")[[1]][1])
     
     # filter the huge data frame on the club selected
     team_infos <- season_players_joined %>%
-      filter(club == input$info_team_club_selection)
+      filter(club == input$info_team_club_selection,
+             season_start_year == season_year)
+
     
     # extract the club name
     name <- team_infos %>%
@@ -228,6 +235,104 @@ information_team_server <- function(input, output, session){
                                   align = "center")
           
         ))
+  })
+  
+  
+  
+  
+  team_stats_reactive <- reactive({
+    
+  })
+  
+  
+  
+  
+  output$info_team_stats <- renderReactable({
+    test <- team_stats_bayern_2021
+    
+    desired_order <- c("fixtures_played", "fixtures_wins", "fixtures_draws",
+                       "fixtures_loses")
+    
+    fixtures <- get_team_stats_cleaned(test$fixtures, total = TRUE,
+                                       desired_order)
+
+    
+    desired_order <- c("goals_for", "goals_for_average", "goals_against",
+                       "goals_against_average")
+    
+    goals <- get_team_stats_cleaned(test$goals, total = TRUE,
+                                    desired_order) 
+    
+    goals_diff <- rownames_to_column(goals) %>%
+      filter(rowname %in% c("goals_for", "goals_against")) %>%
+      mutate(diff_away = lag(away) - away,
+             diff_home = lag(home) - home,
+             diff_total = lag(total) - total) %>%
+      select(away = diff_away,
+             home = diff_home,
+             total = diff_total) %>%
+      remove_empty("rows")
+    
+    rownames(goals_diff) <- "goals_diff"
+    
+    goals <- rbind(goals,
+                   goals_diff)
+      
+    
+    #biggest <- get_team_stats_cleaned(test$biggest, total = FALSE)
+    
+    desired_order <- "failed_to_score"
+    failed_to_score <- get_team_stats_cleaned(test$failed_to_score, total = TRUE,
+                                              desired_order)
+    
+    desired_order <- "clean_sheet"
+    clean_sheet <- get_team_stats_cleaned(test$clean_sheet, total = TRUE,
+                                          desired_order)
+    
+    
+    
+    # penalty <- test$penalty
+    # cards <- test$cards
+    
+    stats_all <- rbind(fixtures,
+                       goals,
+                       #biggest,
+                       failed_to_score,
+                       clean_sheet) %>%
+      select(home, away, total)
+    
+    rownames(stats_all) <- c("Games played", "Wins", "Draws", "Loses",
+                             "Goals for", "Avg Goals for", "Goals agaist",
+                             "Avg Goals against", "Goal Difference",
+                             "Failed to score", "Clean sheets")
+    
+    reactable(stats_all,
+              highlight = TRUE,
+              borderless = TRUE,
+              pagination = FALSE,
+              defaultPageSize = 15,
+              showPageInfo = FALSE,
+              showPagination = FALSE,
+              # set the theme for the table
+              theme = reactableTheme(
+                borderColor = "#000000",
+                color = "#000000",
+                backgroundColor = "#004157",
+                highlightColor = "#2f829e",
+                cellPadding = "8px 12px",
+                style = list(color = "white")
+              ),
+              columns = list(
+                home = colDef(name = "HOME",
+                              align = "center"),
+                away = colDef(name = "AWAY",
+                              align = "center"),
+                total = colDef(name = "TOTAL",
+                               align = "center")
+              )
+              
+    )
+    
   })
   
   
@@ -471,6 +576,76 @@ information_team_server <- function(input, output, session){
                                                 ),
                                                 align = "right"
           )
+        )
+      )
+  })
+  
+  
+  # create a plot for the market value over time
+  output$info_team_market_value_over_time <- renderPlotly({
+    # we need the user to select a club first 
+    req(input$info_team_club_selection)
+    
+    market_values <- market_values_over_time %>%
+      # currently we have to filter out these dates
+      filter(cut_off_day != "2011-07-01",
+             cut_off_day != "2020-07-01",
+             cut_off_day != "2014-06-01",
+             cut_off_day != "2014-07-01",
+             cut_off_day != "2014-08-01",
+             cut_off_day != "2014-09-01",
+             cut_off_day != "2014-10-01",
+             club == input$info_team_club_selection) %>%
+      # transform the market value at the given time to a numeric
+      mutate(value_then = as.numeric(str_remove_all(value_then,"[\u20AC|m]")) * 1000000) %>%
+      # create actual plot for the market value over time by club
+      plot_ly(x = ~cut_off_day, y = ~value_then) %>%
+      add_lines() %>%
+      layout(title = "Market value over time",
+             yaxis = list(title = "Current Market Value"),
+             xaxis = list(title = "Year"))
+    
+    market_values
+  })
+  
+  
+  # create a table for past transfers
+  output$info_team_transfers_over_time <- renderReactable({
+    # we need the user to select a club first 
+    #req(input$info_team_club_selection)
+    
+    bayern_transfers %>%
+      select(date, player_name, type, from_team_name,
+             to_team_name) %>%
+      reactable(
+        sortable = TRUE,
+        filterable = TRUE,
+        searchable = TRUE,
+        highlight = TRUE,
+        borderless = TRUE, 
+        # set the theme for the table
+        theme = reactableTheme(
+          borderColor = "#000000",
+          color = "#000000",
+          backgroundColor = "#004157",
+          highlightColor = "#2f829e",
+          cellPadding = "8px 12px",
+          style = list(color = "white"),
+          searchInputStyle = list(width = "100%",
+                                  color = "black")
+        ), 
+        # modify the layout and names of the columns
+        columns = list(
+          date = colDef(name = "Date",
+                        align = "left"),
+          player_name = colDef(name = "Player",
+                               align = "center"),
+          type = colDef(name = "Type",
+                        align = "center"),
+          from_team_name = colDef(name = "From Team",
+                                  align = "center"),
+          to_team_name = colDef(name = "To Team",
+                                align = "center")
         )
       )
   })
