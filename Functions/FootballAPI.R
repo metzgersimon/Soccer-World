@@ -1046,11 +1046,11 @@ get_fixture_lineups <- function(fixture_id){
 
 
 
-############## get_player_stats #################
+############## get_player_stats_fixture #################
 # inputs: fixture_id
 # outputs: should return a data frame which contains all available
 # statistics about the the players of a selected fixture
-get_player_stats <- function(fixture_id){
+get_player_stats_fixture <- function(fixture_id){
   # set the endpoint of the API
   endpoint <- "https://v3.football.api-sports.io/fixtures/players"
 
@@ -1189,6 +1189,115 @@ get_player_stats <- function(fixture_id){
 
 
 
+############## get_player_stats_season #################
+# inputs: league_id, season
+# outputs: should return a data frame which contains stats about all players
+# in the league for a season
+get_player_stats_season <- function(league_id, season){
+  # set the endpoint of the API
+  endpoint <- "https://v3.football.api-sports.io/players"
+  
+  # create a get request to that API with the API key
+  # and the selected parameters (the league via its id and the season)
+  response <- GET(endpoint, 
+                  add_headers('x-apisports-key' = football_api_key),
+                  query = list(league = league_id,
+                               season = season))
+  
+  
+  # check if the request was successful and only then go on with the 
+  # transformation of the data
+  if(status_code(response) >= 200 & status_code(response) < 300){
+    
+    # this endpoint is paginated. Therefore we have to extract the number of pages
+    # to iterate over all pages
+    number_pages <- content(response)$paging$total
+    
+    # create an empty variable to store all player stats
+    all_players <- NULL
+    
+    # iterate over all pages
+    for(i in 1:number_pages){
+      # print for debugging
+      print(paste0("Current page: ", i))
+      
+      # create a get request for the current page with the given parameters
+      # and the current page
+      response_current_page <- GET(endpoint, 
+                      add_headers('x-apisports-key' = football_api_key),
+                      query = list(league = league_id,
+                                   season = season,
+                                   page = i))
+      
+      
+      # check if the request was successful and only then go on with the 
+      # transformation of the data
+      if(status_code(response_current_page) >= 200 & 
+         status_code(response_current_page) < 300){
+      
+        # extract the content of the current page
+        content_current_page <- content(response_current_page)$response
+  
+        # iterate over all players on the current page
+        for(player in 1:length(content_current_page)){
+          # print for debugging
+          print(paste0("Current player: ", player))
+          
+          current_player <- content_current_page[[player]]
+          
+          # extract player specific information such as name, age and nationality
+          # we use the helper function get_content_for_list_element
+          player_infos <- get_content_for_list_element(current_player, "player",
+                                                       piv_wider = TRUE,
+                                                       name_elem = "") %>%
+            # make the name column correct, i.e., do not shorten the first name
+            mutate(name = paste0(firstname, " ", lastname))
+            
+          # extract player statistics
+          # use the function unlist_no_drop_nulls to prevent the unlist function
+          # to drop empty (NULL) elements 
+          player_stats <- enframe(unlist_no_drop_nulls(current_player$statistics[[1]])) %>%
+            # then using pivot_wider to transform the frame into wide format, i.e.,
+            # one row x columns
+            pivot_wider(names_from = name) %>%
+            data.frame()
+          
+          # combine both data frames into one by binding the columns together
+          player_data <- bind_cols(player_infos, 
+                                   player_stats)
+          
+          
+          # add the current player to the all_players frame
+          all_players <- bind_rows(
+            all_players,
+            player_data
+          )
+            
+        }
+        # if the inner request was not successful print an error 
+      } else {
+        print(paste0("Error: The request was not successful. \nStatus code: ",
+                     status_code(response_current_page)))
+      }
+      
+      # sleep for 20 seconds to not overwhelm the API and because the API
+      # does not return a value if we request too many data in a short time
+      Sys.sleep(20)
+      
+    }
+    
+    # if the outer request was not successful print an error 
+  } else {
+    print(paste0("Error: The request was not successful. \nStatus code: ",
+                 status_code(response)))
+  }
+  
+  
+  return(all_players)
+}
+
+
+
 ############## get_player_transfers #################
 # inputs: player_id
 # outputs: data frame with all transfers of a given player
@@ -1316,6 +1425,7 @@ get_team_transfers <- function(team_id){
     
     # iterate over all transfers the player had
     for(transfer in 1:length(transfer_infos)){
+      print(paste0("Curr. Transfer: ", transfer))
       # extract the player information of the transfer
       player_infos <- get_content_for_list_element(transfer_infos[[transfer]],
                                                    "player",
@@ -1351,6 +1461,14 @@ get_team_transfers <- function(team_id){
                                      name_elem = "from_team_") %>%
         data.frame()
       
+      # deal with the case that there is no club the player came from, i.e.,
+      # the player is a young player who was scouted. Then we create a data frame 
+      # and fill it with NA 
+      if(nrow(team_infos_from) == 0){
+        team_infos_from <- data.frame("from_team_name" = NA)
+      } 
+      
+      
       # the information about the team the player transfered to
       # using the helper function get_content_for_list_element to extract the
       # content and return it in a proper format
@@ -1361,10 +1479,23 @@ get_team_transfers <- function(team_id){
                                      name_elem = "to_team_") %>%
         data.frame()
       
+      # deal with the case that there is no club the player goes to, i.e.,
+      # the player ends his career. Then we create a data frame 
+      # and fill it with NA 
+      if(nrow(team_infos_to) == 0){
+        team_infos_to <- data.frame("to_team_name" = NA)
+      } 
+      
       
       # combine all information into one data frame
       curr_transfer_infos <- cbind(player_infos, date, type, team_infos_from,
                                    team_infos_to)
+      
+      # for the last cleaning step, we have to make sure that all columns are
+      # present (this could not be the case if the player ends his career).
+      # To do this, we use the cleaning function api_football_fixtures_general_complete_check
+      curr_transfer_infos <- api_football_fixtures_general_complete_check(curr_transfer_infos,
+                                                                          "team_transfer")
       
       # now combine the data extracted for the current transfer with the
       # data collected earlier into one frame by binding rows
@@ -1376,7 +1507,11 @@ get_team_transfers <- function(team_id){
     
     # lastly, add a column at the beginning of the frame for the team id
     transfer_frame <- bind_cols(data.frame(team_id),
-                                transfer_frame)
+                                transfer_frame) %>%
+      # convert the date column into an actual date
+      mutate(date = ymd(date)) %>%
+      # get only those transfers that are already done
+      filter(date <= Sys.Date())
     
     
     
@@ -1483,6 +1618,8 @@ get_content_for_list_element <- function(content_list, list_element,
     }
     
   }
+  
+  content_for_list_element <- as.data.frame(content_for_list_element)
     
   
   return(content_for_list_element)
