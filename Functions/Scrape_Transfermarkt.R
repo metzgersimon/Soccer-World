@@ -1025,7 +1025,7 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season,
 
 
 
-############## get_fixture_stats #################
+############## get_fixture_stats_tm #################
 # inputs: league, league_id, season
 # outputs: returns all stats available for the games played in a given season
 # for a given league
@@ -1045,22 +1045,21 @@ get_fixture_stats_tm <- function(league, league_id, season, port = 4321L){
   # get the client
   remDr <- rD$client
   
+  # set time outs to give the page the change to first fully load before
+  # we try to get information form it
+  remDr$setTimeout(type = "implicit", milliseconds = 7000)
+  remDr$setTimeout(type = "page load", milliseconds = 7000)
+  
   # navigate to the created url
   remDr$navigate(url)
-  
-  Sys.sleep(5)
   
   # switch to the pop-up cookies frame
   remDr$switchToFrame(remDr$findElement(using = "xpath",
                                         "//iframe[@title='SP Consent Message']"))
   
-  Sys.sleep(3)
-  
   # access the "ACCEPT ALL" button
   cookie_elem <- remDr$findElement(using = "xpath", 
                                    "//button[@title='ACCEPT ALL']")
-  
-  Sys.sleep(3)
   
   # click it
   cookie_elem$clickElement()
@@ -1079,7 +1078,7 @@ get_fixture_stats_tm <- function(league, league_id, season, port = 4321L){
     length()
   
   # iterate through all matchdays
-  for(i in 1:length(number_matchdays)){
+  for(i in 1:number_matchdays){
     # print for debugging
     print(paste0("Matchday ", i))
     
@@ -1106,7 +1105,7 @@ get_fixture_stats_tm <- function(league, league_id, season, port = 4321L){
     }
     
     
-    Sys.sleep(1)
+    Sys.sleep(3)
     
     # iterate through all matches
     for(j in 1:length(matchday_refs)){
@@ -1128,10 +1127,11 @@ get_fixture_stats_tm <- function(league, league_id, season, port = 4321L){
       # find the button which leads to the statistics page     
       elem <- remDr$findElement(using = "css", "#statistics .megamenu")
       
-      Sys.sleep(2)
-      
-      # click the button
-      elem$clickElement()
+      # the click did not work most often so we use send keys to simulate an
+      # enter-key button
+      elem$sendKeysToElement(list("stats", key = "enter"))
+
+      Sys.sleep(1)
       
       # extract the html for the given url
       page_html <- read_html(remDr$getPageSource()[[1]])
@@ -1169,7 +1169,7 @@ get_fixture_stats_tm <- function(league, league_id, season, port = 4321L){
       time_12h <- paste(date_information[[1]][3], date_information[[1]][4], collapse = "")
       time <- format(strptime(time_12h, "%I:%M %p"), "%H:%M")
       
-      Sys.sleep(3)
+      Sys.sleep(2)
       
       # extract the actual statistics
       current_match_stats <- page_html %>%

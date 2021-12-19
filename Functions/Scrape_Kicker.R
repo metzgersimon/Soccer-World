@@ -2,7 +2,6 @@
 # inputs: league_name, season
 # outputs: returns all stats available for the games played in a given season
 # for a given league
-
 get_fixture_stats_kicker <- function(league, season, port = 4321L){
   # we want to extract the last two digits of the season because the date in the
   # kicker url is given as "season-season+1" where the second one only has two digits
@@ -24,17 +23,22 @@ get_fixture_stats_kicker <- function(league, season, port = 4321L){
   # get the client
   remDr <- rD$client
   
+  # set time outs to give the page the change to first fully load before
+  # we try to get information form it
+  remDr$setTimeout(type = "implicit", milliseconds = 5000)
+  remDr$setTimeout(type = "page load", milliseconds = 5000)
+  
   # navigate to the created url
   remDr$navigate(url)
 
   # extract the number of matchdays dynamically
   number_matchdays <- read_html(remDr$getPageSource()[[1]]) %>%
-    html_nodes(xpath = "//select[@class='kick__head-dropdown__select']//option[@value][contains(text(), 'Spieltag')]") %>%
+    html_nodes(xpath = paste0("//select[@class='kick__head-dropdown__select']",
+                              "//option[@value][contains(text(), 'Spieltag')]")) %>%
+    # get the attributes
     html_attrs() %>%
     # we need to subtract 1 because the last element is "ALL" which we do not want
     length() - 1
-  
-  Sys.sleep(1)
   
   # variable to store the match stats over the whole season
   all_season_stats <- NULL
@@ -54,8 +58,6 @@ get_fixture_stats_kicker <- function(league, season, port = 4321L){
       html_nodes(xpath = "//div[@class='kick__v100-gameList__gameRow__stateCell']/a") %>%
       html_attr("href")
     
-    Sys.sleep(1)
-    
     # variable to store all stats for the current matchday
     matchday_stats <- NULL
     
@@ -73,6 +75,8 @@ get_fixture_stats_kicker <- function(league, season, port = 4321L){
       
       # navigate to the date url of the current match
       remDr$navigate(match_date_url)
+      
+      Sys.sleep(2)
       
       # extract the fixture date and time information
       fixture_date_time <- read_html(remDr$getPageSource()[[1]]) %>%
@@ -93,7 +97,7 @@ get_fixture_stats_kicker <- function(league, season, port = 4321L){
       fixture_time <- fixture_date_time[[1]][-1] %>%
         trimws()
       
-      Sys.sleep(2)
+      Sys.sleep(1)
       
       # set the tail of the url from "analyse" to "spieldaten" to get to the
       # url that contain information about the stats
@@ -108,8 +112,6 @@ get_fixture_stats_kicker <- function(league, season, port = 4321L){
       
       # extract the html of the page
       page_html <- read_html(remDr$getPageSource()[[1]])
-      
-      Sys.sleep(1)
       
       # extract team names
       team_names <- page_html %>%
@@ -160,15 +162,21 @@ get_fixture_stats_kicker <- function(league, season, port = 4321L){
         cbind(., team_names) %>%
         # reorder the variables
         select(date, time,
-               team_name = team_names, everything())
+               team_name = team_names, everything()) %>%
+        # add a flag variable to keep track which team is the home team
+        mutate(is_home_team = c(TRUE, FALSE))
       
       # bind the data of the current match to the frame for the current matchday
       # by adding the rows
       matchday_stats <- bind_rows(matchday_stats,
                                   match_stats)
         
-      Sys.sleep(5)
+      Sys.sleep(2)
     }
+    
+    # add the matchday as a variable
+    matchday_stats <- matchday_stats %>%
+      mutate("matchday" = matchday)
     
     # append the current matchday stats to the variable which stores all stats
     # of the season
@@ -184,8 +192,19 @@ get_fixture_stats_kicker <- function(league, season, port = 4321L){
     # reorder variables
     select(league, season_start_year,
            season_end_year,
+           matchday,
            date, time,
-           team_name, everything())
+           team_name, is_home_team, everything())
+  
+  # reset rownames
+  rownames(all_season_stats) <- 1:nrow(all_season_stats)
+  
+  # close the driver (client) and the server
+  remDr$close()
+  rD$server$stop()
+  rm(rD)
+  gc()
+  
   
   return(all_season_stats)
   
