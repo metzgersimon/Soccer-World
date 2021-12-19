@@ -1,6 +1,12 @@
+############## api_football_fixtures_general_complete_check #################
+# inputs: data_frame_to_observe, content_type
+# outputs: returns the given data frame as it should look like 
 api_football_fixtures_general_complete_check <- function(data_frame_to_observe,
                                                          content_type = "general"){
   
+  # check which content type it is, i.e., what kind of data we want to
+  # produce and based on that create an emtpy data frame with the correct
+  # column names in the right order
   if(content_type == "general"){
     data_frame_template <- data.frame(matrix(ncol = 13,
                                              nrow = 0))
@@ -79,19 +85,34 @@ api_football_fixtures_general_complete_check <- function(data_frame_to_observe,
                                        "assist_id", "assist_name",
                                        "type", "detail", "comments")
     
+  } else if(content_type == "team_transfer"){
+    data_frame_template <- data.frame(matrix(ncol = 10,
+                                             nrow = 0))
+    
+    colnames(data_frame_template) <- c("player_id", "player_name", "date", "type",
+                                       "from_team_id", "from_team_name",
+                                       "from_team_logo", "to_team_id", 
+                                       "to_team_name", "to_team_logo")
+    
   }
   
-  
+  # get the colnames of the data frame we want to check and 
+  # of the one that is how it should be
   colnames_right <- colnames(data_frame_template)
   colnames_wrong <- colnames(data_frame_to_observe)
   
+  # get all columns that are missing
   missing_columns <- setdiff(colnames_right, colnames_wrong)
   
+  # if all columns are as they should be just return the data frame
   if(length(missing_columns) == 0){
     return(data_frame_to_observe)
+    # otherwise we need to work on the data frame
   } else {
+    # create a vector to store the positions of the missing columns
     col_positions <- rep(NA, length(missing_columns))
     
+    # create a new variable to work on
     data_frame_complete <- data_frame_to_observe
     
     # iterate over all missing columns

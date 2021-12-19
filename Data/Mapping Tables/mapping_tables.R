@@ -1,4 +1,9 @@
 club_name_mapping <- function(club_name){
+  
+  if(is.na(club_name)){
+    return(club_name)
+  }
+  
   club_name <- tolower(club_name)
   
   # currently bundesliga
@@ -97,7 +102,8 @@ club_name_mapping <- function(club_name){
     return("SC Paderborn 07")
   }
     
-  return("empty")
+
+  return(str_to_title(club_name))
 }
 
 # clubs_fifa <- unique(fifa_team_stats_over_time_clean$club)
