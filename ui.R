@@ -9,12 +9,11 @@ ui <- dashboardPage(
                startExpanded = TRUE,
                menuItem("League", tabName = "information-league",
                         icon = icon("angle-double-right"),
+                        menuSubItem("General", tabName = "information-league-general"),
                         menuSubItem("Match", tabName = "information-league-match")),
                menuItem("Team", tabName = "information-team",
                         icon = icon("angle-double-right")),
                menuItem("Player", tabName = "information-player",
-                        icon = icon("angle-double-right")),
-               menuItem("Match", tabName = "information-match",
                         icon = icon("angle-double-right"))),
       menuItem("Comparison", tabName = "comparison", icon = icon("balance-scale")),
       menuItem("Analysis", tabName = "analysis", icon = icon("accusoft")),
@@ -24,7 +23,7 @@ ui <- dashboardPage(
   dashboardBody(
     # set the theme for the ui
     shinyDashboardThemes(
-      theme = "blue_gradient"
+      theme = "grey_dark"
     ),
     # use the shinyjs package to improve the user experience
     # of the app
@@ -36,17 +35,11 @@ ui <- dashboardPage(
     # call the sub-uis for the several pages
     tabItems(
       tab_home_ui(),
-      tab_information_league_ui(),
+      tab_information_league_general_ui(),
+      tab_information_league_match_ui(),
       tab_information_team_ui(),
-      tab_information_player_ui(),
-      tab_information_match_ui()
-    )#,
-    # column(
-    #   width = 3, align = "center",
-    #   submitButton("Apply Changes",
-    #                icon = icon("change")
-    #   )
-    # )
+      tab_information_player_ui()
+    )
   )
 )
 
