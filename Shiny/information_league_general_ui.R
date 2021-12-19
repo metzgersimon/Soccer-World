@@ -1,8 +1,20 @@
 # sub-ui for the league tab in the information menu item
-tab_information_league_ui <- function(){
+tab_information_league_general_ui <- function(){
   # set the tabname to reference it from the main ui
-  tabItem(tabName = "information-league",
+  tabItem(tabName = "information-league-general",
           # create all the tabs for the league pages
+          fluidRow(
+            # to be able to select a range of seasons, we want two
+            # selectInputs to select a start season and an end season
+            column(
+              width = 3, align = "center",
+              selectInput("information_league_season_selection", 
+                          label = "Season",
+                          choices = seasons,
+                          selected = seasons[1]
+              )
+            )
+          ),
           tabsetPanel(
             # create an overview page for the league to show information
             # such as the average age in the league, or the average market
@@ -22,17 +34,6 @@ tab_information_league_ui <- function(){
                  # for the matchdays, statistics for a selected season, etc.
                  tabPanel(
                    "Season specific",
-                   fluidRow(
-                     # to be able to select a range of seasons, we want two
-                     # selectInputs to select a start season and an end season
-                     column(
-                       width = 3, align = "center",
-                       selectInput("information_league_season_selection_start", 
-                                   label = "Season",
-                                   choices = seasons,
-                                   selected = seasons[1]
-                       )
-                     ),
                      # column(
                      #   width = 3, align = "center",
                      #   selectInput("information_league_season_selection_end", 
@@ -69,18 +70,18 @@ tab_information_league_ui <- function(){
                      #               
                      #   )
                      # )
-                     
+                   fluidRow(
                      column(
-                       width = 3, align = "center",
+                       width = 3, 
+                       align = "center",
                        selectInput("information_league_matchday_selection",
                                    label = "Matchday",
                                    choices = c("All"),
                                    selected = ""
-                                      
+                                   )
                        )
-                     )
-                                      
-                   ),
+                     ),
+                   
                    fluidRow(
                      reactableOutput("information_league_matchday_fixtures")
                    )

@@ -1,5 +1,50 @@
 # subserver for the team-tab in the information menu item
 information_team_server <- function(input, output, session){
+  
+  # create an observer to display for the club selection
+  # only those clubs that are present for the selected season
+  # observe({
+  #   updateSelectInput(session,
+  #                     inputId = "info_team_club_selection",
+  #                     choices = c("",
+  #                                 unique(season_players_joined %>%
+  #                                          filter(season_start_year == 
+  #                                                   as.numeric(
+  #                                                     str_split(input$info_team_season_selection,
+  #                                                               pattern = "/")[[1]][1])
+  #                                          ) %>%
+  #                                          select(club) %>%
+  #                                          unlist() %>%
+  #                                          unname()
+  #                                 )
+  #                     )
+  #   )
+  # })
+  
+  # create an observer to display for the club selection
+  # only those clubs that are present for the selected season
+  # observeEvent(input$info_team_season_selection, {
+  #   updateSelectInput(session, 
+  #                     inputId = "info_team_club_selection",
+  #                     choices = c("",
+  #                                 unique(season_players_joined %>%
+  #                                          filter(season_start_year == 
+  #                                                   as.numeric(
+  #                                                     str_split(input$info_team_season_selection,
+  #                                                               pattern = "/")[[1]][1])
+  #                                          ) %>%
+  #                                          select(club) %>%
+  #                                          unlist() %>%
+  #                                          unname()
+  #                                 )
+  #                     )
+  #   )
+  # })
+  
+  
+  
+  
+  
   # create the output for the table on the overview page
   output$info_team_team_name <- function(){
     # there has to be a club selected
@@ -104,12 +149,14 @@ information_team_server <- function(input, output, session){
     # we need the user to select a club first
     req(input$info_team_club_selection)
     
+    print(input$info_team_club_selection)
     # extract the logo from the frame
-    team_image <- bundesliga_2020_infos %>%
-      filter(team_name == input$info_team_club_selection) %>%
+    team_image <- season_players_joined %>%
+      filter(club == input$info_team_club_selection) %>%
       select(logo) %>%
       unlist() %>%
-      unname()
+      unname() %>%
+      unique()
       
     # set the img on the extracted logo
     tags$img(src = team_image)
@@ -120,7 +167,7 @@ information_team_server <- function(input, output, session){
   ################# Season Page ######################
   # create the table for the next match of the selected
   # club
-  output$info_team_next_match <- renderTable({
+  output$info_team_next_match <- renderReactable({
     # we need the user to select a club and
     # a season first
     req(input$info_team_club_selection)
@@ -131,48 +178,73 @@ information_team_server <- function(input, output, session){
       input$info_team_season_selection,
       pattern = "/")[[1]][1]
     )
-    
+
     # selected_club <- "FC Bayern Munich"
     # selected_season <- 2021
-    next_match <- get_next_fixture_by_team(league_id = 78,
-                                           team_name = selected_club,
-                                           season = selected_season) %>%
+    get_next_fixture_by_team(league_id = 78,
+                             team_name = selected_club,
+                             season = selected_season) %>%
       # only select important columns
       select(c(fixture_date, fixture_time,
-               venue_name, venue_city,
-               league_round, club_name_home,
-               club_name_away))
+               league_round, venue_city,
+               club_name_home, club_name_away)) %>%
+      reactable(borderless = TRUE,
+                # set the theme for the table
+                theme = reactableTheme(
+                  borderColor = "#000000",
+                  color = "#000000",
+                  backgroundColor = "#004157",
+                  highlightColor = "#2f829e",
+                  cellPadding = "8px 12px",
+                  style = list(color = "white"),
+                  searchInputStyle = list(width = "100%")
+                ), 
+                # modify the layout and names of the columns
+                columns = list(
+                  fixture_date = colDef(name = "Date",
+                                       align = "left"),
+                  fixture_time = colDef(name = "Time",
+                                           align = "center"),
+                  venue_city = colDef(name = "City",
+                                        align = "center"),
+                  league_round = colDef(name = "Matchday",
+                                        align = "center"),
+                  club_name_home = colDef(name = "Home",
+                                        align = "center"),
+                  club_name_away = colDef(name = "Away",
+                                        align = "center")
+                ))
     
-    fixture_test <- paste(as.character(next_match$fixture_date),
-                          "\n",
-                          next_match$fixture_time,
-                          "\n\n")
-    
-    fixture_test2 <- paste(next_match$venue_name,
-                          "\n",
-                          next_match$venue_city)
-    
-    fixture_time <- next_match$fixture_time
-    venue_name <- next_match$venue_name
-    venue_city <- next_match$venue_city
+    # fixture_test <- paste(as.character(next_match$fixture_date),
+    #                       "\n",
+    #                       next_match$fixture_time,
+    #                       "\n\n")
+    # 
+    # fixture_test2 <- paste(next_match$venue_name,
+    #                       "\n",
+    #                       next_match$venue_city)
+    # 
+    # fixture_time <- next_match$fixture_time
+    # venue_name <- next_match$venue_name
+    # venue_city <- next_match$venue_city
     
     
     # set the NA format in a kable table to an empty string
-    options(knitr.kable.NA = "")
-    
-    # create a kable table with the data
-    next_match %>%
-      select(-c(fixture_date,
-                fixture_time,
-                venue_name,
-                venue_city,
-                league_round)) %>% 
-      as.matrix() %>%
-      kableExtra::kable("html", row.names = FALSE, col.names = NULL
-      ) %>%
-      #kable_minimal()
-      kable_styling(full_width = F, ) %>%
-      add_header_above(., c(setNames(2, fixture_test)))
+    # options(knitr.kable.NA = "")
+    # 
+    # # create a kable table with the data
+    # next_match %>%
+    #   select(-c(fixture_date,
+    #             fixture_time,
+    #             venue_name,
+    #             venue_city,
+    #             league_round)) %>% 
+    #   as.matrix() %>%
+    #   kableExtra::kable("html", row.names = FALSE, col.names = NULL
+    #   ) %>%
+    #   #kable_minimal()
+    #   kable_styling(full_width = F, ) %>%
+    #   add_header_above(., c(setNames(2, fixture_test)))
     
       
    
@@ -612,11 +684,18 @@ information_team_server <- function(input, output, session){
   # create a table for past transfers
   output$info_team_transfers_over_time <- renderReactable({
     # we need the user to select a club first 
-    #req(input$info_team_club_selection)
+    req(input$info_team_club_selection)
     
-    bayern_transfers %>%
+    # test <- all_transfers %>%
+    #   filter(from_team_name == "VfB Stuttgart" |
+    #            to_team_name == "VfB Stuttgart")
+    # 
+    all_transfers %>%
+      filter(from_team_name == input$info_team_club_selection |
+               to_team_name == input$info_team_club_selection) %>%
       select(date, player_name, type, from_team_name,
              to_team_name) %>%
+      arrange(desc(date)) %>%
       reactable(
         sortable = TRUE,
         filterable = TRUE,

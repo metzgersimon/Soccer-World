@@ -17,25 +17,50 @@ information_player_server <- function(input, output, session){
   observeEvent(input$information_player_team_selection, {
     updateSelectInput(session, 
                       inputId = "information_player_player_selection",
-                      choices = c("",unique(season_players_joined %>%
-                                         filter(club == input$information_player_team_selection) %>%
+                      choices = unique(season_players_joined %>%
+                                         filter(club == input$information_player_team_selection,
+                                                season_start_year == as.numeric(
+                                                  str_split(input$information_player_season_selection,
+                                                            pattern = "/")[[1]][1])) %>%
                                          select(player_name) %>%
                                          unlist() %>%
-                                         unname()))
+                                         unname()),
+                      selected = ""
     )
+
   })
   
   
   
   # create the output for the table on the overview page
-  output$info_player_player_name <- function(){
+  output$info_player_player_name <- renderTable({
     # there has to be a player selected
     req(input$information_player_player_selection)
-    
+
     # filter the data for the selected club and the selected player
     player_infos <- season_players_joined %>%
       filter(club == input$information_player_team_selection,
-             player_name == input$information_player_player_selection)
+             player_name == input$information_player_player_selection,
+             season_start_year == max(season_start_year)) %>%
+      select(player_name, country.x, position, birth_date,
+             age, height, joining_date, contract_date,
+             market_value_in_million_euro, club,
+             league) %>%
+      data.frame() %>%
+      unique()
+    
+    player_infos <- season_players_joined %>%
+      filter(club == "FC Bayern Munich",
+             player_name == "Manuel Neuer",
+             season_start_year == max(season_start_year)) %>%
+      select(player_name, country.x, position, birth_date,
+             age, height, joining_date, contract_date,
+             market_value_in_million_euro, club,
+             league) %>%
+      data.frame() %>%
+      unique()
+    
+    print(player_infos)
     
     # extract the name of the player
     name <- unique(player_infos$player_name)
@@ -94,6 +119,40 @@ information_player_server <- function(input, output, session){
       kable_styling(full_width = F)
     
     
-  }
+  })
+  
+  
+  # output for the club logo
+  output$info_player_player_img <- renderUI({
+    # we need the user to select a club first
+    req(input$information_player_player_selection)
+    
+    print(input$information_player_player_selection)
+    # extract image from the data
+    player_image <- player_stats_2021_buli %>%
+      filter(name %like% input$information_player_player_selection) %>%
+      select(photo) %>%
+      unlist() %>%
+      unname() %>%
+      unique()
+    
+    print(player_image)
+    
+    # set the img on the extracted image
+    tags$img(src = player_image)
+  })
+  
+  
+  # create the table output for the stats
+  output$info_player_stats <- renderReactable({
+    req(input$information_player_player_selection)
+    print("TEST")
+    
+    player_stats_2021_buli %>%
+      # filter(name == input$information_player_player_selection) %>%
+      filter(lastname == "Neuer") %>%
+      select(team_name, games_appearences:penalty_saved) %>%
+      reactable()
+  })
   
 }

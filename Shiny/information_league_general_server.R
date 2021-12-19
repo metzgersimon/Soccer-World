@@ -1,5 +1,5 @@
 # subserver for the league-tab in the information menu item
-information_league_server <- function(input, output, session){
+information_league_general_server <- function(input, output, session){
   
   # create an observer to display for the club selection
   # only those clubs that are present in the selected league
@@ -19,12 +19,12 @@ information_league_server <- function(input, output, session){
   
   # create an observer to display for the club selection
   # only those clubs that are present in the selected league
-  observeEvent(input$information_league_season_selection_start, {
-    print(input$information_league_season_selection_start)
+  observeEvent(input$information_league_season_selection, {
+    print(input$information_league_season_selection)
     data <- fixtures_bundesliga_2010_2021 %>%
       filter(league_season == 
                as.numeric(str_split(
-                 input$information_league_season_selection_start,
+                 input$information_league_season_selection,
                  pattern = "/")[[1]][1]
                ),
              !is.na(status_elapsed)) %>%
@@ -113,7 +113,12 @@ information_league_server <- function(input, output, session){
   
   # create the output for the table on the overview page
   output$info_league_overview_table <- function(){
-    league_infos <- season_players_joined
+    req(input$information_league_season_selection)
+    
+    league_infos <- season_players_joined %>% 
+      filter(season_start_year == as.numeric(
+        str_split(input$information_league_season_selection,
+                  pattern = "/")[[1]][1]))
     
     # extract the name of the league
     name <- unique(league_infos$league)
@@ -222,7 +227,7 @@ information_league_server <- function(input, output, session){
     fixtures_bundesliga_2010_2021 %>%
       filter(league_season == 
                as.numeric(str_split(
-                 input$information_league_season_selection_start,
+                 input$information_league_season_selection,
                  pattern = "/")[[1]][1]
                ),
              league_round == as.numeric(input$information_league_matchday_selection)) %>%
@@ -354,7 +359,7 @@ information_league_server <- function(input, output, session){
   # create a plot to show the rank of every club over the season
   output$league_rank_over_season <- renderPlotly({
     # convert the selected season into a number
-    selected_season <- as.numeric(str_split(input$information_league_season_selection_start, 
+    selected_season <- as.numeric(str_split(input$information_league_season_selection, 
                                             pattern = "/")[[1]][1])
     
     # create the frame for the plot

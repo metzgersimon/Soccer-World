@@ -15,9 +15,18 @@ tab_information_player_ui <- function(){
                    
             ),
             column(width = 3, align = "center",
+                   selectInput("information_player_season_selection",
+                               label = "Season",
+                               choices = seasons,
+                               selected = seasons[1]
+                   )
+                   
+            ),
+            column(width = 3, align = "center",
                    selectInput("information_player_team_selection",
                                label = "Club",
-                               choices = unique(season_players_joined$club)
+                               choices = unique(season_players_joined$club),
+                               selected = unique(season_players_joined$club)[1]
                    )
                    
             ),
@@ -42,8 +51,40 @@ tab_information_player_ui <- function(){
                               div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
                                   tableOutput("info_player_player_name")
                               )
+                       ),
+                       # ui output to display the logo of the club
+                       column(width = 1,
+                              align = "left",
+                              div(style = "margin-top: 20px;",
+                                  uiOutput("info_player_player_img",
+                                           width = "2px")
+                              )
                        )
                      )
+            ),
+            tabPanel(
+              "Stats",
+              fluidRow(
+                column(width = 5, 
+                       offset = 3,
+                       align = "center",
+                       div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
+                           reactableOutput("info_player_stats")
+                       )
+                )
+              )
+            ),
+            tabPanel(
+              "Transfers",
+              fluidRow(
+                column(width = 5, 
+                       offset = 3,
+                       align = "center",
+                       div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
+                           tableOutput("info_player_transfers")
+                       )
+                )
+              )
             )
             
           )
