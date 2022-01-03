@@ -352,7 +352,7 @@ get_team_stats_in_league_by_season <- function(league_id, team_id, season){
     # extract the lineups information by using the helper function
     # get_content_for_list_element
     lineups_info <- get_content_for_list_element(content, "lineups",
-                                                 piv_wider = FALSE)
+                                                  piv_wider = FALSE)
     
     # extract the cards information by using the helper function
     # get_content_for_list_element
@@ -479,40 +479,41 @@ get_fixtures_in_league_by_season <- function(league_id, season){
     content <- content(response)$response
     
     # pre-allocate the data frame to store all the fixtures
-    all_fixture_information <- data.frame(fixture_id = integer(length(content)),
-                                          referee = character(length(content)),
-                                          timezone = character(length(content)),
-                                          fixture_date = character(length(content)),
-                                          fixture_time = character(length(content)),
-                                          timestamp = integer(length(content)),
-                                          periods_first = integer(length(content)),
-                                          periods_second = integer(length(content)),
-                                          venue_id = integer(length(content)),
-                                          venue_name = character(length(content)),
-                                          venue_city = character(length(content)),
-                                          status_long = character(length(content)),
-                                          status_short = character(length(content)),
-                                          status_elapsed = integer(length(content)),
-                                          league_id = integer(length(content)),
-                                          league_name = character(length(content)),
-                                          league_country = character(length(content)),
-                                          league_logo = character(length(content)),
-                                          league_flag = character(length(content)),
-                                          league_season = integer(length(content)),
-                                          league_round = integer(length(content)),
-                                          club_id_home = integer(length(content)),
-                                          club_name_home = character(length(content)),
-                                          club_logo_home = character(length(content)),
-                                          is_winner_home = logical(length(content)),
-                                          club_id_away = integer(length(content)),
-                                          club_name_away = character(length(content)),
-                                          club_logo_away = character(length(content)),
-                                          is_winner_away = logical(length(content)),
-                                          halftime_score_home = integer(length(content)),
-                                          halftime_score_away = integer(length(content)),
-                                          fulltime_score_home = integer(length(content)),
-                                          fulltime_score_away = integer(length(content))
-                                        )
+    all_fixture_information <- NULL
+    # all_fixture_information <- data.frame(fixture_id = integer(length(content)),
+    #                                       referee = character(length(content)),
+    #                                       timezone = character(length(content)),
+    #                                       fixture_date = character(length(content)),
+    #                                       fixture_time = character(length(content)),
+    #                                       timestamp = integer(length(content)),
+    #                                       periods_first = integer(length(content)),
+    #                                       periods_second = integer(length(content)),
+    #                                       venue_id = integer(length(content)),
+    #                                       venue_name = character(length(content)),
+    #                                       venue_city = character(length(content)),
+    #                                       status_long = character(length(content)),
+    #                                       status_short = character(length(content)),
+    #                                       status_elapsed = integer(length(content)),
+    #                                       league_id = integer(length(content)),
+    #                                       league_name = character(length(content)),
+    #                                       league_country = character(length(content)),
+    #                                       league_logo = character(length(content)),
+    #                                       league_flag = character(length(content)),
+    #                                       league_season = integer(length(content)),
+    #                                       league_round = integer(length(content)),
+    #                                       club_id_home = integer(length(content)),
+    #                                       club_name_home = character(length(content)),
+    #                                       club_logo_home = character(length(content)),
+    #                                       is_winner_home = logical(length(content)),
+    #                                       club_id_away = integer(length(content)),
+    #                                       club_name_away = character(length(content)),
+    #                                       club_logo_away = character(length(content)),
+    #                                       is_winner_away = logical(length(content)),
+    #                                       halftime_score_home = integer(length(content)),
+    #                                       halftime_score_away = integer(length(content)),
+    #                                       fulltime_score_home = integer(length(content)),
+    #                                       fulltime_score_away = integer(length(content))
+    #                                     )
     
     
     # iterate through all fixtures
@@ -554,7 +555,9 @@ get_fixtures_in_league_by_season <- function(league_id, season){
           fixture_venue_city <- venue_city_split %>%
             .[[1]] %>%
             .[-1] %>%
-            str_remove_all("\\(|\\)")
+            .[1] %>%
+            str_remove_all("\\(|\\)") %>%
+            trimws()
           
           # set the value of the row to the venue name
           fixture_general_info[row_position, "value"] <- fixture_venue_name
@@ -578,13 +581,17 @@ get_fixtures_in_league_by_season <- function(league_id, season){
         # use pivot_wider to transform the tibble from long to wide
         # so that we only got 1 row with multiple columns
         pivot_wider(names_from = name, values_from = value,
-                    names_glue = "{name}")
+                    names_glue = "{name}") %>%
+        unnest(cols = everything())
+      
+      
       
       # check if the data frame contains all columns it should contain
       # with a helper function called "api_football_fixtures_general_complete_check"
       fixture_general_info <- 
         api_football_fixtures_general_complete_check(fixture_general_info,
                                                      content_type = "general") %>%
+        data.frame() %>%
         # rename all variables appropriately
         rename(fixture_id = id,
                fixture_date = date,
@@ -647,25 +654,26 @@ get_fixtures_in_league_by_season <- function(league_id, season){
         # check if the data frame contains all columns it should contain
         # with a helper function called "api_football_fixtures_general_complete_check"
         api_football_fixtures_general_complete_check(fixture_team_info,
-                                                     content_type = "team") %>%
+                                                     content_type = "team") #%>%
         # create new variables for which team won and which loose
-        mutate(home.winner = ifelse(is.na(home.winner),
-                                    FALSE,
-                                    home.winner),
-               away.winner = ifelse(is.na(away.winner),
-                                    FALSE,
-                                    away.winner))
+        # mutate(home.winner = ifelse(is.na(home.winner),
+        #                             FALSE,
+        #                             home.winner),
+        #        away.winner = ifelse(is.na(away.winner),
+        #                             FALSE,
+        #                             away.winner))
       
       # rename all variables in the frame
       fixture_team_info <- fixture_team_info %>%
+        select(-c(`home.winner`, `away.winner`)) %>%
         rename(club_id_home = `home.id`,
                club_name_home = `home.name`,
                club_logo_home = `home.logo`,
-               is_winner_home = `home.winner`,
+               #is_winner_home = `home.winner`,
                club_id_away = `away.id`,
                club_name_away = `away.name`,
-               club_logo_away = `away.logo`,
-               is_winner_away = `away.winner`)
+               club_logo_away = `away.logo`)#,
+              # is_winner_away = `away.winner`)
 
       
       # extract score information with the enframe function
@@ -689,6 +697,10 @@ get_fixtures_in_league_by_season <- function(league_id, season){
                fulltime_score_home = `fulltime.home`,
                fulltime_score_away = `fulltime.away`)
       
+      if(nrow(fixture_score_info) == 0){
+        fixture_score_info[1,] <- NA
+      }
+      
       # check if the fixture date is smaller than the current date, i.e.,
       # if it is in the past
       # if it is not in the past, we have to deal with the data
@@ -702,37 +714,43 @@ get_fixtures_in_league_by_season <- function(league_id, season){
         
        
       # bind all information for the current fixture together via bind_cols
-      all_fixture_information[i,] <- bind_cols(fixture_general_info,
-                                               fixture_league_info,
-                                               fixture_team_info,
-                                               fixture_score_info
-       )
+      all_fixture_information <- bind_rows(
+        all_fixture_information,
+        bind_cols(fixture_general_info,
+                  fixture_league_info,
+                  fixture_team_info,
+                  fixture_score_info)
+      )
+      # all_fixture_information[i,] <- bind_cols(fixture_general_info,
+      #                                          fixture_league_info,
+      #                                          fixture_team_info,
+      #                                          fixture_score_info
+      #  )
       
     }
-    
-    # at the end we want to mutate all variables to give them the
-    # right data type
-    all_fixture_information <- all_fixture_information %>%
-      mutate(fixture_id = as.integer(fixture_id),
-             timestamp = as.integer(timestamp),
-             periods_first = as.integer(periods_first),
-             periods_second = as.integer(periods_second),
-             venue_id = as.integer(venue_id),
-             status_elapsed = as.integer(status_elapsed),
-             league_id = as.integer(league_id),
-             league_season = as.integer(league_season),
-             league_round = as.integer(league_round),
-             club_id_home = as.integer(club_id_home),
-             is_winner_home = as.logical(is_winner_home),
-             club_id_away = as.integer(club_id_away),
-             is_winner_away = as.logical(is_winner_away))
-    
-    
+ 
     # if the request was not successful print an error 
   } else {
     print(paste0("Error: The request was not successful. \nStatus code: ",
                  status_code(response)))
   }
+  
+  # at the end we want to mutate all variables to give them the
+  # right data type
+  all_fixture_information <- all_fixture_information %>%
+    mutate(fixture_id = as.integer(fixture_id),
+           timestamp = as.integer(timestamp),
+           # periods_first = as.integer(periods_first),
+           # periods_second = as.integer(periods_second),
+           venue_id = as.integer(venue_id),
+           status_elapsed = as.integer(status_elapsed),
+           league_id = as.integer(league_id),
+           league_season = as.integer(league_season),
+           league_round = as.integer(league_round),
+           club_id_home = as.integer(club_id_home),
+           # is_winner_home = as.logical(is_winner_home),
+           club_id_away = as.integer(club_id_away))#,
+           # is_winner_away = as.logical(is_winner_away))
   
   # return the data frame containing information about all fixtures
   # for the given league and season
@@ -812,7 +830,11 @@ get_fixture_stats <- function(fixture_id){
                goalkeeper_saves = `Goalkeeper Saves`,
                passes_total = `Total passes`,
                passes_accurate= `Passes accurate`,
-               passing_accuracy = `Passes %`) 
+               passing_accuracy = `Passes %`) %>%
+        # add a column for the fixture id
+        mutate(fixture_id = fixture_id) %>%
+        # change the order such that the frame begins with the fixture_id
+        select(fixture_id, everything())
       
       # bind all data into one frame with multiple columns
       team_data <- bind_cols(team_info, 
@@ -1432,6 +1454,10 @@ get_team_transfers <- function(team_id){
                                                    piv_wider = TRUE,
                                                    name_elem = "player_") %>%
         data.frame()
+      
+      if(!("player_name" %in% colnames(player_infos))){
+        next
+      }
     
     
       # extract the date of the transfer and convert it into a data frame
@@ -1524,6 +1550,61 @@ get_team_transfers <- function(team_id){
   # return all the transfers of the club
   return(transfer_frame)
 } 
+
+
+
+############## get_coach_by_id #################
+# inputs: coach_id
+# outputs: data frame containing all information about a coach and its career
+
+get_coach_by_id <- function(coach_id){
+  # set the endpoint of the API
+  endpoint <- "https://v3.football.api-sports.io/coachs"
+  
+  # create a get request to that API with the API key
+  # and the selected parameter (team_id)
+  response <- GET(endpoint, 
+                  add_headers('x-apisports-key' = football_api_key),
+                  query = list(id = coach_id))
+  
+  # check if the request was successful and only then go on with the 
+  # transformation of the data
+  if(status_code(response) >= 200 & status_code(response) < 300){
+    
+    # extract the content from the response
+    content <- content(response)$response[[1]]
+    
+    # store the coach person specific data in a data frame
+    coach_info <- data.frame("id" = content$id,
+                             "name" = content$name,
+                             "firstname" = content$firstname,
+                             "lastname" = content$lastname,
+                             "age" = content$age,
+                             "nationality" = content$nationality) %>%
+      # change the name of the coach appropriately to "firstname lastname"
+      # to get rid of the shortened first name
+      mutate(name = paste0(firstname, " ", lastname))
+    
+    # extract the birth information and clean it with the helper function
+    birth_info <- get_content_for_list_element(content,
+                                               "birth",
+                                               piv_wider = TRUE,
+                                               name_elem = NULL)
+    
+    
+    
+    
+    
+    # if the request was not successful print an error 
+  } else {
+    print(paste0("Error: The request was not successful. \nStatus code: ",
+                 status_code(response)))
+  }
+  
+  # return all the transfers of the club
+  return(transfer_frame)
+    
+}
 
 
 
