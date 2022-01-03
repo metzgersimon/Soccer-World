@@ -1225,3 +1225,143 @@ get_fixture_stats_tm <- function(league, league_id, season, port = 4321L){
   return(fixture_stats_all_season)
       
 }
+
+
+
+############## get_regeneration_days #################
+# inputs: league_name, season
+# outputs: returns all stats available for the games played in a given season
+# for a given league
+get_regeneration_days <- function(league, league_id, season, port = 4321L){
+
+  # paste together the url we want to scrape
+  url <- paste0("https://www.transfermarkt.com/", league, "/startseite/",
+                "wettbewerb/", league_id, "/plus/?saison_id=", season)
+  
+  # create a driver from Rselenium
+  rD <- rsDriver(browser = "firefox", port = port)
+  
+  # get the client
+  remDr <- rD$client
+  
+  # set time outs to give the page the change to first fully load before
+  # we try to get information form it
+  remDr$setTimeout(type = "implicit", milliseconds = 7000)
+  remDr$setTimeout(type = "page load", milliseconds = 7000)
+  
+  # navigate to the created url
+  remDr$navigate(url)
+  
+  # switch to the pop-up cookies frame
+  remDr$switchToFrame(remDr$findElement(using = "xpath",
+                                        "//iframe[@title='SP Consent Message']"))
+  
+  # access the "ACCEPT ALL" button
+  cookie_elem <- remDr$findElement(using = "xpath", 
+                                   "//button[@title='ACCEPT ALL']")
+  
+  # click it
+  cookie_elem$clickElement()
+  
+  # after that we have to switch back to the default frame
+  remDr$switchToFrame(NA)
+  
+  # extract the html of the page
+  page_html <- read_html(remDr$getPageSource()[[1]])
+  
+  # get all teams of the season in the selected league
+  club_refs <- page_html %>%
+    html_nodes(xpath = paste0("//table[@class='items']//td[@class='hauptlink ",
+                              "no-border-links hide-for-small hide-for-pad']//a")) %>%
+    html_attr("href") %>%
+    str_remove_all("#") %>%
+    str_subset(pattern = ".+")
+  
+  club_names <- page_html %>%
+    html_nodes(xpath = paste0("//table[@class='items']//td[@class='hauptlink ",
+                              "no-border-links hide-for-small hide-for-pad']//a")) %>%
+    html_text(trim = TRUE) %>%
+    str_subset(pattern = ".+")
+  
+  Sys.sleep(2)
+  
+  # create an empty data frame to store the data
+  all_matches_frame <- NULL
+  
+  
+  for(i in 1:length(club_refs)){
+    print(club_refs[i])
+    
+    match_plan_url <- paste0("https://www.transfermarkt.com", club_refs[i]) %>%
+      str_replace("startseite", replacement = "vereinsspielplan") %>%
+      paste0(., "/heim_gast//plus/1")
+    
+    remDr$navigate(match_plan_url)
+    
+    # extract the html of the page
+    page_html <- read_html(remDr$getPageSource()[[1]])
+    
+    # get the correct club name 
+    club_name <- page_html %>%
+      html_nodes(xpath = paste0("//div[@id='verein_head']//h1[@itemprop='name']/span")) %>%
+      html_text(trim = TRUE)
+    
+    # get all teams of the season in the selected league
+    club_leagues <- page_html %>%
+      html_nodes(xpath = paste0("//div[@class='responsive-table']//table",
+                                "/tbody/tr/td/img")) %>%
+      html_attr("title")
+    
+    club_infos <- page_html %>%
+      html_nodes(xpath = paste0("//div[@class='responsive-table']//table")) %>%
+      html_table(convert = TRUE) %>%
+      .[[1]] %>%
+      .[, !duplicated(colnames(.), fromLast = TRUE)] %>%
+      mutate(Attendance = ifelse(!is.numeric(Attendance),
+                                 as.numeric(Attendance),
+                                 Attendance))
+    
+    correct_club_names <- page_html %>%
+      html_nodes(xpath = paste0("//div[@class='responsive-table']//table",
+                                "/tbody/tr/td[7]/a",
+                                "|",
+                                "//div[@class='responsive-table']//table",
+                                "/tbody/tr/td[9]/a")) %>%
+      html_attr("title") %>%
+      matrix(ncol = 2, byrow = TRUE) %>%
+      data.frame()
+    
+    club_match_infos <- club_infos %>%
+      cbind(club_leagues, correct_club_names) %>%
+      select(league = club_leagues, matchday = Matchday, date = Date, time = Time,
+             home_team = X1, away_team = X2,
+             coach = Coach, result = Result) %>%
+      filter(home_team == club_name |
+               away_team == club_name) %>%
+      # remove all characters up to the first white space to remove the weekday
+      # and convert the date to a real date to be able to make computations on it
+      mutate(date = mdy(sub(".*? ", "", date)),
+             # create a variable indicating how many days a team has break in between
+             # two matches
+             regeneration_days = as.integer(difftime(date, lag(date, 1), units = c("days"))),
+             team_name = club_name,
+             season_start_year = season,
+             time = format(strptime(time, "%I:%M %p"), "%H:%M")) %>%
+      filter(date <= Sys.Date()) %>%
+      select(season_start_year, team_name, everything())
+    
+    
+    # add the data of the current club to the data frame holding all the data
+    all_matches_frame <- bind_rows(
+      all_matches_frame,
+      club_match_infos
+    )
+    
+    Sys.sleep(2)
+
+  }
+    
+  return(all_matches_frame)
+  
+}
+
