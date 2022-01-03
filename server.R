@@ -11,4 +11,6 @@ server <- function(input, output, session){
   
   information_player_server(input, output, session)
   
+  prediction_investment_server(input, output, session)
+  
 }

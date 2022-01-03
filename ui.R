@@ -17,7 +17,10 @@ ui <- dashboardPage(
                         icon = icon("angle-double-right"))),
       menuItem("Comparison", tabName = "comparison", icon = icon("balance-scale")),
       menuItem("Analysis", tabName = "analysis", icon = icon("accusoft")),
-      menuItem("Prediction", tabName = "prediction", icon = icon("battle-net"))
+      menuItem("Prediction", tabName = "prediction", icon = icon("battle-net"),
+               startExpanded = TRUE,
+               menuSubItem("Model", tabName = "prediction-model"),
+               menuSubItem("Investment", tabName = "prediction-investment"))
     )
   ),
   dashboardBody(
@@ -38,7 +41,8 @@ ui <- dashboardPage(
       tab_information_league_general_ui(),
       tab_information_league_match_ui(),
       tab_information_team_ui(),
-      tab_information_player_ui()
+      tab_information_player_ui(),
+      tab_prediction_investment_ui()
     )
   )
 )
