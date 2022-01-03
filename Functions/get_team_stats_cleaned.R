@@ -29,7 +29,8 @@ get_team_stats_cleaned <- function(stats_data, total = TRUE, desired_order){
     
     # set the column and the row names accordingly
     colnames(stats_data_cleaned) <- c("away", "home", "total")
-    rownames(stats_data_cleaned) <- row_names
+    rownames(stats_data_cleaned) <- rep(row_names, nrow(stats_data_cleaned)/
+                                          length(row_names))
     
     # if total is not set to true
   } else {
