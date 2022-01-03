@@ -59,8 +59,7 @@ information_player_server <- function(input, output, session){
              league) %>%
       data.frame() %>%
       unique()
-    
-    print(player_infos)
+
     
     # extract the name of the player
     name <- unique(player_infos$player_name)
@@ -115,7 +114,7 @@ information_player_server <- function(input, output, session){
     player_info_frame %>%
       kableExtra::kable("html", row.names = FALSE, col.names = NULL
       ) %>%
-      #kable_minimal()
+      kable_minimal() %>%
       kable_styling(full_width = F)
     
     
@@ -144,15 +143,138 @@ information_player_server <- function(input, output, session){
   
   
   # create the table output for the stats
-  output$info_player_stats <- renderReactable({
+  output$info_player_stats_general <- renderReactable({
     req(input$information_player_player_selection)
-    print("TEST")
+    
+    last_name <- str_split(input$information_player_player_selection, " ")[[1]][-1]
+    # last_name <- "Baumann"
+    
     
     player_stats_2021_buli %>%
       # filter(name == input$information_player_player_selection) %>%
-      filter(lastname == "Neuer") %>%
-      select(team_name, games_appearences:penalty_saved) %>%
-      reactable()
+      filter(lastname %like% last_name) %>%
+      select(team_name, 
+             contains("games"),
+             contains("substitutes")) %>%
+      reactable(sortable = TRUE,
+                highlight = TRUE,
+                borderless = TRUE, 
+                # set the theme for the table
+                theme = reactableTheme(
+                  borderColor = "#000000",
+                  color = "#000000",
+                  backgroundColor = "#004157",
+                  highlightColor = "#2f829e",
+                  cellPadding = "8px 12px",
+                  style = list(color = "white"),
+                  searchInputStyle = list(width = "100%",
+                                          color = "black")
+                )
+                )#, 
+                # modify the layout and names of the columns
+      #           columns = list(
+      #             date = colDef(name = "Date",
+      #                           align = "left"),
+      #             player_name = colDef(name = "Player",
+      #                                  align = "center"),
+      #             type = colDef(name = "Type",
+      #                           align = "center"),
+      #             from_team_name = colDef(name = "From Team",
+      #                                     align = "center"),
+      #             to_team_name = colDef(name = "To Team",
+      #                                   align = "center")
+      #           )
+      # )
+  })
+  
+  
+  # create the table output for the stats
+  output$info_player_stats_matches <- renderReactable({
+    req(input$information_player_player_selection)
+    
+    last_name <- str_split(input$information_player_player_selection, " ")[[1]][-1]
+    # last_name <- "Baumann"
+    
+    
+    player_stats_2021_buli %>%
+      # filter(name == input$information_player_player_selection) %>%
+      filter(lastname %like% last_name) %>%
+      select(team_name, shots_total:penalty_saved) %>%
+      reactable(sortable = TRUE,
+                highlight = TRUE,
+                borderless = TRUE, 
+                # set the theme for the table
+                theme = reactableTheme(
+                  borderColor = "#000000",
+                  color = "#000000",
+                  backgroundColor = "#004157",
+                  highlightColor = "#2f829e",
+                  cellPadding = "8px 12px",
+                  style = list(color = "white"),
+                  searchInputStyle = list(width = "100%",
+                                          color = "black")
+                )
+      )#, 
+    # modify the layout and names of the columns
+    #           columns = list(
+    #             date = colDef(name = "Date",
+    #                           align = "left"),
+    #             player_name = colDef(name = "Player",
+    #                                  align = "center"),
+    #             type = colDef(name = "Type",
+    #                           align = "center"),
+    #             from_team_name = colDef(name = "From Team",
+    #                                     align = "center"),
+    #             to_team_name = colDef(name = "To Team",
+    #                                   align = "center")
+    #           )
+    # )
+  })
+  
+  
+  # create a table for all transfers the player had so far during his career
+  output$info_player_transfers <- renderReactable({
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    
+    last_name <- str_split(input$information_player_player_selection, " ")[[1]][-1]
+    
+    all_transfers %>%
+      filter(player_name %like% last_name,
+             from_team_name == input$information_player_team_selection |
+               to_team_name == input$information_player_team_selection) %>%
+      select(date, player_name, type, from_team_name,
+             to_team_name) %>%
+      distinct() %>%
+      arrange(desc(date)) %>%
+      reactable(sortable = TRUE,
+                highlight = TRUE,
+                borderless = TRUE, 
+                # set the theme for the table
+                theme = reactableTheme(
+                  borderColor = "#000000",
+                  color = "#000000",
+                  backgroundColor = "#004157",
+                  highlightColor = "#2f829e",
+                  cellPadding = "8px 12px",
+                  style = list(color = "white"),
+                  searchInputStyle = list(width = "100%",
+                                          color = "black")
+                ), 
+                # modify the layout and names of the columns
+                columns = list(
+                  date = colDef(name = "Date",
+                                align = "left"),
+                  player_name = colDef(name = "Player",
+                                       align = "center"),
+                  type = colDef(name = "Type",
+                                align = "center"),
+                  from_team_name = colDef(name = "From Team",
+                                          align = "center"),
+                  to_team_name = colDef(name = "To Team",
+                                        align = "center")
+                )
+      )
   })
   
 }

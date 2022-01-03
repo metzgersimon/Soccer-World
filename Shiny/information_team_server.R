@@ -675,7 +675,11 @@ information_team_server <- function(input, output, session){
       add_lines() %>%
       layout(title = "Market value over time",
              yaxis = list(title = "Current Market Value"),
-             xaxis = list(title = "Year"))
+             xaxis = list(title = "Year"),
+             font = list(color = "white"),
+             plot_bgcolor = "rgba(0, 65, 87, 10)",
+             paper_bgcolor = "rgba(0, 65, 87, 10)",
+             fig_bg_color = "rgba(0, 65, 87, 10)")
     
     market_values
   })

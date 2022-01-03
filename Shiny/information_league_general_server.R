@@ -296,7 +296,11 @@ information_league_general_server <- function(input, output, session){
       add_lines() %>%
       layout(title = "Market value over time",
              yaxis = list(title = "Current Market Value"),
-             xaxis = list(title = "Year"))
+             xaxis = list(title = "Year"),
+             font = list(color = "white"),
+             plot_bgcolor = "rgba(0, 65, 87, 10)",
+             paper_bgcolor = "rgba(0, 65, 87, 10)",
+             fig_bg_color = "rgba(0, 65, 87, 10)")
     
     market_values
   })
@@ -351,7 +355,11 @@ information_league_general_server <- function(input, output, session){
       add_bars() %>%
       layout(title = paste0("Number of league wins"),
              xaxis = list(title = "Season"),
-             yaxis = list(title = "# League wins"))
+             yaxis = list(title = "# League wins"),
+             font = list(color = "white"),
+             plot_bgcolor = "rgba(0, 65, 87, 10)",
+             paper_bgcolor = "rgba(0, 65, 87, 10)",
+             fig_bg_color = "rgba(0, 65, 87, 10)")
   })
   
   
@@ -376,7 +384,11 @@ information_league_general_server <- function(input, output, session){
       layout(title = paste0("Cumulative ranks in season ", 
                             input$information_league_season_selection),
              xaxis = list(title = "Matchday"),
-             yaxis = list(title = "Current league position", autorange = "reversed"))
+             yaxis = list(title = "Current league position", autorange = "reversed"),
+             font = list(color = "white"),
+             plot_bgcolor = "rgba(0, 65, 87, 10)",
+             paper_bgcolor = "rgba(0, 65, 87, 10)",
+             fig_bg_color = "rgba(0, 65, 87, 10)")
   })
   
   

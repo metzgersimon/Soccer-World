@@ -65,11 +65,22 @@ tab_information_player_ui <- function(){
             tabPanel(
               "Stats",
               fluidRow(
-                column(width = 5, 
-                       offset = 3,
+                column(width = 12, 
+                       # offset = 3,
                        align = "center",
                        div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
-                           reactableOutput("info_player_stats")
+                           reactableOutput("info_player_stats_general") %>%
+                             withSpinner(color = "blue")
+                       )
+                )
+              ),
+              fluidRow(
+                column(width = 12, 
+                       # offset = 3,
+                       align = "center",
+                       div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
+                           reactableOutput("info_player_stats_matches") %>%
+                             withSpinner(color = "blue")
                        )
                 )
               )
@@ -77,11 +88,11 @@ tab_information_player_ui <- function(){
             tabPanel(
               "Transfers",
               fluidRow(
-                column(width = 5, 
-                       offset = 3,
+                column(width = 10, 
+                       offset = 1,
                        align = "center",
                        div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
-                           tableOutput("info_player_transfers")
+                           reactableOutput("info_player_transfers")
                        )
                 )
               )
