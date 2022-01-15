@@ -2,7 +2,7 @@
 # inputs: league_name, season
 # outputs: returns all stats available for the games played in a given season
 # for a given league
-get_fixture_stats_kicker <- function(league, season, port = 4321L){
+get_fixture_stats_kicker <- function(league, season, port = 4321L, matchday = NULL){
   # we want to extract the last two digits of the season because the date in the
   # kicker url is given as "season-season+1" where the second one only has two digits
   # e.g., "2013-14"
@@ -25,26 +25,41 @@ get_fixture_stats_kicker <- function(league, season, port = 4321L){
   
   # set time outs to give the page the change to first fully load before
   # we try to get information form it
-  remDr$setTimeout(type = "implicit", milliseconds = 5000)
-  remDr$setTimeout(type = "page load", milliseconds = 5000)
+  remDr$setTimeout(type = "implicit", milliseconds = 10000)
+  remDr$setTimeout(type = "page load", milliseconds = 10000)
   
   # navigate to the created url
   remDr$navigate(url)
 
-  # extract the number of matchdays dynamically
-  number_matchdays <- read_html(remDr$getPageSource()[[1]]) %>%
-    html_nodes(xpath = paste0("//select[@class='kick__head-dropdown__select']",
-                              "//option[@value][contains(text(), 'Spieltag')]")) %>%
-    # get the attributes
-    html_attrs() %>%
-    # we need to subtract 1 because the last element is "ALL" which we do not want
-    length() - 1
+  # if we want to scrape the whole season
+  if(is.null(matchday)){
+    # extract the number of matchdays dynamically
+    number_matchdays <- read_html(remDr$getPageSource()[[1]]) %>%
+      html_nodes(xpath = paste0("//select[@class='kick__head-dropdown__select']",
+                                "//option[@value][contains(text(), 'Spieltag')]")) %>%
+      # get the attributes
+      html_attrs() %>%
+      # we need to subtract 1 because the last element is "ALL" which we do not want
+      length() - 1
+    
+    # set the starting matchday to 1
+    starting_matchday <- 1
+    # set the ending matchday to the number of matchdays available
+    ending_matchday <- number_matchdays
+    
+    # if we only want to scrape a specific matchday
+  } else {
+    # set the starting and the ending matchday to the selected matchday
+    starting_matchday <- matchday
+    ending_matchday <- matchday
+  }
+  
   
   # variable to store the match stats over the whole season
   all_season_stats <- NULL
   
-  # iterate over all matchdays
-  for(matchday in 1:number_matchdays){
+  # iterate over all matchdays in between the selected range
+  for(matchday in starting_matchday:ending_matchday){
     print(paste0("Matchday: ", matchday))
     
     final_url <- paste0(url, matchday)
@@ -93,6 +108,10 @@ get_fixture_stats_kicker <- function(league, season, port = 4321L){
       fixture_date <- fixture_date_time[[1]][1] %>%
         # convert the date in a proper format
         dmy()
+      
+      if(fixture_date >= Sys.Date()){
+        break
+      }
       
       fixture_time <- fixture_date_time[[1]][-1] %>%
         trimws()
@@ -174,9 +193,11 @@ get_fixture_stats_kicker <- function(league, season, port = 4321L){
       Sys.sleep(2)
     }
     
-    # add the matchday as a variable
-    matchday_stats <- matchday_stats %>%
-      mutate("matchday" = matchday)
+    if(fixture_date < Sys.Date()){
+      # add the matchday as a variable
+      matchday_stats <- matchday_stats %>%
+        mutate("matchday" = matchday)
+    }
     
     # append the current matchday stats to the variable which stores all stats
     # of the season
@@ -184,17 +205,28 @@ get_fixture_stats_kicker <- function(league, season, port = 4321L){
                                   matchday_stats) 
   }
   
+  print(paste0("Liga:", league))
+  
   all_season_stats <- all_season_stats %>%
     # add a column for the season and the league
     mutate(season_start_year = season,
            season_end_year = (season + 1),
-           league = league) %>%
+           league = str_to_title(league),
+           distance_ran_km = str_replace(str_remove(distance_ran, " km"), pattern = ",",
+                                         replacement = "."),
+           passing_accuracy = str_remove(passing_accuracy, "%"),
+           possession = str_remove(possession, "%"),
+           duel_quota = str_remove(duel_quota, "%")) %>%
     # reorder variables
+    select(-distance_ran) %>%
     select(league, season_start_year,
            season_end_year,
            matchday,
            date, time,
-           team_name, is_home_team, everything())
+           team_name, is_home_team, everything()) %>%
+    # make all suited variables to numeric
+    mutate(across(c(goals:distance_ran_km), as.numeric))
+    
   
   # reset rownames
   rownames(all_season_stats) <- 1:nrow(all_season_stats)
