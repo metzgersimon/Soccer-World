@@ -13,7 +13,7 @@ club_name_mapping <- function(club_name){
     } else {
       return("FC Bayern Munich")
     }
-  } else if(str_detect(club_name, "bor.*mund.*")){
+  } else if(str_detect(club_name, ".*dortmund.*")){
     if(endsWith(club_name, "ii")){
       return("Borussia Dortmund II")
     } else {
@@ -25,7 +25,7 @@ club_name_mapping <- function(club_name){
     return("Bayer 04 Leverkusen")
   } else if(str_detect(club_name, ".*wolfs*")){
     return("VfL Wolfsburg")
-  } else if(str_detect(club_name, "bor.*gladbach")){
+  } else if(str_detect(club_name, "b.*gladbach")){
     return("Borussia Monchengladbach")
   } else if(str_detect(club_name, ".*hof.enheim")){
     return("TSG 1899 Hoffenheim")
@@ -41,7 +41,7 @@ club_name_mapping <- function(club_name){
     return("1. FSV Mainz 05")
   } else if(str_detect(club_name, ".*augsburg.*")){
     return("FC Augsburg")
-  } else if(str_detect(club_name, ".*fc.*k.*ln")){
+  } else if(str_detect(club_name, ".*fc.*k.*ln|cologne")){
     return("1. FC Koln")
   } else if(str_detect(club_name, ".*union.*berlin.*")){
     return("1. FC Union Berlin")
@@ -54,7 +54,7 @@ club_name_mapping <- function(club_name){
   } 
   
   # currently 2. bundesliga or lower
-  else if(str_detect(club_name, ".*schalke.*04")){
+  else if(str_detect(club_name, ".*schalke.*[04]?")){
     return("FC Schalke 04")
   } else if(str_detect(club_name, ".*werder.bremen.*")){
     if(endsWith(club_name, "ii")){
@@ -66,7 +66,7 @@ club_name_mapping <- function(club_name){
     return("FC St. Pauli")
   } else if(str_detect(club_name, ".*karlsruher.*")){
     return("Karlsruher SC")
-  } else if(str_detect(club_name, "f.*d.sseldorf")){
+  } else if(str_detect(club_name, ".*d.sseldorf")){
     return("Fortuna D\u00fcsseldorf")
   } else if(str_detect(club_name, ".*k.*lautern")){
     return("1. FC Kaiserslautern")
@@ -100,6 +100,8 @@ club_name_mapping <- function(club_name){
     return("SV Darmstadt 98")
   } else if(str_detect(club_name, ".*paderborn.*")){
     return("SC Paderborn 07")
+  } else if(str_detect(club_name, ".*heidenheim.*")){
+    return("1. FC Heidenheim")
   }
     
 

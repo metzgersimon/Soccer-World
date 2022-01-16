@@ -94,6 +94,153 @@ api_football_fixtures_general_complete_check <- function(data_frame_to_observe,
                                        "from_team_logo", "to_team_id", 
                                        "to_team_name", "to_team_logo")
     
+  } else if(content_type == "team_stats_league_info"){
+    data_frame_template <- data.frame(matrix(ncol = 6,
+                                             nrow = 0))
+    
+    colnames(data_frame_template) <- c("league_id", "league_name", "league_country",
+                                       "league_logo", "league_flag", "league_season")
+    
+  } else if(content_type == "team_stats_team_info"){
+    data_frame_template <- data.frame(matrix(ncol = 3,
+                                             nrow = 0))
+    
+    colnames(data_frame_template) <- c("team_id", "team_name", "team_logo")
+    
+  } else if(content_type == "team_stats_fixture_info"){
+    data_frame_template <- data.frame(matrix(ncol = 12,
+                                             nrow = 0))
+    
+    colnames(data_frame_template) <- c("fixtures_played_home", "fixtures_played_away",  
+                                       "fixtures_played_total", "fixtures_wins_home",   
+                                       "fixtures_wins_away", "fixtures_wins_total",
+                                       "fixtures_draws_home", "fixtures_draws_away",  
+                                       "fixtures_draws_total", "fixtures_loses_home",
+                                       "fixtures_loses_away", "fixtures_loses_total" )
+    
+  } else if(content_type == "team_stats_goal_info"){
+    data_frame_template <- data.frame(matrix(ncol = 44,
+                                             nrow = 0))
+    
+    colnames(data_frame_template) <- c("goals_for_total_home",
+                                       "goals_for_total_away",                  
+                                       "goals_for_total_total",
+                                       "goals_for_average_home",                
+                                       "goals_for_average_away",
+                                       "goals_for_average_total",               
+                                       "goals_for_minute_0-15_total",
+                                       "goals_for_minute_0-15_percentage",      
+                                       "goals_for_minute_16-30_total", 
+                                       "goals_for_minute_16-30_percentage",    
+                                       "goals_for_minute_31-45_total",
+                                       "goals_for_minute_31-45_percentage",     
+                                       "goals_for_minute_46-60_total",
+                                       "goals_for_minute_46-60_percentage",     
+                                       "goals_for_minute_61-75_total",
+                                       "goals_for_minute_61-75_percentage",     
+                                       "goals_for_minute_76-90_total",
+                                       "goals_for_minute_76-90_percentage",     
+                                       "goals_for_minute_91-105_total",
+                                       "goals_for_minute_91-105_percentage",
+                                       "goals_for_minute_106-120_total",
+                                       "goals_for_minute_106-120_percentage",
+                                       "goals_against_total_home",
+                                       "goals_against_total_away",              
+                                       "goals_against_total_total",
+                                       "goals_against_average_home",            
+                                       "goals_against_average_away",
+                                       "goals_against_average_total",           
+                                       "goals_against_minute_0-15_total",
+                                       "goals_against_minute_0-15_percentage",  
+                                       "goals_against_minute_16-30_total",
+                                       "goals_against_minute_16-30_percentage", 
+                                       "goals_against_minute_31-45_total",
+                                       "goals_against_minute_31-45_percentage", 
+                                       "goals_against_minute_46-60_total",
+                                       "goals_against_minute_46-60_percentage", 
+                                       "goals_against_minute_61-75_total",
+                                       "goals_against_minute_61-75_percentage", 
+                                       "goals_against_minute_76-90_total",
+                                       "goals_against_minute_76-90_percentage", 
+                                       "goals_against_minute_91-105_total",
+                                       "goals_against_minute_91-105_percentage",
+                                       "goals_against_minute_106-120_total",
+                                       "goals_against_minute_106-120_percentage")
+    
+  } else if(content_type == "team_stats_penalty_info"){
+    data_frame_template <- data.frame(matrix(ncol = 5,
+                                             nrow = 0))
+    
+    colnames(data_frame_template) <- c("penalty_scored_total", 
+                                       "penalty_scored_percentage",
+                                       "penalty_missed_total",     
+                                       "penalty_missed_percentage",
+                                       "penalty_total")
+    
+  } else if(content_type == "team_stats_biggest_info"){
+    data_frame_template <- data.frame(matrix(ncol = 11,
+                                             nrow = 0))
+    
+    colnames(data_frame_template) <- c("biggest_streak_wins", "biggest_streak_draws",
+                                       "biggest_streak_loses", "biggest_wins_home",
+                                       "biggest_wins_away", "biggest_loses_home",        
+                                       "biggest_loses_away", "biggest_goals_for_home",
+                                       "biggest_goals_for_away",    
+                                       "biggest_goals_against_home",
+                                       "biggest_goals_against_away")
+    
+  } else if(content_type == "team_stats_clean_sheet_info"){
+    data_frame_template <- data.frame(matrix(ncol = 3,
+                                             nrow = 0))
+    
+    colnames(data_frame_template) <- c("clean_sheet_home", "clean_sheet_away",
+                                       "clean_sheet_total")
+    
+  } else if(content_type == "team_stats_failed_to_score_info"){
+    data_frame_template <- data.frame(matrix(ncol = 3,
+                                             nrow = 0))
+    
+    colnames(data_frame_template) <- c("failed_to_score_home", 
+                                       "failed_to_score_away",
+                                       "failed_to_score_total")
+    
+  } else if(content_type == "team_stats_cards_info"){
+    data_frame_template <- data.frame(matrix(ncol = 32,
+                                             nrow = 0))
+    
+    colnames(data_frame_template) <- c("cards_yellow_0-15_total",
+                                       "cards_yellow_0-15_percentage",
+                                       "cards_yellow_16-30_total",
+                                       "cards_yellow_16-30_percentage",
+                                       "cards_yellow_31-45_total",      
+                                       "cards_yellow_31-45_percentage",
+                                       "cards_yellow_46-60_total",
+                                       "cards_yellow_46-60_percentage", 
+                                       "cards_yellow_61-75_total",
+                                       "cards_yellow_61-75_percentage",
+                                       "cards_yellow_76-90_total",      
+                                       "cards_yellow_76-90_percentage",
+                                       "cards_yellow_91-105_total",
+                                       "cards_yellow_91-105_percentage",
+                                       "cards_yellow_106-120_total",
+                                       "cards_yellow_106-120_percentage",
+                                       "cards_red_0-15_total",
+                                       "cards_red_0-15_percentage",
+                                       "cards_red_16-30_total",
+                                       "cards_red_16-30_percentage",
+                                       "cards_red_31-45_total",
+                                       "cards_red_31-45_percentage",
+                                       "cards_red_46-60_total",
+                                       "cards_red_46-60_percentage",
+                                       "cards_red_61-75_total",
+                                       "cards_red_61-75_percentage",
+                                       "cards_red_76-90_total",
+                                       "cards_red_76-90_percentage",
+                                       "cards_red_91-105_total",
+                                       "cards_red_91-105_percentage",
+                                       "cards_red_106-120_total",
+                                       "cards_red_106-120_percentage")
+    
   }
   
   # get the colnames of the data frame we want to check and 
