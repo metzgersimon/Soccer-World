@@ -463,10 +463,12 @@ get_rest_days_kicker <- function(league_name, season, port = 4321L, matchday = N
   
   # map the club names with the mapping function
   all_matches_data_complete$home_team <- sapply(all_matches_data_complete$home_team,
-                                                club_name_mapping)
+                                                club_name_mapping) %>%
+    unname()
   
   all_matches_data_complete$away_team <- sapply(all_matches_data_complete$away_team,
-                                                club_name_mapping)
+                                                club_name_mapping) %>%
+    unname()
 
   return(all_matches_data_complete)
 }

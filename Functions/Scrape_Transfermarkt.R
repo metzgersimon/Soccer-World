@@ -1024,6 +1024,199 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season,
 }
 
 
+get_fixture_detailed_info <- function(league, league_id, season, port = 1234L){
+  # paste together the url we want to scrape
+  url <- paste0("https://www.transfermarkt.com/", league, "/spieltagtabelle",
+                "/wettbewerb/", league_id, "?saison_id=",
+                season)
+  
+  # create an empty list to store our information
+  match_infos_all_season <- NULL
+  
+  # create a driver from Rselenium
+  rD <- rsDriver(browser = "firefox", port = port)
+  
+  # get the client
+  remDr <- rD$client
+  
+  # set time outs to give the page the change to first fully load before
+  # we try to get information form it
+  remDr$setTimeout(type = "implicit", milliseconds = 10000)
+  remDr$setTimeout(type = "page load", milliseconds = 10000)
+  
+  # navigate to the created url
+  remDr$navigate(url)
+  
+  # switch to the pop-up cookies frame
+  remDr$switchToFrame(remDr$findElement(using = "xpath",
+                                        "//iframe[@title='SP Consent Message']"))
+  
+  # access the "ACCEPT ALL" button
+  cookie_elem <- remDr$findElement(using = "xpath", 
+                                   "//button[@title='ACCEPT ALL']")
+  
+  # click it
+  cookie_elem$clickElement()
+  
+  # after that we have to switch back to the default frame
+  remDr$switchToFrame(NA)
+  
+  # extract the html for the given url
+  page_html <- read_html(remDr$getPageSource()[[1]])
+  
+  # extract the number of matchdays by getting the length
+  # of the elements
+  number_matchdays <- page_html %>%
+    html_nodes(xpath = "//select[@name='spieltag']/option[@value]") %>%
+    html_attrs() %>%
+    length()
+  
+  # iterate through all matchdays
+  for(i in 1:number_matchdays){
+    # print for debugging
+    print(paste0("Matchday ", i))
+    
+    # create an empty variable
+    current_matchday_stats <- NULL
+    
+    # paste together the final url
+    final_url <- paste0(url, "&spieltag=", i)
+    
+    # navigate to the final url
+    remDr$navigate(final_url)
+    
+    # extract the html for the given url
+    page_html <- read_html(remDr$getPageSource()[[1]])
+    
+    # get the urls for all matches taking place at the
+    # given matchday
+    matchday_refs <- page_html %>%
+      html_nodes(xpath = "//a[@title='Match report']") %>%
+      html_attr("href")
+    
+    Sys.sleep(3)
+    
+    # iterate through all matches
+    for(j in 1:length(matchday_refs)){
+      # print for debugging
+      print(paste0("Match_number ", j))
+      
+      # paste the url we want to scrape data from
+      match_url <- paste0("https://www.transfermarkt.com",
+                          matchday_refs[j])
+      
+      # navigate to the url of the specific match
+      remDr$navigate(match_url)
+      
+      # store the webpage
+      page_html <- read_html(remDr$getPageSource()[[1]])
+      
+      Sys.sleep(2)
+      
+      # store the team names
+      team_names <- page_html %>%
+        html_nodes(xpath = paste0("//div[@class='sb-team sb-heim']/a[1]",
+                                  "|", "//div[@class='sb-team sb-gast']/a[1]")) %>%
+        html_attr("title") %>%
+        # map the names with my own mapping function club_name_mapping
+        sapply(., club_name_mapping) %>%
+        unname()
+      
+      # store the date information
+      date_information <- page_html %>%
+        # extract nodes
+        html_nodes(xpath = paste0("//div[@class='sb-spieldaten']",
+                                  "/p[@class='sb-datum hide-for-small']/a[2]",
+                                  "|", 
+                                  "//div[@class='sb-spieldaten']",
+                                  "/p[@class='sb-datum hide-for-small']/text()[3]")) %>%
+        html_text(trim = TRUE) %>%
+        # split the string by the "|"
+        str_split(" \\|") %>%
+        # remove all "|"
+        str_remove_all(., pattern = "\\|") %>%
+        # paste the string together
+        paste(., collapse = "") %>%
+        str_remove(pattern = ".*, ") %>%
+        str_split("\\s")
+      
+      # extract the date and convert it into a proper format
+      date <- date_information[[1]][1] %>%
+        mdy()
+      
+      # get the time the match takes place
+      time_12h <- paste(date_information[[1]][3], date_information[[1]][4], collapse = "")
+      # convert it into a 24h format
+      time <- format(strptime(time_12h, "%I:%M %p"), "%H:%M")
+      
+      # matchday information
+      matchday <- page_html %>%
+        # extract nodes
+        html_nodes(xpath = paste0("//div[@class='sb-spieldaten']",
+                                  "/p[@class='sb-datum hide-for-small']/a[1]")) %>%
+        html_text(trim = TRUE) %>%
+        # get the the actual number and convert it into numeric
+        str_extract(., pattern = "[0-9]+") %>%
+        as.numeric()
+      
+      # venue information
+      venue <- page_html %>%
+        # extract nodes
+        html_nodes(xpath = paste0("//div[@class='sb-spieldaten']",
+                                  "/p[@class='sb-zusatzinfos']/span[@class='hide-for-small']/a")) %>%
+        html_text(trim = TRUE)
+      
+      # referee information
+      referee <- page_html %>%
+        # extract nodes
+        html_nodes(xpath = paste0("//div[@class='sb-spieldaten']",
+                                  "/p[@class='sb-zusatzinfos']/a")) %>%
+        html_text(trim = TRUE)
+      
+      # attendance information
+      attendance <- page_html %>%
+        # extract nodes
+        html_nodes(xpath = paste0("//div[@class='sb-spieldaten']",
+                                  "/p[@class='sb-zusatzinfos']/",
+                                  "span[@class='hide-for-small']/strong")) %>%
+        html_text(trim = TRUE) %>%
+        # remove the word attendance 
+        str_remove_all(., pattern = "Attendance: ")
+      
+      # store the data in a temporary data frame
+      current_data <- data.frame("league" = str_to_title(league),
+                                 "season" = season,
+                                 "matchday" = matchday,
+                                 "match_date" = date,
+                                 "match_time" = time,
+                                 "home_team" = team_names[1],
+                                 "away_team" = team_names[2],
+                                 "venue" = venue,
+                                 "referee" = referee,
+                                 "attendance" = attendance)
+
+      # add the temporary data frame to the data frame that store the data
+      # of the whole season
+      match_infos_all_season <- bind_rows(match_infos_all_season,
+                                          current_data)
+      
+      Sys.sleep(2)
+      
+    }
+  }
+  
+  # transform the season and attendance variable into a numeric variable
+  # for the attendance variable we first need to remove the dot
+  match_infos_all_season <- match_infos_all_season %>%
+    mutate(season = as.numeric(season),
+           attendance = as.numeric(str_remove(attendance, pattern = "\\.")))
+      
+      
+  return(match_infos_all_season)
+      
+}
+
+
 
 ############## get_fixture_stats_tm #################
 # inputs: league, league_id, season
@@ -1232,10 +1425,10 @@ get_fixture_stats_tm <- function(league, league_id, season, port = 4321L){
 # inputs: league_name, season
 # outputs: returns all stats available for the games played in a given season
 # for a given league
-get_regeneration_days <- function(league, league_id, season, port = 4321L){
+get_regeneration_days <- function(league_name, league_id, season, port = 4321L){
 
   # paste together the url we want to scrape
-  url <- paste0("https://www.transfermarkt.com/", league, "/startseite/",
+  url <- paste0("https://www.transfermarkt.com/", league_name, "/startseite/",
                 "wettbewerb/", league_id, "/plus/?saison_id=", season)
   
   # create a driver from Rselenium
@@ -1246,8 +1439,8 @@ get_regeneration_days <- function(league, league_id, season, port = 4321L){
   
   # set time outs to give the page the change to first fully load before
   # we try to get information form it
-  remDr$setTimeout(type = "implicit", milliseconds = 7000)
-  remDr$setTimeout(type = "page load", milliseconds = 7000)
+  remDr$setTimeout(type = "implicit", milliseconds = 10000)
+  remDr$setTimeout(type = "page load", milliseconds = 10000)
   
   # navigate to the created url
   remDr$navigate(url)
@@ -1337,7 +1530,8 @@ get_regeneration_days <- function(league, league_id, season, port = 4321L){
              home_team = X1, away_team = X2,
              coach = Coach, result = Result) %>%
       filter(home_team == club_name |
-               away_team == club_name) %>%
+               away_team == club_name,
+             league == str_to_title(league_name)) %>%
       # remove all characters up to the first white space to remove the weekday
       # and convert the date to a real date to be able to make computations on it
       mutate(date = mdy(sub(".*? ", "", date)),
@@ -1346,7 +1540,8 @@ get_regeneration_days <- function(league, league_id, season, port = 4321L){
              regeneration_days = as.integer(difftime(date, lag(date, 1), units = c("days"))),
              team_name = club_name,
              season_start_year = season,
-             time = format(strptime(time, "%I:%M %p"), "%H:%M")) %>%
+             time = format(strptime(time, "%I:%M %p"), "%H:%M"),
+             matchday = as.numeric(matchday)) %>%
       filter(date <= Sys.Date()) %>%
       select(season_start_year, team_name, everything())
     
@@ -1360,6 +1555,32 @@ get_regeneration_days <- function(league, league_id, season, port = 4321L){
     Sys.sleep(2)
 
   }
+  
+  
+  incorrect_data <- all_matches_frame %>%
+    group_by(team_name) %>%
+    mutate(number_matchdays = max(matchday)) %>%
+    ungroup() %>%
+    filter(number_matchdays != max(number_matchdays))
+
+  incorrect_teams <- unique(incorrect_data$team_name)
+  
+  for(i in 1:length(incorrect_teams)){
+    last_available_matchday <- incorrect_data %>%
+      filter(team_name == incorrect_teams[i]) %>%
+      select(matchday) %>%
+      max()
+    
+    missing_data <- all_matches_frame %>%
+      filter(home_team == incorrect_teams[i] |
+               away_team == incorrect_teams[i],
+             matchday > last_available_matchday)
+  }
+  
+  
+  
+  
+  
     
   return(all_matches_frame)
   
