@@ -1864,7 +1864,7 @@ check_for_value_column <- function(frame_to_observe){
 }
 
 
-map_city_names <- function(city_name){
+city_name_mapping <- function(city_name){
   if(is.na(city_name)){
     return(city_name)
   }
