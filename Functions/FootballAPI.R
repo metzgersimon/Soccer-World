@@ -294,96 +294,181 @@ get_team_information_in_league <- function(league_id, season){
 # outputs: should return a list where each element represents a statistic about
 # a given team in a given league and season
 # example: form of the team, average goals, etc.
-get_team_stats_in_league_by_season <- function(league_id, team_id, season){
+get_team_stats_in_league_by_season <- function(league_id, team_id, season, match_dates){
+  
+  # take only those match_dates that are in the past because otherwise there is no
+  # data available
+  match_dates <- match_dates[match_dates < Sys.Date()]
   
   # set the endpoint of the API
   endpoint <- "https://v3.football.api-sports.io/teams/statistics"
   
-  # create a get request to that API with the API key
-  # and the selected parameters (league via league_id and season)
-  response <- GET(endpoint, 
-                  add_headers('x-apisports-key' = football_api_key),
-                  query = list(league = league_id,
-                               team = team_id,
-                               season = season))
+  # create an empty variable to store the team stats over the whole season
+  all_season_team_stats <- NULL
   
-  # check if the request was successful and only then go on with the 
-  # transformation of the data
-  if(status_code(response) >= 200 & status_code(response) < 300){
-    # extract the content from the response
-    content <- content(response)$response
+  # iterate over all (remaining) match dates to get the statistics
+  for(i in 1:length(match_dates)){
+    # create a get request to that API with the API key
+    # and the selected parameters (league via league_id and season)
+    # and the current date
+    response <- GET(endpoint, 
+                    add_headers('x-apisports-key' = football_api_key),
+                    query = list(league = league_id,
+                                 team = team_id,
+                                 season = season,
+                                 date = match_dates[i]))
     
-    # extract the league information by using the helper function
-    # get_content_for_list_element
-    league_info <- get_content_for_list_element(content, "league")
-    
-    # extract the team information by using the helper function
-    # get_content_for_list_element
-    team_info <- get_content_for_list_element(content, "team")
-    
-    # extract the form of the team
-    form_info <- content$form
-    
-    # extract the fixture information by using the helper function
-    # get_content_for_list_element
-    fixtures_info <- get_content_for_list_element(content, "fixtures")
+    # check if the request was successful and only then go on with the 
+    # transformation of the data
+    if(status_code(response) >= 200 & status_code(response) < 300){
+      # extract the content from the response
+      content <- content(response)$response
       
-    # extract the goal information by using the helper function
-    # get_content_for_list_element
-    goal_info <- get_content_for_list_element(content, "goals")
-    
-    # extract the biggest information by using the helper function
-    # get_content_for_list_element
-    biggest_info <- get_content_for_list_element(content, "biggest")
-    
-    # extract the clean_sheet information by using the helper function
-    # get_content_for_list_element
-    clean_sheet_info <- get_content_for_list_element(content, "clean_sheet")
+      # extract the league information by using the helper function
+      # get_content_for_list_element
+      league_info <- get_content_for_list_element(content, "league") %>%
+        api_football_fixtures_general_complete_check(., "team_stats_league_info") %>%
+        fill_empty_with_na(.) %>%
+        mutate(league_id = as.numeric(league_id),
+               league_season = as.numeric(league_season),
+               league_name = as.character(league_name),
+               league_country = as.character(league_country),
+               league_logo = as.character(league_logo),
+               league_flag = as.character(league_flag))
+        
       
-    # extract the failed_to_score information by using the helper function
-    # get_content_for_list_element
-    failed_to_score_info <- get_content_for_list_element(content,
-                                                         "failed_to_score")
+      # extract the team information by using the helper function
+      # get_content_for_list_element
+      team_info <- get_content_for_list_element(content, "team") %>%
+        api_football_fixtures_general_complete_check(., "team_stats_team_info") %>%
+        fill_empty_with_na(.) %>%
+        mutate(team_id = as.numeric(team_id),
+               team_name = as.character(team_name),
+               team_logo = as.character(team_logo))
       
-    # extract the penalty information by using the helper function
-    # get_content_for_list_element
-    penalty_info <- get_content_for_list_element(content, "penalty")
+      # extract the form of the team
+      form_info <- content$form %>%
+        data.frame("current_form" = .)
+      
+      # extract the fixture information by using the helper function
+      # get_content_for_list_element
+      fixtures_info <- get_content_for_list_element(content, "fixtures") %>%
+        api_football_fixtures_general_complete_check(., "team_stats_fixture_info") %>%
+        fill_empty_with_na(.)
+      
+      # extract the goal information by using the helper function
+      # get_content_for_list_element
+      goal_info <- get_content_for_list_element(content, "goals") %>%
+        api_football_fixtures_general_complete_check(., "team_stats_goal_info") %>%
+        fill_empty_with_na(.) %>%
+        # for those who are in % we remove the percentage-sign to be able
+        # to convert the values into numeric
+        mutate(across(contains("percentage"), ~ str_remove(.x, "%"))) %>%
+        mutate(across(.cols = everything(), as.numeric))
+        
+      
+      # extract the penalty information by using the helper function
+      # get_content_for_list_element
+      penalty_info <- get_content_for_list_element(content, "penalty") %>%
+        api_football_fixtures_general_complete_check(., "team_stats_penalty_info") %>%
+        fill_empty_with_na(.) %>%
+        # for those who are in % we remove the percentage-sign to be able
+        # to convert the values into numeric
+        mutate(across(contains("percentage"), ~ str_remove(.x, "%"))) %>%
+        mutate(across(.cols = everything(), as.numeric))
+      
+      # extract the biggest information by using the helper function
+      # get_content_for_list_element
+      biggest_info <- get_content_for_list_element(content, "biggest") %>%
+        api_football_fixtures_general_complete_check(., "team_stats_biggest_info") %>%
+        fill_empty_with_na(.) %>%
+        # for those who are actual numeric values we want to convert into
+        # numeric
+        mutate(across(c(contains("streak"), contains("goals")), as.numeric),
+               across(c(biggest_wins_home:biggest_loses_away), as.character))
+        
+      
+      # extract the clean_sheet information by using the helper function
+      # get_content_for_list_element
+      clean_sheet_info <- get_content_for_list_element(content, "clean_sheet") %>%
+        api_football_fixtures_general_complete_check(., "team_stats_clean_sheet_info") %>%
+        fill_empty_with_na(.)
+      
+      # extract the failed_to_score information by using the helper function
+      # get_content_for_list_element
+      failed_to_score_info <- get_content_for_list_element(content,
+                                                           "failed_to_score") %>%
+        api_football_fixtures_general_complete_check(., "team_stats_failed_to_score_info") %>%
+        fill_empty_with_na(.)
+      
+      
+      # extract the lineups information by using the helper function
+      # get_content_for_list_element
+      # lineups_info <- get_content_for_list_element(content, "lineups",
+      #                                              piv_wider = FALSE)
+      # 
+      # # check how many formations are available
+      # number_formations <- nrow(lineups_info) / 2
+      # 
+      # # spread the rows to columns
+      # j <- 1
+      # while(j <= (number_formations * 2)){
+      #   lineups_info$name[j:(j+1)] <- 
+      #     paste0(lineups_info$name[j:(j+1)], "_", ifelse(j == 1, 
+      #                                                    1,
+      #                                                    (j - 1)))
+      #   
+      #   j <- j + 2
+      # }
+      # 
+      # lineups_info <- lineups_info %>%
+      #   spread(key = name, value = value)
+        
     
-    # extract the lineups information by using the helper function
-    # get_content_for_list_element
-    lineups_info <- get_content_for_list_element(content, "lineups",
-                                                  piv_wider = FALSE)
+      # extract the cards information by using the helper function
+      # get_content_for_list_element
+      cards_info <- get_content_for_list_element(content, "cards") %>%
+        api_football_fixtures_general_complete_check(., "team_stats_cards_info") %>%
+        fill_empty_with_na(.) %>%
+        # for those who are in % we remove the percentage-sign to be able
+        # to convert the values into numeric
+        mutate(across(contains("percentage"), ~ str_remove(.x, "%"))) %>%
+        mutate(across(.cols = everything(), as.numeric))
+        
+      
+      matchday_frame <- data.frame("matchday" = i)
+      
+      team_stats_complete <- bind_cols(league_info, matchday_frame, team_info, 
+                                      fixtures_info, form_info, goal_info,
+                                      penalty_info, biggest_info, clean_sheet_info, 
+                                      failed_to_score_info, cards_info)#, 
+                                      #lineups_info)
+      
+      # if(sum(str_detect(colnames(team_stats_complete), "value")) > 0){
+      #   print(i)
+      #   team_stats_complete <- team_stats_complete %>%
+      #     select(-value)
+      # }
+      
+      all_season_team_stats <- bind_rows(all_season_team_stats,
+                                         team_stats_complete)
+      
+      Sys.sleep(2)
+      
+      # if the request was not successful print an error 
+    } else {
+      print(paste0("Error: The request was not successful. \nStatus code: ",
+                   status_code(response)))
+    }
     
-    # extract the cards information by using the helper function
-    # get_content_for_list_element
-    cards_info <- get_content_for_list_element(content, "cards")
-  
+    ################## FRAME IS EMPTY ######################
     
-    # create a list containing all information
-    team_info_complete <- list(
-      "season" = season,
-      "league" = league_info,
-      "team" = team_info,
-      "form" = form_info,
-      "fixtures" = fixtures_info,
-      "goals" = goal_info,
-      "biggest" = biggest_info,
-      "clean_sheet" = clean_sheet_info,
-      "failed_to_score" = failed_to_score_info,
-      "penalty" = penalty_info,
-      "lineups" = lineups_info,
-      "cards" = cards_info
-    )
-    
-    # if the request was not successful print an error 
-  } else {
-    print(paste0("Error: The request was not successful. \nStatus code: ",
-                 status_code(response)))
   }
   
+
   # return the list containing statistics about the given team
   # in the league for the given season
-  return(team_info_complete)
+  return(all_season_team_stats)
   
 }
 
@@ -460,16 +545,27 @@ get_team_squads_current_season <- function(league_id){
 # outputs: should return a data frame which contains all available
 # fixtures in a league for a given season
 # example: 
-get_fixtures_in_league_by_season <- function(league_id, season){
+get_fixtures_in_league_by_season <- function(league_id, season, matchday = NULL){
   # set the endpoint of the API
   endpoint <- "https://v3.football.api-sports.io/fixtures"
   
   # create a get request to that API with the API key
   # and the selected parameter (league given by its id and the season)
-  response <- GET(endpoint, 
-                  add_headers('x-apisports-key' = football_api_key),
-                  query = list(league = league_id,
-                               season = season))
+  if(is.null(matchday)){
+    response <- GET(endpoint, 
+                    add_headers('x-apisports-key' = football_api_key),
+                    query = list(league = league_id,
+                                 season = season))
+  } else {
+    matchday <- paste0("Regular Season - ", matchday)
+    response <- GET(endpoint, 
+                    add_headers('x-apisports-key' = football_api_key),
+                    query = list(league = league_id,
+                                 season = season,
+                                 round = matchday))
+    
+  }
+  
   
   # check if the request was successful and only then go on with the 
   # transformation of the data
@@ -478,43 +574,8 @@ get_fixtures_in_league_by_season <- function(league_id, season){
     # extract the content from the response
     content <- content(response)$response
     
-    # pre-allocate the data frame to store all the fixtures
+    # create empty variable to store the information
     all_fixture_information <- NULL
-    # all_fixture_information <- data.frame(fixture_id = integer(length(content)),
-    #                                       referee = character(length(content)),
-    #                                       timezone = character(length(content)),
-    #                                       fixture_date = character(length(content)),
-    #                                       fixture_time = character(length(content)),
-    #                                       timestamp = integer(length(content)),
-    #                                       periods_first = integer(length(content)),
-    #                                       periods_second = integer(length(content)),
-    #                                       venue_id = integer(length(content)),
-    #                                       venue_name = character(length(content)),
-    #                                       venue_city = character(length(content)),
-    #                                       status_long = character(length(content)),
-    #                                       status_short = character(length(content)),
-    #                                       status_elapsed = integer(length(content)),
-    #                                       league_id = integer(length(content)),
-    #                                       league_name = character(length(content)),
-    #                                       league_country = character(length(content)),
-    #                                       league_logo = character(length(content)),
-    #                                       league_flag = character(length(content)),
-    #                                       league_season = integer(length(content)),
-    #                                       league_round = integer(length(content)),
-    #                                       club_id_home = integer(length(content)),
-    #                                       club_name_home = character(length(content)),
-    #                                       club_logo_home = character(length(content)),
-    #                                       is_winner_home = logical(length(content)),
-    #                                       club_id_away = integer(length(content)),
-    #                                       club_name_away = character(length(content)),
-    #                                       club_logo_away = character(length(content)),
-    #                                       is_winner_away = logical(length(content)),
-    #                                       halftime_score_home = integer(length(content)),
-    #                                       halftime_score_away = integer(length(content)),
-    #                                       fulltime_score_home = integer(length(content)),
-    #                                       fulltime_score_away = integer(length(content))
-    #                                     )
-    
     
     # iterate through all fixtures
     for(i in 1:length(content)){
@@ -528,50 +589,51 @@ get_fixtures_in_league_by_season <- function(league_id, season){
       
       # only do this if the matchday is not the relegation
       if(matchday != "Relegation Round"){
-        # if the venue.city column is empty and 
-        # the name column contains the venue city in the venue.name in parantheses
-        if(!("venue.city" %in% unique(fixture_general_info$name)) &
-           str_detect(
-             fixture_general_info$value[fixture_general_info$name == "venue.name"],
-             pattern = "\\(|\\)"
-           )
-        ){
-          # extract the row position where it contains the venue.name 
-          row_position <- which(fixture_general_info$name == "venue.name")
-          
-          # split this row by the opening paranthesis into a new variable
-          venue_city_split <- str_split(
-            fixture_general_info[row_position, "value"],
-            pattern = "\\(") 
-          
-          # extract the venue name
-          fixture_venue_name <- venue_city_split %>%
-            .[[1]] %>%
-            .[1] %>%
-            trimws()
-          
-          # and the venue city from this variable
-          # and remove the parantheses
-          fixture_venue_city <- venue_city_split %>%
-            .[[1]] %>%
-            .[-1] %>%
-            .[1] %>%
-            str_remove_all("\\(|\\)") %>%
-            trimws()
-          
-          # set the value of the row to the venue name
-          fixture_general_info[row_position, "value"] <- fixture_venue_name
-          
-          # and add a new row after the specific row extracted earlier with
-          # the venue city
-          fixture_general_info <- fixture_general_info %>%
-            add_row(
-              name = "venue.city",
-              value = fixture_venue_city,
-              .after = row_position
-            )
-          
-          
+        if("venue.name" %in% fixture_general_info$name){
+          # if the venue.city column is empty and 
+          # the name column contains the venue city in the venue.name in parantheses
+          if(!("venue.city" %in% unique(fixture_general_info$name)) &
+             str_detect(
+               fixture_general_info$value[fixture_general_info$name == "venue.name"],
+               pattern = "\\(|\\)"
+             )
+          ){
+            # extract the row position where it contains the venue.name 
+            row_position <- which(fixture_general_info$name == "venue.name")
+            
+            # split this row by the opening paranthesis into a new variable
+            venue_city_split <- str_split(
+              fixture_general_info[row_position, "value"],
+              pattern = "\\(") 
+            
+            # extract the venue name
+            fixture_venue_name <- venue_city_split %>%
+              .[[1]] %>%
+              .[1] %>%
+              trimws()
+            
+            # and the venue city from this variable
+            # and remove the parantheses
+            fixture_venue_city <- venue_city_split %>%
+              .[[1]] %>%
+              .[-1] %>%
+              .[1] %>%
+              str_remove_all("\\(|\\)") %>%
+              trimws()
+            
+            # set the value of the row to the venue name
+            fixture_general_info[row_position, "value"] <- fixture_venue_name
+            
+            # and add a new row after the specific row extracted earlier with
+            # the venue city
+            fixture_general_info <- fixture_general_info %>%
+              add_row(
+                name = "venue.city",
+                value = fixture_venue_city,
+                .after = row_position
+              )
+
+          }
         }
       }
       
@@ -610,15 +672,18 @@ get_fixtures_in_league_by_season <- function(league_id, season){
                # and remove the country from the referee column
                referee = str_remove_all(referee, pattern = ",.*")) %>%
         # convert the date into the correct timezone
-        mutate(fixture_date = with_tz(fixture_date, tzone = "Europe/Berlin"),
-               timezone = "Europe/Berlin") %>%
+        mutate(fixture_date = with_tz(fixture_date, tzone = "Europe/Berlin")) %>%
         # separate the date column into date and time
         separate(col = fixture_date,
                  into = c("fixture_date", "fixture_time"),
                  sep = " ") %>%
         # remove the milliseconds 
         mutate(fixture_time = str_remove_all(fixture_time, 
-                                             pattern = ":[0-9]+$"))
+                                             pattern = ":[0-9]+$")) %>%
+        select(-c(periods_first, periods_second, timezone, timestamp))
+      
+      # in case the frame is empty
+      fixture_general_info <- check_for_value_column(fixture_general_info)
         
       
       # extract league information with the enframe function
@@ -638,7 +703,8 @@ get_fixtures_in_league_by_season <- function(league_id, season){
         # extract only the number of the round from the league_round column
         mutate(league_round = str_extract(league_round, pattern = "[0-9]+"))
       
-    
+      # in case the frame is empty
+      fixture_league_info <- check_for_value_column(fixture_league_info)
       
       
       # extract team information with the enframe function
@@ -675,6 +741,8 @@ get_fixtures_in_league_by_season <- function(league_id, season){
                club_logo_away = `away.logo`)#,
               # is_winner_away = `away.winner`)
 
+      # in case the frame is empty
+      fixture_team_info <- check_for_value_column(fixture_team_info)
       
       # extract score information with the enframe function
       # to convert the score list into a tibble
@@ -701,16 +769,19 @@ get_fixtures_in_league_by_season <- function(league_id, season){
         fixture_score_info[1,] <- NA
       }
       
+      # in case the frame is empty
+      fixture_score_info <- check_for_value_column(fixture_score_info)
+      
       # check if the fixture date is smaller than the current date, i.e.,
       # if it is in the past
       # if it is not in the past, we have to deal with the data
-      if(!(fixture_general_info$fixture_date < Sys.Date())){
-        # set the first row to NA
-        fixture_score_info[1,] <- NA
-        # and dropp the value (because there is none)
-        fixture_score_info <- select(fixture_score_info,
-                                     -value)
-      }
+      # if(!(fixture_general_info$fixture_date < Sys.Date())){
+      #   # set the first row to NA
+      #   fixture_score_info[1,] <- NA
+      #   # and dropp the value (because there is none)
+      #   fixture_score_info <- select(fixture_score_info,
+      #                                -value)
+      # }
         
        
       # bind all information for the current fixture together via bind_cols
@@ -721,12 +792,6 @@ get_fixtures_in_league_by_season <- function(league_id, season){
                   fixture_team_info,
                   fixture_score_info)
       )
-      # all_fixture_information[i,] <- bind_cols(fixture_general_info,
-      #                                          fixture_league_info,
-      #                                          fixture_team_info,
-      #                                          fixture_score_info
-      #  )
-      
     }
  
     # if the request was not successful print an error 
@@ -739,18 +804,13 @@ get_fixtures_in_league_by_season <- function(league_id, season){
   # right data type
   all_fixture_information <- all_fixture_information %>%
     mutate(fixture_id = as.integer(fixture_id),
-           timestamp = as.integer(timestamp),
-           # periods_first = as.integer(periods_first),
-           # periods_second = as.integer(periods_second),
            venue_id = as.integer(venue_id),
            status_elapsed = as.integer(status_elapsed),
            league_id = as.integer(league_id),
            league_season = as.integer(league_season),
            league_round = as.integer(league_round),
            club_id_home = as.integer(club_id_home),
-           # is_winner_home = as.logical(is_winner_home),
-           club_id_away = as.integer(club_id_away))#,
-           # is_winner_away = as.logical(is_winner_away))
+           club_id_away = as.integer(club_id_away))
   
   # return the data frame containing information about all fixtures
   # for the given league and season
@@ -766,7 +826,41 @@ get_fixtures_in_league_by_season <- function(league_id, season){
 # stats for a given fixture
 # example: shots, fouls, cards, etc.
 get_fixture_stats <- function(fixture_id){
-  # set the endpoint of the API
+  # set the endpoint for the fixture information itself because the stats
+  # # does not contain data about the score
+  # endpoint <- "https://v3.football.api-sports.io/fixtures"
+  # 
+  # # create a get request to that API with the API key
+  # # and the selected parameter (the selected fixture via its id)
+  # response <- GET(endpoint, 
+  #                 add_headers('x-apisports-key' = football_api_key),
+  #                 query = list(id = fixture_id))
+  # 
+  # # create empty variable to store the score data
+  # match_score <- NULL
+  # 
+  # # check if the request was successful and only then go on with the 
+  # # transformation of the data
+  # if(status_code(response) >= 200 & status_code(response) < 300){
+  #   
+  #   # extract the content from the response
+  #   content <- content(response)$response
+  #   
+  #   # get the match_score
+  #   match_score <- unlist(content[[1]]$score$fulltime) %>%
+  #     data.frame("score" = .)
+  #   
+  #   # reset rownames
+  #   rownames(match_score) <- 1:nrow(match_score)
+  #   
+  #   # if the request was not successful print an error 
+  # } else {
+  #   print(paste0("Error: The request was not successful. \nStatus code: ",
+  #                status_code(response)))
+  # }
+    
+
+  # set the endpoint of the API for the actual match statistics
   endpoint <- "https://v3.football.api-sports.io/fixtures/statistics"
   
   # create a get request to that API with the API key
@@ -784,6 +878,10 @@ get_fixture_stats <- function(fixture_id){
     
     # extract the content from the response
     content <- content(response)$response
+    
+    if(length(content) == 0){
+      return(NULL)
+    }
     
     # iterate over both team statistics
     for(i in 1:length(content)){
@@ -832,7 +930,16 @@ get_fixture_stats <- function(fixture_id){
                passes_accurate= `Passes accurate`,
                passing_accuracy = `Passes %`) %>%
         # add a column for the fixture id
-        mutate(fixture_id = fixture_id) %>%
+        # and a variable to indicate whether the team is the home or the away team
+        # remove the % sign for the possession and the passing accuracy
+        mutate(fixture_id = fixture_id,
+               is_home_team = ifelse(i == 1,
+                                     TRUE,
+                                     FALSE),
+               ball_possession = str_remove(ball_possession, "%"),
+               passing_accuracy = str_remove(passing_accuracy, "%")) %>%
+        # replace all NAs with 0
+        mutate(across(c(shots_on_goal:passing_accuracy), ~replace_na(.x, 0))) %>%
         # change the order such that the frame begins with the fixture_id
         select(fixture_id, everything())
       
@@ -849,6 +956,15 @@ get_fixture_stats <- function(fixture_id){
       
     }
     
+    # add the score to the frame
+    # fixture_stats <- cbind(fixture_stats,
+    #                        match_score)
+    
+    # reorder the variables in the data frame
+    fixture_stats <- fixture_stats %>%
+      select(fixture_id, team_id, team_name, team_logo, is_home_team,
+             everything())
+    
     # if the request was not successful print an error 
   } else {
     print(paste0("Error: The request was not successful. \nStatus code: ",
@@ -856,6 +972,13 @@ get_fixture_stats <- function(fixture_id){
   }
   
   return(fixture_stats)
+}
+
+
+
+######## combine_stats_with_score #########
+combine_stats_with_score <- function(match_infos, match_stats){
+  # match_infos <- 
 }
 
 
@@ -953,6 +1076,9 @@ get_fixture_lineups <- function(fixture_id){
   # create an empty variable to store the fixture info
   fixture_lineups <- NULL
   
+  # store the lineups for the model
+  lineups_model <- NULL
+  
   # check if the request was successful and only then go on with the 
   # transformation of the data
   if(status_code(response) >= 200 & status_code(response) < 300){
@@ -977,9 +1103,9 @@ get_fixture_lineups <- function(fixture_id){
       
       # extracting the information about the coach by extracting the elements
       # with enframe and then going from long to wide with pivot_wider
-      coach_info <- enframe(unlist(content[[i]]$coach)) %>%
-        pivot_wider(names_from = name, values_from = value,
-                    names_glue = "coach_{name}")
+      # coach_info <- enframe(unlist(content[[i]]$coach)) %>%
+      #   pivot_wider(names_from = name, values_from = value,
+      #               names_glue = "coach_{name}")
       
       # extracting the start formation
       formation <- content[[i]]$formation
@@ -1010,6 +1136,27 @@ get_fixture_lineups <- function(fixture_id){
       # set the column names accordingly
       colnames(player_data) <- colnames_player_data
       
+      # convert the data in a format that is suitable for a model
+      players <- player_data %>%
+        select(player_name) %>%
+        t() %>%
+        data.frame()
+      
+      prefixes_team <- c("home_", "away_")
+      
+      colnames_players <- rep(NA, length(players))
+      
+      for(col in 1:ncol(players)){
+        curr_col_name <- paste0(prefixes_team[i], "player_", col)
+        colnames_players[col] <- curr_col_name
+        
+      }
+      
+      colnames(players) <- colnames_players
+      rownames(players) <- 1:nrow(players)
+      
+      lineups_model <- bind_rows(lineups_model,
+                                 players)
       
       # extracting the substitute players
       # get the plain data into a named character vector
@@ -1062,7 +1209,7 @@ get_fixture_lineups <- function(fixture_id){
   }
   
   # return the lineups for the fixture
-  return(fixture_lineups)
+  return(fixture_lineups, lineups_model)
   
 }
 
@@ -1704,4 +1851,37 @@ get_content_for_list_element <- function(content_list, list_element,
     
   
   return(content_for_list_element)
+}
+
+
+check_for_value_column <- function(frame_to_observe){
+  if(nrow(frame_to_observe) == 0 & "value" %in% colnames(frame_to_observe)){
+    frame_to_observe <- frame_to_observe %>%
+      select(-value)
+  }
+  
+  return(frame_to_observe)
+}
+
+
+map_city_names <- function(city_name){
+  if(is.na(city_name)){
+    return(city_name)
+  }
+  
+  city_name <- str_to_title(city_name)
+  
+  if(str_detect(city_name, pattern = "M+nchen")){
+    city_name <- "Munich"
+  } else if(str_detect(city_name, pattern = "D+sseldorf")){
+    city_name <- "Dusseldorf"
+  } else if(str_detect(city_name, pattern = "M+nchengladbach")){
+    city_name <- "Monchengladbach"
+  } else if(str_detect(city_name, pattern = "N+rnberg")){
+    city_name <- "Nuremberg"
+  } else if(str_detect(city_name, pattern = "K+ln")){
+    city_name <- "Cologne"
+  }
+  
+  return(city_name)
 }
