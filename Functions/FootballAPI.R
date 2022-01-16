@@ -1881,6 +1881,8 @@ city_name_mapping <- function(city_name){
     city_name <- "Nuremberg"
   } else if(str_detect(city_name, pattern = "K+ln")){
     city_name <- "Cologne"
+  } else if(str_detect(city_name, pattern = "Frankfurt")){
+    city_name <- "Frankfurt am Main"
   }
   
   return(city_name)
