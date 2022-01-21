@@ -722,12 +722,11 @@ get_squads_by_season <- function(league, league_id, season){
 
 
 
-############## get_lineups_all_ended_fixture_by_season #################
+############## get_lineups_by_season_tm #################
 # inputs: league, league_id, season
 # outputs: returns all lineups for ended fixtures in a given season
 
-get_lineups_all_ended_fixture_by_season <- function(league, league_id, season,
-                                                    port = NULL){
+get_lineups_by_season_tm <- function(league, league_id, season, port = NULL){
   # paste together the url we want to scrape
   url <- paste0("https://www.transfermarkt.com/", league, "/spieltagtabelle",
                       "/wettbewerb/", league_id, "?saison_id=",
@@ -741,6 +740,11 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season,
   
   # get the client
   remDr <- rD$client
+  
+  # set time outs to give the page the change to first fully load before
+  # we try to get information form it
+  remDr$setTimeout(type = "implicit", milliseconds = 10000)
+  remDr$setTimeout(type = "page load", milliseconds = 10000)
   
   # navigate to the created url
   remDr$navigate(url)
@@ -875,22 +879,93 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season,
      
       Sys.sleep(3)
       
+      name_and_age_nodes <- page_html %>%
+        html_nodes(xpath = "//div[@class='row sb-formation'][1]//table[@class='items']")
+        # extract the nodes for the player name, position and number
+        
+      name <- name_and_age_nodes %>%
+        html_nodes(xpath = paste0(".//table[@class='inline-table']//tr[1]//td[2]/a")) %>%
+        html_text(trim = TRUE)
       
+      player_number <- page_html %>%
+        html_nodes(xpath = paste0("//*[@class='row sb-formation'][1]//",
+                                  "div[@class='rn_nummer']")) %>%
+        html_text(trim = TRUE)
+      
+      age <- name_and_age_nodes %>%
+        html_nodes(xpath = paste0(".//table[@class='inline-table']//tr[1]//td[2]/text()")) %>%
+        html_text(trim = TRUE) %>%
+        str_extract(., pattern = "[0-9]+") %>%
+        .[!is.na(.)]
+      
+      nationality <- page_html %>%
+        html_nodes(xpath = paste0("//div[@class='row sb-formation'][1]", "
+                                  //table[@class='items']/tbody/tr/td[3]/img[1]")) %>%
+        html_attr("alt")
+      
+      pos_and_market_value <- page_html %>%
+        html_nodes(xpath = paste0("//div[@class='row sb-formation'][1]",
+                                  "//table[@class='inline-table']//tr[2]/td")) %>%
+        html_text() %>%
+        str_split(pattern = ",") %>%
+        unlist() %>%
+        trimws()
+      
+      pos <- pos_and_market_value %>%
+        .[seq(1, length(.), 2)]
+      
+      market_value <- pos_and_market_value %>%
+        str_extract(., pattern = "[0-9]+.*") %>%
+        .[!is.na(.)] 
+      
+      transfer_status <- page_html %>%
+        html_nodes(xpath = paste0("//div[@class='row sb-formation'][1]",
+                                  "//table[@class='inline-table']")) %>%
+        html_nodes(xpath = "..") %>%
+        html_attr("class")
+      
+      new_transfer <- rep(NA, 22)
+      new_winter_transfer <- rep(NA, 22)
+      returnee <- rep(NA, 22)
+      
+      
+      for(i in 1:length(transfer_status)){
+        new_transfer[i] <- ifelse(transfer_status[i] == "neuzugang",
+                                  TRUE, FALSE)
+        
+        new_winter_transfer[i] <- ifelse(transfer_status[i] == "winter_neuzugang",
+                                         TRUE, FALSE)
+        
+        returnee[i] <- ifelse(transfer_status[i] == "rueckkehrer",
+                              TRUE, FALSE)
+      }
+
+      starting_lineups <- c(name, player_number, age, pos, nationality, age, market_value) %>%
+        matrix(ncol = 6, byrow = FALSE) %>%
+        data.frame()
+      
+      
+      
+      
+      
+      
+
       # extract starting line ups 
       starting_line_ups <- page_html %>%
         # extract the nodes for the player name, position and number
         html_nodes(xpath = paste0("//*[@class='row sb-formation'][1]//",
                                   "table[@class='items']//a[@class='wichtig']",
                                   "|//*[@class='row sb-formation'][1]",
-                                  "//table[@class='inline-table']//tr[2]/td/text()[1]",
+                                  "//table[@class='inline-table']//tr[2]/td/text()",
                                   "|//*[@class='row sb-formation'][1]//",
-                                  "div[@class='rn_nummer']")) %>%
+                                  "div[@class='rn_nummer']",
+                                  "|//table[@class='items']//tr[1]//td[4]//span")) %>%
         html_text(trim = TRUE) %>%
         str_remove_all(., pattern = ",.*") %>%
         str_trim() %>%
         # convert the data into a matrix (3 columns)
         # and then into a data frame
-        matrix(., ncol = 3,
+        matrix(., ncol = 4,
                byrow = TRUE) %>%
         data.frame()
       
@@ -1024,7 +1099,8 @@ get_lineups_all_ended_fixture_by_season <- function(league, league_id, season,
 }
 
 
-get_fixture_detailed_info <- function(league, league_id, season, port = 1234L){
+get_fixture_detailed_info <- function(league, league_id, season, port = 1234L,
+                                      matchday = NULL, max_matchday = NULL){
   # paste together the url we want to scrape
   url <- paste0("https://www.transfermarkt.com/", league, "/spieltagtabelle",
                 "/wettbewerb/", league_id, "?saison_id=",
@@ -1064,15 +1140,32 @@ get_fixture_detailed_info <- function(league, league_id, season, port = 1234L){
   # extract the html for the given url
   page_html <- read_html(remDr$getPageSource()[[1]])
   
-  # extract the number of matchdays by getting the length
-  # of the elements
-  number_matchdays <- page_html %>%
-    html_nodes(xpath = "//select[@name='spieltag']/option[@value]") %>%
-    html_attrs() %>%
-    length()
+  date <- NULL
+  
+  if(is.null(matchday)){
+    # extract the number of matchdays by getting the length
+    # of the elements
+    number_matchdays <- page_html %>%
+      html_nodes(xpath = "//select[@name='spieltag']/option[@value]") %>%
+      html_attrs() %>%
+      length()
+    
+    if(is.null(max_matchday)){
+      starting_matchday <- 1
+      ending_matchday <- number_matchdays
+    } else {
+      starting_matchday <- 1
+      ending_matchday <- max_matchday
+    }
+    
+  } else {
+    starting_matchday <- matchday
+    ending_matchday <- matchday
+  }
+  
   
   # iterate through all matchdays
-  for(i in 1:number_matchdays){
+  for(i in starting_matchday:ending_matchday){
     # print for debugging
     print(paste0("Matchday ", i))
     
@@ -1111,7 +1204,7 @@ get_fixture_detailed_info <- function(league, league_id, season, port = 1234L){
       # store the webpage
       page_html <- read_html(remDr$getPageSource()[[1]])
       
-      Sys.sleep(2)
+      Sys.sleep(3)
       
       # store the team names
       team_names <- page_html %>%
@@ -1143,6 +1236,11 @@ get_fixture_detailed_info <- function(league, league_id, season, port = 1234L){
       # extract the date and convert it into a proper format
       date <- date_information[[1]][1] %>%
         mdy()
+      
+      # if the date is in the future break
+      if(date >= Sys.Date()){
+        break
+      }
       
       # get the time the match takes place
       time_12h <- paste(date_information[[1]][3], date_information[[1]][4], collapse = "")
@@ -1183,6 +1281,12 @@ get_fixture_detailed_info <- function(league, league_id, season, port = 1234L){
         # remove the word attendance 
         str_remove_all(., pattern = "Attendance: ")
       
+      # during the corona crisis there a matches where there is no audience
+      if(length(attendance) == 0){
+        attendance = "0"
+      }
+      
+      
       # store the data in a temporary data frame
       current_data <- data.frame("league" = str_to_title(league),
                                  "season" = season,
@@ -1203,6 +1307,11 @@ get_fixture_detailed_info <- function(league, league_id, season, port = 1234L){
       Sys.sleep(2)
       
     }
+    
+    # if the date is in the future break
+    if(date >= Sys.Date()){
+      break
+    }
   }
   
   # transform the season and attendance variable into a numeric variable
@@ -1211,6 +1320,12 @@ get_fixture_detailed_info <- function(league, league_id, season, port = 1234L){
     mutate(season = as.numeric(season),
            attendance = as.numeric(str_remove(attendance, pattern = "\\.")))
       
+  
+  # close the driver (client) and the server
+  remDr$close()
+  rD$server$stop()
+  rm(rD)
+  gc()
       
   return(match_infos_all_season)
       

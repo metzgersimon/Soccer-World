@@ -42,7 +42,9 @@ get_matchday_table_undestat <- function(league, season, port = 5143L){
   league <- str_to_title(league)
   # get all matchdays which are in the selected league and season
   # and are in the past
-  match_dates <- get_match_dates(league, season)
+  match_dates <- get_match_dates(league, season) %>%
+    filter(!is.na(league_round))
+  
   # paste together base url
   url <- paste0("https://understat.com/league/", league, "/", season)
   
@@ -63,35 +65,42 @@ get_matchday_table_undestat <- function(league, season, port = 5143L){
   # store all data
   season_running_table <- NULL
   
-  # get start date selection of the table
-  start_date_button <- remDr$findElement(using = "xpath",
-                                         paste0("//div[@class='filters']//input[@name='date-start']"))
-  
-  start_date <- match_dates %>%
-    group_by(league_round) %>%
-    filter(league_round == 1,
-           fixture_date == min(fixture_date)) %>%
-    select(fixture_date) %>%
-    pull() %>%
-    str_split(" ") %>%
-    .[[1]]
 
-  start_date_month <- paste0(start_date[1], " ")
-  start_date_day <- paste0(start_date[2], " ")
-  
-  start_date_button$clickElement()
-  start_date_button$sendKeysToElement(c(start_date_month, start_date_day,
-                                        start_date[3]))
-  
   for(i in 1:max(match_dates$league_round)){
-    end_date_button <- remDr$findElement(using = "xpath",
-                                         paste0("//div[@class='filters']//input[@name='date-end']"))
+    # get start date selection of the table
+    start_date_button <- remDr$findElement(using = "xpath",
+                                           paste0("//div[@class='filters']//input[@name='date-start']"))
+    
+    # start_date <- match_dates %>%
+    #   group_by(league_round) %>%
+    #   filter(league_round == 1,
+    #          fixture_date == min(fixture_date)) %>%
+    #   select(fixture_date) %>%
+    #   pull() %>%
+    #   str_split(" ") %>%
+    #   .[[1]]
     
     curr_matchday <- match_dates %>%
       group_by(league_round) %>%
-      summarize(#min_date = min(fixture_date),
-                max_date = max(fixture_date)) %>%
+      summarize(min_date = min(fixture_date),
+        max_date = max(fixture_date)) %>%
       filter(league_round == i)
+    
+    start_date <- str_split(curr_matchday$min_date, " ") %>%
+      .[[1]]
+    
+    start_date_month <- paste0(start_date[1], " ")
+    start_date_day <- paste0(start_date[2], " ")
+    
+    start_date_button$clickElement()
+    start_date_button$sendKeysToElement(c(start_date_month, start_date_day,
+                                          start_date[3]))
+    
+    
+    end_date_button <- remDr$findElement(using = "xpath",
+                                         paste0("//div[@class='filters']//input[@name='date-end']"))
+    
+    
     
     end_date <- str_split(curr_matchday$max_date, " ") %>%
       .[[1]]
@@ -130,10 +139,14 @@ get_matchday_table_undestat <- function(league, season, port = 5143L){
     season_running_table <- bind_rows(season_running_table,
                                       curr_matchday_table)
     
+    start_date_clear <- remDr$findElement(using = "xpath",
+                                        paste0("//div[@class='filters']//span[@class='datepicker-icon datepicker-clear'][1]"))
+    
     
     end_date_clear <- remDr$findElement(using = "xpath",
                                         paste0("//div[@class='filters']//span[@class='datepicker-icon datepicker-clear'][2]"))
     
+    start_date_clear$clickElement()
     end_date_clear$clickElement()
     
     Sys.sleep(2)
@@ -156,10 +169,7 @@ get_matchday_table_undestat <- function(league, season, port = 5143L){
   return(season_running_table)
   
 }
-  
-  
-  
-  
+
   # # get the button which corresponds to the previous week
   # previous_week_button <- remDr$findElement(using = "xpath",
   #                                           paste0("//div[@class='calendar']//button[@class='calendar-prev']"))

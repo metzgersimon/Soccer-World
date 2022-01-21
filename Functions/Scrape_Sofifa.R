@@ -42,7 +42,11 @@ get_team_stats_full <- function(first_fifa_version, league = "bundesliga") {
   
   # iterate through all extracted fifa versions
   for (i in 1:length(fifa_versions)) {
-    url_for_date <- get_available_dates(final_url, fifa_versions[i])
+    
+    available_refs_dates <- get_available_refs_and_dates(final_url, fifa_versions[i])
+    
+    url_for_date <- available_refs_dates[[1]]
+    available_dates <- available_refs_dates[[2]]
     
     Sys.sleep(1)
     
@@ -127,7 +131,7 @@ get_team_stats_full <- function(first_fifa_version, league = "bundesliga") {
 }
 
 
-get_squads_full_by_season <- function(league_id, first_fifa_version, port = 4124L){
+get_squads_full_by_season <- function(league_id, fifa_vers, port = 4124L){
   # create a driver from Rselenium
   rD <- rsDriver(browser = "firefox", port = port)
   
@@ -143,8 +147,8 @@ get_squads_full_by_season <- function(league_id, first_fifa_version, port = 4124
   
   league_url <- paste0(base_url, "/teams?lg=", league_id)
   
-  fifa_versions <- get_available_fifa_versions() %>%
-    .[. >= first_fifa_version]
+  fifa_version <- get_available_fifa_versions() %>%
+    .[. == fifa_vers]
   
   Sys.sleep(1)
   
@@ -152,8 +156,8 @@ get_squads_full_by_season <- function(league_id, first_fifa_version, port = 4124
   club_squads_frame <- NULL
   
   # iterate through all extracted fifa versions
-  for (i in 1:length(fifa_versions)) {
-    available_refs_dates <- get_available_refs_and_dates(league_url, fifa_versions[i])
+  for (i in 1:length(fifa_version)) {
+    available_refs_dates <- get_available_refs_and_dates(league_url, fifa_version[i])
     
     url_for_date <- available_refs_dates[[1]]
     available_dates <- available_refs_dates[[2]]
@@ -170,7 +174,7 @@ get_squads_full_by_season <- function(league_id, first_fifa_version, port = 4124
       league_name <- fifa_league_id_mapping(league_id)
       
       # navigate to the created url
-      remDr$navigate(league_url)
+      remDr$navigate(url_for_date[j])
       
       page_content <- read_html(remDr$getPageSource()[[1]])
       
@@ -187,11 +191,14 @@ get_squads_full_by_season <- function(league_id, first_fifa_version, port = 4124
   
       # iterate over all teams in the league
       for(k in 1:length(team_refs)){
-        print(paste0("Current fifa version: ", fifa_versions[i]))
+        print(paste0("Current fifa version: ", fifa_version[i]))
         print(paste0("Current date: ", curr_date))
         print(paste0("Current team: ", team_refs[k]))
         
-        team_url <- paste0(base_url, team_refs[k])
+        fifa_vers_and_date_ending <- url_for_date[j] %>%
+          str_extract(., pattern = "r=.*")
+        
+        team_url <- paste0(base_url, team_refs[k], "?", fifa_vers_and_date_ending)
         
         # navigate to the created url
         remDr$navigate(team_url)
@@ -222,7 +229,7 @@ get_squads_full_by_season <- function(league_id, first_fifa_version, port = 4124
                                                       pattern = "\\."),
                                            fifa_player_name_long,
                                            fifa_player_name_short),
-                 fifa_version = fifa_versions[i],
+                 fifa_version = fifa_version[i],
                  date = mdy(curr_date),
                  league = league_name,
                  team = team_names[k],

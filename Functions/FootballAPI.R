@@ -137,84 +137,84 @@ get_all_available_leagues_by_country <- function(country){
 # inputs: league_id, season
 # outputs: should return a data frame containing information about the 
 # current standing in a league for the given season
-get_standing_by_season <- function(league_id, season){
-  # set the endpoint of the API
-  endpoint <- "https://v3.football.api-sports.io/standings"
-  
-  # create a get request to that API with the API key
-  # and the selected parameters (league and season)
-  response <- GET(endpoint, 
-                  add_headers('x-apisports-key' = football_api_key),
-                  query = list(league = league_id,
-                               season = season))
-  
-  # check if the request was successful and only then go on with the 
-  # transformation of the data
-  if(status_code(response) >= 200 & status_code(response) < 300){
-    # extract the content from the response
-    content <- content(response)$response[[1]]$league
-    
-    # extract the plain strings from the content
-    league_id <- content$id
-    league_name <- content$name
-    league_country <- content$country
-    league_logo <- content$logo
-    league_season <- content$season
-    
-    # extract the ranking of the season
-    ranking_content <- content$standings[[1]]
-    # get the length of the content
-    ranking_length <- length(ranking_content)
-    
-    # pre-allocate data frame to store the ranking
-    ranking_frame <- data.frame(matrix(nrow = ranking_length,
-                                       ncol = 29))
-    
-    # create an empty variable to store the current info
-    current_rank <- NULL
-    
-    # iterate through all the positions in the ranking
-    for(rank in 1:ranking_length){
-      # use the helper function to get the current ranking information
-      # in an appropriate form
-      current_rank <- get_content_for_list_element(ranking_content,
-                                                   rank, 
-                                                   name_elem = "")
-      
-      # deal with missing columns in the data by using
-      # the helper function "api_football_complete_checks"
-      current_rank <- api_football_fixtures_general_complete_check(current_rank,
-                                                                   "standing")
-      
-      # save the current info at the correct position in the
-      # data frame
-      ranking_frame[rank, ] <- current_rank
-      
-    }
-    
-    # set the column names appropriately
-    colnames(ranking_frame) <- colnames(current_rank)
-    
-    # bind the information extracted above regarding the league
-    # at the beginning of the data frame
-    ranking_frame <- cbind(league_id,
-                           league_name,
-                           league_country,
-                           league_logo,
-                           league_season,
-                           ranking_frame
-                           )
-      
-    
-    # if the request was not successful print an error  
-  } else {
-    print(paste0("Error: The request was not successful. \nStatus code: ",
-                 status_code(response)))
-  }
-  
-  return(ranking_frame)
-   
-}
+# get_standing_by_season <- function(league_id, season){
+#   # set the endpoint of the API
+#   endpoint <- "https://v3.football.api-sports.io/standings"
+# 
+#   # create a get request to that API with the API key
+#   # and the selected parameters (league and season)
+#   response <- GET(endpoint,
+#                   add_headers('x-apisports-key' = football_api_key),
+#                   query = list(league = league_id,
+#                                season = season))
+# 
+#   # check if the request was successful and only then go on with the
+#   # transformation of the data
+#   if(status_code(response) >= 200 & status_code(response) < 300){
+#     # extract the content from the response
+#     content <- content(response)$response[[1]]$league
+# 
+#     # extract the plain strings from the content
+#     league_id <- content$id
+#     league_name <- content$name
+#     league_country <- content$country
+#     league_logo <- content$logo
+#     league_season <- content$season
+# 
+#     # extract the ranking of the season
+#     ranking_content <- content$standings[[1]]
+#     # get the length of the content
+#     ranking_length <- length(ranking_content)
+# 
+#     # pre-allocate data frame to store the ranking
+#     ranking_frame <- data.frame(matrix(nrow = ranking_length,
+#                                        ncol = 29))
+# 
+#     # create an empty variable to store the current info
+#     current_rank <- NULL
+# 
+#     # iterate through all the positions in the ranking
+#     for(rank in 1:ranking_length){
+#       # use the helper function to get the current ranking information
+#       # in an appropriate form
+#       current_rank <- get_content_for_list_element(ranking_content,
+#                                                    rank,
+#                                                    name_elem = "")
+# 
+#       # deal with missing columns in the data by using
+#       # the helper function "api_football_complete_checks"
+#       current_rank <- api_football_fixtures_general_complete_check(current_rank,
+#                                                                    "standing")
+# 
+#       # save the current info at the correct position in the
+#       # data frame
+#       ranking_frame[rank, ] <- current_rank
+# 
+#     }
+# 
+#     # set the column names appropriately
+#     colnames(ranking_frame) <- colnames(current_rank)
+# 
+#     # bind the information extracted above regarding the league
+#     # at the beginning of the data frame
+#     ranking_frame <- cbind(league_id,
+#                            league_name,
+#                            league_country,
+#                            league_logo,
+#                            league_season,
+#                            ranking_frame
+#                            )
+# 
+# 
+#     # if the request was not successful print an error
+#   } else {
+#     print(paste0("Error: The request was not successful. \nStatus code: ",
+#                  status_code(response)))
+#   }
+# 
+#   return(ranking_frame)
+# 
+# }
 
 
 
@@ -479,64 +479,64 @@ get_team_stats_in_league_by_season <- function(league_id, team_id, season, match
 # outputs: should return a data frame containing information about all
 # team squads in the current season for the given league_id
 # example: squad of Dortmund when the bundesliga id is given
-get_team_squads_current_season <- function(league_id){
-  
-  # call the get_team_information_in_league function with
-  # the given league_id and the current season to get all team ids
-  all_teams_in_league <- get_team_information_in_league(league_id, 2021) %>%
-    select(team_id) %>%
-    unlist() %>%
-    unname()
-  
-  # set the endpoint of the API
-  endpoint <- "https://v3.football.api-sports.io/players/squads"
-  
-  # create an empty variable to store the data
-  team_squads <- NULL
-  
-  # iterate through all the teams that play in the league
-  for(i in 1:length(all_teams_in_league)){
-    
-    # create a get request to that API with the API key
-    # and the selected parameter (team given by its id got from the 
-    # get_team_information_in_league function)
-    response <- GET(endpoint, 
-                    add_headers('x-apisports-key' = football_api_key),
-                    query = list(team = all_teams_in_league[i]))
-    
-    
-    # check if the request was successful and only then go on with the 
-    # transformation of the data
-    if(status_code(response) >= 200 & status_code(response) < 300){
-      
-      # extract the content from the response
-      content <- content(response)$response[[1]]
-      
-      # get all the player information from the players list
-      curr_team_squad <- list.stack(content$players)
-      
-      # add columns that stands for the team id
-      # and the team name
-      curr_team_squad <- curr_team_squad %>%
-        mutate(team_id = all_teams_in_league[i],
-               team_name = content$team$name)
-      
-      # combine the team_squads data frame and the curr_team_squad frame
-      # by rows
-      team_squads <- bind_rows(team_squads,
-                               curr_team_squad)
-      
-      # if the request was not successful print an error 
-    } else {
-      print(paste0("Error: The request was not successful. \nStatus code: ",
-                   status_code(response)))
-    }
-  }
-  
-  # return the data frame containing information about all squads
-  # of the teams
-  return(team_squads)
-}
+# get_team_squads_current_season <- function(league_id){
+#   
+#   # call the get_team_information_in_league function with
+#   # the given league_id and the current season to get all team ids
+#   all_teams_in_league <- get_team_information_in_league(league_id, 2021) %>%
+#     select(team_id) %>%
+#     unlist() %>%
+#     unname()
+#   
+#   # set the endpoint of the API
+#   endpoint <- "https://v3.football.api-sports.io/players/squads"
+#   
+#   # create an empty variable to store the data
+#   team_squads <- NULL
+#   
+#   # iterate through all the teams that play in the league
+#   for(i in 1:length(all_teams_in_league)){
+#     
+#     # create a get request to that API with the API key
+#     # and the selected parameter (team given by its id got from the 
+#     # get_team_information_in_league function)
+#     response <- GET(endpoint, 
+#                     add_headers('x-apisports-key' = football_api_key),
+#                     query = list(team = all_teams_in_league[i]))
+#     
+#     
+#     # check if the request was successful and only then go on with the 
+#     # transformation of the data
+#     if(status_code(response) >= 200 & status_code(response) < 300){
+#       
+#       # extract the content from the response
+#       content <- content(response)$response[[1]]
+#       
+#       # get all the player information from the players list
+#       curr_team_squad <- list.stack(content$players)
+#       
+#       # add columns that stands for the team id
+#       # and the team name
+#       curr_team_squad <- curr_team_squad %>%
+#         mutate(team_id = all_teams_in_league[i],
+#                team_name = content$team$name)
+#       
+#       # combine the team_squads data frame and the curr_team_squad frame
+#       # by rows
+#       team_squads <- bind_rows(team_squads,
+#                                curr_team_squad)
+#       
+#       # if the request was not successful print an error 
+#     } else {
+#       print(paste0("Error: The request was not successful. \nStatus code: ",
+#                    status_code(response)))
+#     }
+#   }
+#   
+#   # return the data frame containing information about all squads
+#   # of the teams
+#   return(team_squads)
+# }
 
 
 
@@ -976,12 +976,6 @@ get_fixture_stats <- function(fixture_id){
 
 
 
-######## combine_stats_with_score #########
-combine_stats_with_score <- function(match_infos, match_stats){
-  # match_infos <- 
-}
-
-
 
 ############## get_fixture_events #################
 # inputs: fixture_id
@@ -1090,22 +1084,18 @@ get_fixture_lineups <- function(fixture_id){
     for(i in 1:length(content)){
       
       # extract the content from the team list-element
-      # and dropp the colors element from this list
-      team_content <- content[[i]]$team %>%
-        .[names(.) != "colors"]
+      team_content <- content[[i]]
       
       # now transform this content from a list element
       # into a data frame of one row by extracting the elements
-      # with enframe and then going from long to wide with pivot_wider
-      team_info <- enframe(unlist(team_content)) %>%
-        pivot_wider(names_from = name, values_from = value,
-                    names_glue = "team_{name}")
+      # with the helper function get_content_for_list_element
+      team_info <- get_content_for_list_element(team_content, "team",
+                                                piv_wider = TRUE,
+                                                name_elem = "team_")
       
-      # extracting the information about the coach by extracting the elements
-      # with enframe and then going from long to wide with pivot_wider
-      # coach_info <- enframe(unlist(content[[i]]$coach)) %>%
-      #   pivot_wider(names_from = name, values_from = value,
-      #               names_glue = "coach_{name}")
+      if(sum(colnames(team_info) %like% "colors") > 0){
+        team_info <- select(team_info, -c(contains("colors")))
+      }
       
       # extracting the start formation
       formation <- content[[i]]$formation
@@ -1136,9 +1126,17 @@ get_fixture_lineups <- function(fixture_id){
       # set the column names accordingly
       colnames(player_data) <- colnames_player_data
       
+      formation_info <- player_data %>%
+        # add a new column counting the defenders, midfielders and strikers
+        transmute(number_defenders = sum(player_pos == "D"),
+                  number_midfielders = sum(player_pos == "M"),
+                  number_attackers = sum(player_pos %in% c("S", "F"))) %>%
+        unique()
+      
+      
       # convert the data in a format that is suitable for a model
       players <- player_data %>%
-        select(player_name) %>%
+        select(player_name, player_pos) %>%
         t() %>%
         data.frame()
       
