@@ -264,7 +264,7 @@ information_team_server <- function(input, output, session){
     )
       
     # filter the data for the clubs and the season
-    fixtures_bundesliga_2010_2021 %>%
+    buli_matches_2010_2021 %>%
       filter(club_name_home == selected_club |
                club_name_away == selected_club,
              league_season == selected_season) %>%
@@ -690,11 +690,11 @@ information_team_server <- function(input, output, session){
     # we need the user to select a club first 
     req(input$info_team_club_selection)
     
-    # test <- all_transfers %>%
+    # test <- major_five_leagues_transfers %>%
     #   filter(from_team_name == "VfB Stuttgart" |
     #            to_team_name == "VfB Stuttgart")
     # 
-    all_transfers %>%
+    major_five_leagues_transfers %>%
       filter(from_team_name == input$info_team_club_selection |
                to_team_name == input$info_team_club_selection) %>%
       select(date, player_name, type, from_team_name,

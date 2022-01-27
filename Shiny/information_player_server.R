@@ -239,7 +239,7 @@ information_player_server <- function(input, output, session){
     
     last_name <- str_split(input$information_player_player_selection, " ")[[1]][-1]
     
-    all_transfers %>%
+    major_five_league_transfers %>%
       filter(player_name %like% last_name,
              from_team_name == input$information_player_team_selection |
                to_team_name == input$information_player_team_selection) %>%
