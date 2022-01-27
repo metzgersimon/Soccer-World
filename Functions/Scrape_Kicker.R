@@ -245,11 +245,7 @@ get_fixture_stats_kicker <- function(league, season, port = 4321L, matchday = NU
 
 
 
-############## get_rest_days_kicker #################
-# inputs: league_name, season
-# outputs: returns all stats available for the games played in a given season
-# for a given league
-get_rest_days_kicker <- function(league_name, season, port = 4321L, matchday = NULL){
+get_rest_days_kicker2 <- function(league, season, port = 7777L, matchday = NULL){
   # we want to extract the last two digits of the season because the date in the
   # kicker url is given as "season-season+1" where the second one only has two digits
   # e.g., "2013-14"
@@ -260,9 +256,10 @@ get_rest_days_kicker <- function(league_name, season, port = 4321L, matchday = N
   season <- as.numeric(season)
   
   # paste together the url we want to scrape
-  url <- paste0("https://www.kicker.de/", league_name, "/vereine/",
-                season, "-", last_two_digits+1)
+  url <- paste0("https://www.kicker.de/", league, "/vereine/",
+                season, "-", last_two_digits + 1)
   
+  all_matches_data <- NULL
   
   # create a driver from Rselenium
   rD <- rsDriver(browser = "firefox", port = port)
@@ -272,8 +269,8 @@ get_rest_days_kicker <- function(league_name, season, port = 4321L, matchday = N
   
   # set time outs to give the page the change to first fully load before
   # we try to get information form it
-  remDr$setTimeout(type = "implicit", milliseconds = 10000)
-  remDr$setTimeout(type = "page load", milliseconds = 10000)
+  remDr$setTimeout(type = "implicit", milliseconds = 50000)
+  # remDr$setTimeout(type = "page load", milliseconds = 10000)
   
   # navigate to the created url
   remDr$navigate(url)
@@ -292,10 +289,6 @@ get_rest_days_kicker <- function(league_name, season, port = 4321L, matchday = N
   
   Sys.sleep(1)
   
-  # store all the match information
-  all_matches_data <- NULL
-  
-  # iterate over all clubs
   for(i in 1:length(club_refs)){
     # paste together the final club url
     final_club_url <- paste0("https://www.kicker.de", club_refs[i])
@@ -316,99 +309,150 @@ get_rest_days_kicker <- function(league_name, season, port = 4321L, matchday = N
       html_nodes(xpath = paste0("//table[@class='kick__table kick__table--gamelist",
                                 " kick__table--gamelist-timeline']"))
     
+    all_matches_curr_team <- NULL 
+    
     Sys.sleep(1)
     
-    # variable to store all matches for a team in the current season
-    all_matches_curr_team <- NULL
-    
-    # the data on kicker is separated in tables for each month, we need to
-    # iterate over these months
     for(curr_month in 1:length(all_matches)){
+      curr_month_information <- NULL
+      
       # get the base data for the month
       curr_month_data <- all_matches[curr_month][[1]] %>%
         html_nodes(xpath = ".//tr")
       
       # extract the match date and convert it into an actual date
-      curr_date <- curr_month_data %>%
+      curr_month_dates <- curr_month_data %>%
         html_nodes(xpath = ".//td[1]") %>%
         html_text(trim = TRUE) %>%
         str_remove_all(., pattern = ".*, ") %>%
         dmy()
       
-      # break the loop if the date is in the future
-      if(curr_date >= Sys.Date()){
-        break
+      for(match in 1:length(curr_month_dates)){
+        curr_match_data <- curr_month_data[[match]] 
+        
+        curr_date <- curr_match_data %>%
+          html_nodes(xpath = ".//td[1]") %>%
+          html_text() %>%
+          str_split(pattern = ", ") %>%
+          unlist() %>%
+          .[2] %>%
+          dmy()
+        
+        # break the loop if the date is in the future
+        if(curr_date >= Sys.Date()){
+          break
+        }
+        
+        league_info <- curr_match_data %>%
+          html_nodes(xpath = ".//td[3]") %>%
+          html_text() %>%
+          str_split(., pattern = ", ") %>%
+          unlist() %>%
+          str_remove_all(., pattern = "Gr.") %>%
+          .[. != ""]
+        
+        # split the league infos into the matchdays and the actual league name
+        # by extracting every 2second element to be the matchday starting at the 
+        # second position and every other element to be the league
+        league_name <- league_info %>%
+          .[1]
+        
+        major_leagues <- c("Bundesliga", "Bundesliga 2", "Premier League",
+                                "La Liga", "Serie A", "Ligue 1")
+        
+        league_name <- ifelse(league_name == "BL",
+                              "Bundesliga",
+                              ifelse(league_name == "2.BL",
+                                     "Bundesliga 2",
+                                     ifelse(league_name == "England",
+                                            "Premier League",
+                                            ifelse(league_name == "SPA",
+                                                   "La Liga",
+                                                   ifelse(league_name == "Italien",
+                                                          "Serie A",
+                                                          ifelse(league_name == "FRA",
+                                                                 "Ligue 1",
+                                                                 league_name
+                                                          )
+                                                   )
+                                            )
+                                     )
+                              ))
+        
+        if(!(league_name %in% major_leagues)){
+          next
+        }
+        
+        curr_matchday <- league_info %>%
+          .[2] %>%
+          str_extract(pattern = "[0-9]+") %>%
+          as.numeric()
+        
+        # curr_matchday <- ifelse(is.na(curr_matchday),
+        #                         "NA",
+        #                         curr_matchday)
+        
+        print(paste0("curr_matchday: ", curr_matchday))
+        print(paste0("given matchday: ", matchday))
+        
+        if(curr_matchday == matchday){
+          print(paste0("Current club: ", i))
+          date_pos_in_vector <- which(ymd(curr_date) == curr_month_dates)
+          number_matches <- date_pos_in_vector
+          starting_iteration <- number_matches - 1
+          
+          if(starting_iteration == 0){
+            prev_month_data <- all_matches[(curr_month - 1)][[1]] %>%
+              html_nodes(xpath = ".//tr")
+            
+            # extract the match date and convert it into an actual date
+            prev_month_dates <- prev_month_data %>%
+              html_nodes(xpath = ".//td[1]") %>%
+              html_text(trim = TRUE) %>%
+              str_remove_all(., pattern = ".*, ") %>%
+              dmy()
+            
+            previous_month_match <- prev_month_data[[length(prev_month_dates)]] %>%
+              get_match_infos(., curr_team_name)
+            
+            starting_iteration <- 1
+            
+            curr_month_match <- get_match_infos(curr_month_data[[starting_iteration]],
+                                                curr_team_name)
+            
+            curr_month_information <- bind_rows(curr_month_information,
+                                                previous_month_match,
+                                                curr_month_match)
+            
+            save(curr_month_information, file = "curr_month_with_prev_information.RData")
+            
+          } else {
+            curr_month_match1 <- get_match_infos(curr_month_data[[starting_iteration]],
+                                                 curr_team_name)
+            
+            Sys.sleep(1)
+            curr_month_match2 <- get_match_infos(curr_month_data[[date_pos_in_vector]],
+                                                 curr_team_name)
+            
+            Sys.sleep(1)
+            
+            curr_month_information <- bind_rows(curr_month_information,
+                                                curr_month_match1,
+                                                curr_month_match2)
+            
+            save(curr_month_information, file = "curr_month_with_prev_information.RData")
+          }
+          
+        } else {
+          next
+        }
       }
       
-      # extract the league information (matchday and league name)
-      league_info <- curr_month_data %>%
-        html_nodes(xpath = ".//td[3]") %>%
-        html_text() %>%
-        str_split(., pattern = ", ") %>%
-        unlist() %>%
-        str_remove_all(., pattern = "Gr.") %>%
-        .[. != ""]
-      
-      # split the league infos into the matchdays and the actual league name
-      # by extracting every 2second element to be the matchday starting at the 
-      # second position and every other element to be the league
-      matchday <- league_info %>%
-        .[seq(2, length(.), 2)]
-      
-      league_names <- league_info %>%
-        .[seq(1, length(.), 2)]
-      
-      # extracting the base data for the match
-      match_info <- curr_month_data %>%
-        html_nodes(xpath = ".//td[@class='kick__table--gamelist__gamecell']")
-      
-      # extract the name of the home team
-      team_names_home <- match_info %>%
-        html_nodes(xpath = ".//div[@class='kick__v100-gameCell__team__name']") %>%
-        html_text() %>%
-        .[seq(1, length(.), 2)] %>%
-        trimws()
-      
-      # extract the name of the away team
-      team_names_away <- match_info %>%
-        html_nodes(xpath = ".//div[@class='kick__v100-gameCell__team__name']") %>%
-        html_text() %>%
-        .[seq(2, length(.), 2)] %>%
-        trimws()
-      
-      # extract the goals scored by the home team
-      goals_home <- match_info %>%
-        html_nodes(xpath = ".//div[@class='kick__v100-scoreBoard__scoreHolder__score']") %>%
-        html_text() %>%
-        .[seq(1, length(.), 2)] %>%
-        trimws()
-      
-      # extract the goals scored by the away team
-      goals_away <- match_info %>%
-        html_nodes(xpath = ".//div[@class='kick__v100-scoreBoard__scoreHolder__score']") %>%
-        html_text() %>%
-        .[seq(2, length(.), 2)] %>%
-        trimws()
-      
-      
-      # store the data in a temporary data frame
-      curr_month_matches <- data.frame("match_date" = curr_date, 
-                                       "league" = league_names, 
-                                       "matchday" = matchday,
-                                       "team_name" = curr_team_name,
-                                       "home_team" = team_names_home,
-                                       "away_team" = team_names_away,
-                                       "goals_home" = goals_home, 
-                                       "goals_away" = goals_away)
-      
-      
-      # append the data of the current month to the frame that stores
-      # all matches of the current team
       all_matches_curr_team <- bind_rows(all_matches_curr_team,
-                                         curr_month_matches)
+                                         curr_month_information)
       
-      
-      Sys.sleep(1)
+      Sys.sleep(2)
+     
     }
     
     # compute the rest days for every match for the current team
@@ -416,13 +460,10 @@ get_rest_days_kicker <- function(league_name, season, port = 4321L, matchday = N
       # by computing the difference between two matches and paste it to days
       mutate(rest_days = as.integer(difftime(match_date, lag(match_date, 1), 
                                              units = c("days"))))
+      
     
-    
-    # append the data of the current team to the frame that stores
-    # the data for all teams
     all_matches_data <- bind_rows(all_matches_data,
-                                  all_matches_curr_team) 
-    
+                                  all_matches_curr_team)
   }
   
   # do some final mutating of the data
@@ -436,7 +477,19 @@ get_rest_days_kicker <- function(league_name, season, port = 4321L, matchday = N
     filter(!is.na(matchday),
            league != "Testspiele") %>%
     # convert the league name into a more appropriate name
-    mutate(league = str_to_title(league_name))
+    mutate(league = ifelse(league == "BL",
+                           "Bundesliga",
+                           ifelse(league == "2.BL",
+                                  "Bundesliga 2",
+                                  ifelse(league == "England",
+                                         "Premier League",
+                                         ifelse(league == "SPA",
+                                                "La Liga",
+                                                ifelse(league == "Italien",
+                                                       "Serie A",
+                                                       ifelse(league == "FRA",
+                                                              "Ligue 1",
+                                                              league)))))))
   
   # split the data into a home data frame which contains only
   # those observations where the rest days correspond to the home team
@@ -445,21 +498,25 @@ get_rest_days_kicker <- function(league_name, season, port = 4321L, matchday = N
     filter(team_name == home_team) %>%
     mutate(rest_days_home = rest_days) %>%
     select(-c(team_name, rest_days))
-
+  # 
   all_matches_data_away <- all_matches_data %>%
     filter(team_name == away_team) %>%
     mutate(rest_days_away = rest_days) %>%
     select(-c(team_name, rest_days))
-  
-  # join these two frames together into one frame and with this transforming
-  # it a data frame that just contains one row per match
+  # 
+  # # join these two frames together into one frame and with this transforming
+  # # it a data frame that just contains one row per match
   all_matches_data_complete <- inner_join(all_matches_data_home,
                                           all_matches_data_away,
                                           by = c("match_date", "league",
                                                  "matchday", "home_team",
                                                  "away_team", "goals_home",
-                                                 "goals_away")) %>%
-    arrange(matchday, match_date)
+                                                 "goals_away"))
+  
+  all_matches_data_complete <- all_matches_data_complete %>%
+    filter(!is.na(rest_days_home),
+           !is.na(rest_days_away)) %>%
+    arrange(matchday, match_date) 
   
   # map the club names with the mapping function
   all_matches_data_complete$home_team <- sapply(all_matches_data_complete$home_team,
@@ -475,7 +532,113 @@ get_rest_days_kicker <- function(league_name, season, port = 4321L, matchday = N
   rD$server$stop()
   rm(rD)
   gc()
-
+  
   return(all_matches_data_complete)
+}
+
+
+get_rest_days_full_season_kicker <- function(league, season, ports, num_matchdays){
+  all_seasons_rest_days <- NULL
+  
+  for(i in 1:num_matchdays){
+    curr_matchday_rest_days <- get_rest_days_kicker2(league, season,
+                                                     ports[i],
+                                                     matchday = i)
+    
+    all_seasons_rest_days <- bind_rows(all_seasons_rest_days,
+                                       curr_matchday_rest_days)
+    
+    Sys.sleep(10)
+    
+  }
+  
+  return(all_seasons_rest_days)
+}
+
+
+# helper function to extract data of the current match
+get_match_infos <- function(match_html, curr_team_name){
+  # extract the date of the current match and convert
+  # it into an actuald ate
+  curr_date <- match_html %>%
+      html_nodes(xpath = ".//td[1]") %>%
+      html_text() %>%
+      str_split(pattern = ", ") %>%
+      unlist() %>%
+      .[2] %>%
+      dmy()
+    
+    # break the loop if the date is in the future
+    if(curr_date >= Sys.Date()){
+      break
+    }
+    
+    # extract the league information (matchday and league name)
+    league_info <- match_html %>%
+      html_nodes(xpath = ".//td[3]") %>%
+      html_text() %>%
+      str_split(., pattern = ", ") %>%
+      unlist() %>%
+      str_remove_all(., pattern = "Gr.") %>%
+      .[. != ""]
+    
+    # split the league infos into the matchdays and the actual league name
+    # by extracting every 2second element to be the matchday starting at the 
+    # second position and every other element to be the league
+    league_name <- league_info %>%
+      .[1]
+    
+    matchday <- league_info %>%
+      .[2]
+    
+    # extracting the base data for the match
+    match_info <- match_html %>%
+      html_nodes(xpath = ".//td[@class='kick__table--gamelist__gamecell']")
+    
+    # extract the name of the home team
+    team_name_home <- match_info %>%
+      html_nodes(xpath = ".//div[@class='kick__v100-gameCell__team__name']") %>%
+      html_text() %>%
+      .[1] %>%
+      # .[seq(1, length(.), 2)] %>%
+      trimws()
+    
+    # extract the name of the away team
+    team_name_away <- match_info %>%
+      html_nodes(xpath = ".//div[@class='kick__v100-gameCell__team__name']") %>%
+      html_text() %>%
+      # .[seq(2, length(.), 2)] %>%
+      .[2] %>%
+      trimws()
+    
+    # extract the goals scored by the home team
+    goals_home <- match_info %>%
+      html_nodes(xpath = ".//div[@class='kick__v100-scoreBoard__scoreHolder__score']") %>%
+      html_text() %>%
+      # .[seq(1, length(.), 2)] %>%
+      .[1] %>%
+      trimws()
+    
+    # extract the goals scored by the away team
+    goals_away <- match_info %>%
+      html_nodes(xpath = ".//div[@class='kick__v100-scoreBoard__scoreHolder__score']") %>%
+      html_text() %>%
+      # .[seq(2, length(.), 2)] %>%
+      .[2] %>%
+      trimws()
+    
+    
+    # store the data in a temporary data frame
+    curr_match_info <- data.frame("match_date" = curr_date, 
+                                  "league" = league_name, 
+                                  "matchday" = matchday,
+                                  "team_name" = curr_team_name,
+                                  "home_team" = team_name_home,
+                                  "away_team" = team_name_away,
+                                  "goals_home" = goals_home, 
+                                  "goals_away" = goals_away)
+
+  
+  return(curr_match_info)
 }
 
