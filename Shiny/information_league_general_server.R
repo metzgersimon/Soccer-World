@@ -21,7 +21,7 @@ information_league_general_server <- function(input, output, session){
   # only those clubs that are present in the selected league
   observeEvent(input$information_league_season_selection, {
     print(input$information_league_season_selection)
-    data <- fixtures_bundesliga_2010_2021 %>%
+    data <- buli_matches_2010_2021 %>%
       filter(league_season == 
                as.numeric(str_split(
                  input$information_league_season_selection,
@@ -224,7 +224,7 @@ information_league_general_server <- function(input, output, session){
   
   
   output$information_league_matchday_fixtures <- renderReactable({
-    fixtures_bundesliga_2010_2021 %>%
+    buli_matches_2010_2021 %>%
       filter(league_season == 
                as.numeric(str_split(
                  input$information_league_season_selection,

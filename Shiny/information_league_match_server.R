@@ -395,7 +395,7 @@ information_league_match_server <- function(input, output, session){
     req(input$info_match_season_half)
 
     # get all relevant events for the selection of the user
-    relevant_events <- buli_fixture_events_2019_2021_18_12_21 %>%#
+    relevant_events <- buli_fixture_events_2010_to_2021 %>%#
       # filter for the selected season and get only those matches 
       filter(season == as.numeric(str_split(input$info_match_season,
                                             pattern = "/")[[1]][1]),
@@ -407,7 +407,7 @@ information_league_match_server <- function(input, output, session){
              team_name %in% c(input$info_match_team1, 
                               input$info_match_team2)
         ) %>%
-      inner_join(fixtures_bundesliga_2010_2021,
+      inner_join(buli_matches_2010_2021,
                  by = "fixture_id") %>%
       # now finally filter for the teams to get really only those events
       # that fit to the selected match
@@ -454,7 +454,7 @@ information_league_match_server <- function(input, output, session){
     #          team_name %in% c("FC Bayern Munich",
     #                           "Borussia Dortmund")
     #   ) %>%
-    #   inner_join(fixtures_bundesliga_2010_2021,
+    #   inner_join(buli_matches_2010_2021,
     #              by = "fixture_id") %>%
     #   filter(club_name_home %in% c("FC Bayern Munich",
     #                                "Borussia Dortmund"),
@@ -1018,7 +1018,7 @@ information_league_match_server <- function(input, output, session){
     # team2 <- "FC Bayern Munich"
     # season_half_selection <- "First half"
     
-  # test <- fixtures_bundesliga_2010_2021 %>%
+  # test <- buli_matches_2010_2021 %>%
   #   filter(league_season <= season,
   #          # take only those rows where the clubs match
   #          club_name_home %in% c(team1,
@@ -1027,7 +1027,7 @@ information_league_match_server <- function(input, output, session){
   #                                team2),
   #          fixture_date < Sys.Date()) %>%
     
-    fixtures_bundesliga_2010_2021 %>%
+    buli_matches_2010_2021 %>%
       filter(club_name_home %in% c(input$info_match_team1,
                                    input$info_match_team2),
              club_name_away %in% c(input$info_match_team1,
