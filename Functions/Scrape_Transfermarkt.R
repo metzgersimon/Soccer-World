@@ -782,9 +782,6 @@ get_lineups_by_season_tm <- function(league, league_id, season, port = NULL,
     # print for debugging
     print(paste0("Matchday ", i))
     
-    # create an empty list
-    # current_matchday_info <- list()
-    
     # paste together the final url
     final_url <- paste0(url, "&spieltag=", i)
 
@@ -838,24 +835,13 @@ get_lineups_by_season_tm <- function(league, league_id, season, port = NULL,
       # find the button which leads to the lineup page     
       elem <- remDr$findElement(using = "xpath", "//ul[@id='submenu']//li[@id='line-ups']/a")
       
-      
       Sys.sleep(5)
       
       elem$sendKeysToElement(list("line-ups", key = "enter"))
       
       
       Sys.sleep(5)
-      # 
-      # # click the button
-      # elem$clickElement()
-      # elem$clickElement()
-      
-      # Sys.sleep(2)
-      
-      # elem$click()
-      # elem$sendKeysToElement(list("line-ups", key = "enter"))
-      
-      
+    
       # extract the html for the given url
       page_html <- read_html(remDr$getPageSource()[[1]])
       
@@ -937,6 +923,12 @@ get_lineups_by_season_tm <- function(league, league_id, season, port = NULL,
                                   //table[@class='items']/tbody/tr/td[3]/img[1]")) %>%
         html_attr("alt")
       
+      rating <- page_html %>%
+        html_nodes(xpath = paste0("//div[@class='row sb-formation'][1]",
+                                  "//div[@class='large-6 columns']",
+                                  "//table[@class='items']/tbody/tr/td[4]/span")) %>%
+        html_text(trim = TRUE)
+      
       pos_and_market_value <- page_html %>%
         html_nodes(xpath = paste0("//div[@class='row sb-formation'][1]",
                                   "//table[@class='inline-table']//tr[2]/td")) %>%
@@ -978,8 +970,8 @@ get_lineups_by_season_tm <- function(league, league_id, season, port = NULL,
 
 
       starting_lineups <- c(name, player_number, pos, age, nationality, market_value,
-                            new_transfer, new_winter_transfer, returnee) %>%
-        matrix(ncol = 9, byrow = FALSE) %>%
+                            rating, new_transfer, new_winter_transfer, returnee) %>%
+        matrix(ncol = 10, byrow = FALSE) %>%
         data.frame() %>%
         mutate(match_group = rep(row_number(), length.out = n(), each = 11),
                team = ifelse(match_group == 1,
@@ -990,6 +982,7 @@ get_lineups_by_season_tm <- function(league, league_id, season, port = NULL,
                                                                                   pattern = "m")),
                                                             as.numeric(str_remove(X6, 
                                                                                   pattern = "Th."))/1000),
+               player_rating_tm = as.numeric(X7),
                player_number = as.numeric(X2),
                player_age = as.numeric(X4),
                matchday = i,
@@ -997,14 +990,15 @@ get_lineups_by_season_tm <- function(league, league_id, season, port = NULL,
                match_time = time,
                season,
                league = str_to_title(league),
-               player_is_new_transfer = as.logical(X7),
-               player_is_new_winter_transfer = as.logical(X8),
-               player_is_returnee = as.logical(X9),
+               player_is_new_transfer = as.logical(X8),
+               player_is_new_winter_transfer = as.logical(X9),
+               player_is_returnee = as.logical(X10),
                player_is_starting_grid = TRUE) %>%
         select(league, season, matchday, match_date, match_time,
                team, player_name = X1, player_number, player_pos = X3,
                player_age, player_nationality = X5, 
-               player_market_value_in_million_euro, 
+               player_market_value_in_million_euro,
+               player_rating_tm, 
                player_is_new_transfer,
                player_is_new_winter_transfer,
                player_is_returnee,
@@ -1045,6 +1039,21 @@ get_lineups_by_season_tm <- function(league, league_id, season, port = NULL,
                                     "//table[@class='items']/tbody/tr/td[3]/img[1]")) %>%
           html_attr("alt")
         
+        rating <- rep(NA, length(name))
+        
+        for(player_row in 1:length(name)){
+          curr_rating <- page_html %>%
+            html_nodes(xpath = paste0("//div[@class='row sb-formation'][2]",
+                                      "//div[@class='large-6 columns'][", team_subs, "]",
+                                      "//table[@class='items']/tbody/tr[", player_row, "]/td[4]")) %>%
+            html_text(trim = TRUE)
+          
+          rating[player_row] <- ifelse(length(curr_rating) == 0,
+                                       NA,
+                                       curr_rating)
+        }
+        
+        
         pos_and_market_value <- page_html %>%
           html_nodes(xpath = paste0("//div[@class='row sb-formation'][2]",
                                     "//div[@class='large-6 columns'][", team_subs, "]",
@@ -1060,8 +1069,6 @@ get_lineups_by_season_tm <- function(league, league_id, season, port = NULL,
           unlist() %>%
           str_extract(., pattern = "[0-9]+.*") %>%
           .[!is.na(.)]
-        # sapply(extract2, 2) %>%
-        # str_remove()
         
         transfer_status <- page_html %>%
           html_nodes(xpath = paste0("//div[@class='row sb-formation'][2]",
@@ -1087,8 +1094,8 @@ get_lineups_by_season_tm <- function(league, league_id, season, port = NULL,
         }
         
         substitute_lineups <- c(name, player_number, pos, age, nationality, market_value,
-                              new_transfer, new_winter_transfer, returnee) %>%
-          matrix(ncol = 9, byrow = FALSE) %>%
+                                rating, new_transfer, new_winter_transfer, returnee) %>%
+          matrix(ncol = 10, byrow = FALSE) %>%
           data.frame() %>%
           mutate(team = ifelse(team_subs == 1,
                                team_names[1],
@@ -1098,6 +1105,7 @@ get_lineups_by_season_tm <- function(league, league_id, season, port = NULL,
                                                                                     pattern = "m")),
                                                               as.numeric(str_remove(X6, 
                                                                                     pattern = "Th."))/1000),
+                 player_rating_tm = as.numeric(X7),
                  player_number = as.numeric(X2),
                  player_age = as.numeric(X4),
                  matchday = i,
@@ -1105,14 +1113,15 @@ get_lineups_by_season_tm <- function(league, league_id, season, port = NULL,
                  match_time = time,
                  season,
                  league = str_to_title(league),
-                 player_is_new_transfer = as.logical(X7),
-                 player_is_new_winter_transfer = as.logical(X8),
-                 player_is_returnee = as.logical(X9),
+                 player_is_new_transfer = as.logical(X8),
+                 player_is_new_winter_transfer = as.logical(X9),
+                 player_is_returnee = as.logical(10),
                  player_is_starting_grid = FALSE) %>%
           select(league, season, matchday, match_date, match_time,
                  team, player_name = X1, player_number, player_pos = X3,
                  player_age, player_nationality = X5, 
                  player_market_value_in_million_euro, 
+                 player_rating_tm,
                  player_is_new_transfer,
                  player_is_new_winter_transfer,
                  player_is_returnee,
@@ -1124,81 +1133,10 @@ get_lineups_by_season_tm <- function(league, league_id, season, port = NULL,
         Sys.sleep(2)
         
       }
-      
-      
-      
-      
-      
-      
+
       lineup_information <- bind_rows(lineup_information,
                                       starting_lineups,
                                       substitute_players)
-      
-      
-      # # substitute players 
-      # substitute_line_ups <- page_html %>%
-      #   # extract the nodes
-      #   html_nodes(xpath = paste0("//*[@class='row sb-formation'][2]//",
-      #                             "table[@class='items']//a[@class='wichtig']",
-      #                             "|//*[@class='row sb-formation'][2]",
-      #                             "//table[@class='inline-table']//tr[2]/td/text()[1]",
-      #                             "|//*[@class='row sb-formation'][2]//",
-      #                             "div[@class='rn_nummer']")) %>%
-      #   # convert it into strings
-      #   html_text(trim = TRUE) %>%
-      #   # remove the ","
-      #   str_remove_all(., pattern = ",.*") %>%
-      #   # trim the whitespaces
-      #   str_trim() %>%
-      #   # convert it into a matrix with 3 columns
-      #   # and then into a data frame
-      #   matrix(., ncol = 3, byrow = TRUE) %>%
-      #   data.frame()
-      # 
-      # # set the colnames of the substitutes accordingly
-      # colnames(substitute_line_ups) <- c("player_number",
-      #                                    "player_name",
-      #                                    "player_position")
-      
-      # substitute_line_ups$club_name <- sapply(substitute_line_ups$player_name,
-      #                                           get_club_by_player_name,
-      #                                           # league = league,
-      #                                           season_start = season)
-      
-      # check if for one player there are multiple clubs available, 
-      # i.e., the player transfered from one club to the other in one season
-      # indices <- lapply(enframe(substitute_line_ups$club_name)$value,
-      #                   length) %>%
-      #   which.max()
-      #   
-      # 
-      # for(index in indices){
-      #   clubs <- unlist(substitute_line_ups[index, ]$club_name)
-      #   clubs <- sapply(clubs,
-      #                   club_name_mapping) %>%
-      #     unname()
-      #   
-      #   substitute_line_ups[index, ]$club_name <-
-      #     clubs[clubs %in% team_names]
-      # }
-      # 
-      # substitute_line_ups$club_name <- sapply(substitute_line_ups$club_name,
-      #                                         club_name_mapping) %>%
-      #   unlist()
-      # 
-      
-      # create a list of the current match by
-      # storing all the information into it
-      # current_match_info <- list(
-      #   "matchday" = i,
-      #   "formations" = formations,
-      #   "team_names" = team_names,
-      #   "date" = date,
-      #   "time" = time,
-      #   "starting_lineups" = starting_line_ups_clean,
-      #   "substitute_lineups" = substitute_line_ups
-      # )
-    
       
       # wait for 2 seconds before continuing
       Sys.sleep(2)
