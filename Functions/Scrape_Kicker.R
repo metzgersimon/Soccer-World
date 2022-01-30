@@ -552,6 +552,17 @@ get_rest_days_kicker2 <- function(league, season, port = 7779L, matchday = NULL)
                                                 club_name_mapping) %>%
     unname()
   
+  all_matches_data_complete$previous_event_home_league <- as.integer(all_matches_data_complete$previous_event_home == 'BL')
+  all_matches_data_complete$previous_event_home_cl <- as.integer(all_matches_data_complete$previous_event_home == 'CL')
+  all_matches_data_complete$previous_event_home_el <- as.integer(all_matches_data_complete$previous_event_home == 'EL')
+  all_matches_data_complete$previous_event_home_ecl <- as.integer(all_matches_data_complete$previous_event_home == 'ECL')
+  
+  
+  all_matches_data_complete$previous_event_away_league <- as.integer(all_matches_data_complete$previous_event_away == 'BL')
+  all_matches_data_complete$previous_event_away_cl <- as.integer(all_matches_data_complete$previous_event_away == 'CL')
+  all_matches_data_complete$previous_event_away_el <- as.integer(all_matches_data_complete$previous_event_away == 'EL')
+  all_matches_data_complete$previous_event_away_ecl <- as.integer(all_matches_data_complete$previous_event_away == 'ECL')
+  
   # close the driver (client) and the server
   remDr$close()
   rD$server$stop()
