@@ -245,7 +245,7 @@ get_fixture_stats_kicker <- function(league, season, port = 4321L, matchday = NU
 
 
 
-get_rest_days_kicker2 <- function(league, season, port = 7777L, matchday = NULL){
+get_rest_days_kicker2 <- function(league, season, port = 7779L, matchday = NULL){
   # we want to extract the last two digits of the season because the date in the
   # kicker url is given as "season-season+1" where the second one only has two digits
   # e.g., "2013-14"
@@ -258,6 +258,8 @@ get_rest_days_kicker2 <- function(league, season, port = 7777L, matchday = NULL)
   # paste together the url we want to scrape
   url <- paste0("https://www.kicker.de/", league, "/vereine/",
                 season, "-", last_two_digits + 1)
+  
+  
   
   all_matches_data <- NULL
   
@@ -282,7 +284,7 @@ get_rest_days_kicker2 <- function(league, season, port = 7777L, matchday = NULL)
   club_refs <- page_html %>%
     html_nodes(xpath = "//td[@class='kick__t__a__l kick__table--ranking__metainfo']/a") %>%
     html_attr("href") %>%
-    # match just the links that contain the string "splielplan"
+    # match just the links that contain the string "spielplan"
     str_match(., pattern = ".*spielplan.*") %>%
     # remove all that did not match that string
     .[!is.na(.)]
@@ -290,6 +292,9 @@ get_rest_days_kicker2 <- function(league, season, port = 7777L, matchday = NULL)
   Sys.sleep(1)
   
   for(i in 1:length(club_refs)){
+    
+    stop <- FALSE
+    
     # paste together the final club url
     final_club_url <- paste0("https://www.kicker.de", club_refs[i])
     
@@ -314,6 +319,13 @@ get_rest_days_kicker2 <- function(league, season, port = 7777L, matchday = NULL)
     Sys.sleep(1)
     
     for(curr_month in 1:length(all_matches)){
+      
+      if(stop){
+        break
+      }
+      
+      print(paste('Month', curr_month))
+      
       curr_month_information <- NULL
       
       # get the base data for the month
@@ -328,6 +340,12 @@ get_rest_days_kicker2 <- function(league, season, port = 7777L, matchday = NULL)
         dmy()
       
       for(match in 1:length(curr_month_dates)){
+        
+        if(stop){
+          break
+        }
+        
+        
         curr_match_data <- curr_month_data[[match]] 
         
         curr_date <- curr_match_data %>%
@@ -358,7 +376,7 @@ get_rest_days_kicker2 <- function(league, season, port = 7777L, matchday = NULL)
           .[1]
         
         major_leagues <- c("Bundesliga", "Bundesliga 2", "Premier League",
-                                "La Liga", "Serie A", "Ligue 1")
+                           "La Liga", "Serie A", "Ligue 1")
         
         league_name <- ifelse(league_name == "BL",
                               "Bundesliga",
@@ -441,18 +459,22 @@ get_rest_days_kicker2 <- function(league, season, port = 7777L, matchday = NULL)
                                                 curr_month_match2)
             
             save(curr_month_information, file = "curr_month_with_prev_information.RData")
+            
           }
           
+          stop <- TRUE  
+          
         } else {
-          next
-        }
+            next
+            }
+        
       }
       
       all_matches_curr_team <- bind_rows(all_matches_curr_team,
                                          curr_month_information)
       
       Sys.sleep(2)
-     
+      
     }
     
     # compute the rest days for every match for the current team
@@ -460,7 +482,8 @@ get_rest_days_kicker2 <- function(league, season, port = 7777L, matchday = NULL)
       # by computing the difference between two matches and paste it to days
       mutate(rest_days = as.integer(difftime(match_date, lag(match_date, 1), 
                                              units = c("days"))))
-      
+    
+    all_matches_curr_team$previous_event <- all_matches_curr_team$league[1]
     
     all_matches_data <- bind_rows(all_matches_data,
                                   all_matches_curr_team)
@@ -496,13 +519,15 @@ get_rest_days_kicker2 <- function(league, season, port = 7777L, matchday = NULL)
   # and a away frame with the rest days that correspond to the away team
   all_matches_data_home <- all_matches_data %>%
     filter(team_name == home_team) %>%
-    mutate(rest_days_home = rest_days) %>%
-    select(-c(team_name, rest_days))
+    mutate(rest_days_home = rest_days,
+           previous_event_home = previous_event) %>%
+    select(-c(team_name, rest_days, previous_event))
   # 
   all_matches_data_away <- all_matches_data %>%
     filter(team_name == away_team) %>%
-    mutate(rest_days_away = rest_days) %>%
-    select(-c(team_name, rest_days))
+    mutate(rest_days_away = rest_days,
+           previous_event_away = previous_event) %>%
+    select(-c(team_name, rest_days, previous_event))
   # 
   # # join these two frames together into one frame and with this transforming
   # # it a data frame that just contains one row per match
