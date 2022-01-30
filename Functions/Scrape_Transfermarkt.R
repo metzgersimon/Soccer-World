@@ -901,6 +901,7 @@ get_lineups_by_season_tm <- function(league, league_id, season, port = NULL,
       }
       
       time_12h <- paste(date_information[[1]][3], date_information[[1]][4], collapse = "")
+      print(time_12h)
       time <- format(strptime(time_12h, "%I:%M %p"), "%H:%M")
      
       Sys.sleep(2)
