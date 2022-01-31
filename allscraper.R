@@ -17,7 +17,7 @@ con <- dbConnect(RMariaDB::MariaDB(),
 
 # Fetch Team_ids from this season and league
 current_team_id_q <- dbSendQuery(conn = con, paste(
-                                              "SELECT DISTINCT club_id_home 
+                                              "SELECT DISTINCT club_id_home, fixture_id 
                                               FROM buli_matches_2010_2021
                                               WHERE league_season =",
                                               as.character(current_season) 
@@ -29,7 +29,7 @@ dbClearResult(current_team_id_q)
 
 # Fetch fixtur ids from this matchday in season and league
 current_fixtures_id_q <- dbSendQuery(conn = con,  paste(
-                                              "SELECT DISTINCT club_id_home 
+                                              "SELECT DISTINCT league_id
                                               FROM buli_matches_2010_2021
                                               WHERE league_season =",
                                               as.character(current_season),  
@@ -39,6 +39,14 @@ current_fixtures_id_q <- dbSendQuery(conn = con,  paste(
 current_fixtures_ids <- dbFetch(current_fixtures_id_q)
 dbClearResult(current_fixtures_id_q)
 
+
+# Fetch fixtur ids from this matchday in season and league
+current_league_id_q <- dbSendQuery(conn = con,
+                                              "SELECT DISTINCT fixture_id
+                                              FROM buli_matches_2010_2021")
+
+current_league_ids <- dbFetch(current_league_id_q)
+dbClearResult(current_league_id_q)
 
 
 #===============================================================================
@@ -63,9 +71,9 @@ get_player_stats_fixture()
 # Scrape_Sofifa
 # Probleme: Timeouts
 
-get_team_stats_full
+get_team_stats_full()
 
-get_squads_full_by_season
+get_squads_full_by_season()
 
 #===============================================================================
 # Scrape_Transfermarkt
@@ -125,15 +133,6 @@ buli_all_rest_days <- get_rest_days_kicker(league_name = "bundesliga",
 # get_team_stats_full()
 
 
-
-
-
-
-con <- dbConnect(RMariaDB::MariaDB(),
-                 host='127.0.0.1',
-                 dbname='testdb',
-                 username='root',
-                 password='my-secret-pw')
 
 dbWriteTable(con, name = "buli_rest_days", all_rest_days,
              overwrite = TRUE)
