@@ -1,11 +1,11 @@
-############## get_team_stats_full #################
+############## get_team_stats_full_fifa #################
 # inputs
 # outputs: should return a data frame which contains the
 # information about team-based data from sofifa.com
 # example: includes the FIFA game rating for each club and some other information
 # such as the number of players in the club
 
-get_team_stats_full <- function(first_fifa_version, league = "bundesliga") {
+get_team_stats_full_fifa <- function(fifa_version, league = "bundesliga", max_date_in_database = NULL) {
   # create the url endpoint based on the league parameter
   league <- str_to_title(league)
   
@@ -32,8 +32,14 @@ get_team_stats_full <- function(first_fifa_version, league = "bundesliga") {
                       "showCol%5B%5D=ta")
   
   # get the fifa versions we want to use
-  fifa_versions <- get_available_fifa_versions() %>%
-    .[. >= first_fifa_version]
+  if(is.null(max_date_in_database)){
+    fifa_versions <- get_available_fifa_versions() %>%
+      .[. >= fifa_version]
+  } else {
+    fifa_versions <- get_available_fifa_versions() %>%
+      .[. == fifa_version]
+  }
+  
   
   Sys.sleep(1)
   
@@ -45,8 +51,21 @@ get_team_stats_full <- function(first_fifa_version, league = "bundesliga") {
     
     available_refs_dates <- get_available_refs_and_dates(final_url, fifa_versions[i])
     
-    url_for_date <- available_refs_dates[[1]]
-    available_dates <- available_refs_dates[[2]]
+    if(is.null(max_date_in_database)){
+      url_for_date <- available_refs_dates[[1]]
+      available_dates <- available_refs_dates[[2]]
+    } else {
+      url_for_date <- available_refs_dates[[1]][1]
+      available_dates <- available_refs_dates[[2]][1]
+      
+      max_date_in_database <- ymd(max_date_in_database)
+      available_dates_curr <- mdy(available_dates)
+      
+      if(!(available_dates_curr > max_date_in_database)){
+        return(NULL)
+      }
+    }
+    
     
     Sys.sleep(1)
     
@@ -131,7 +150,9 @@ get_team_stats_full <- function(first_fifa_version, league = "bundesliga") {
 }
 
 
-get_squads_full_by_season <- function(league_id, fifa_vers, port = 4124L){
+
+get_squads_full_fifa <- function(league_id, fifa_version, port = 4124L, max_date_in_database = NULL,
+                                 single_fifa_version = TRUE){
   # create a driver from Rselenium
   rD <- rsDriver(browser = "firefox", port = port)
   
@@ -147,8 +168,21 @@ get_squads_full_by_season <- function(league_id, fifa_vers, port = 4124L){
   
   league_url <- paste0(base_url, "/teams?lg=", league_id)
   
-  fifa_version <- get_available_fifa_versions() %>%
-    .[. == fifa_vers]
+  
+  # get the fifa versions we want to use
+  if(is.null(max_date_in_database)){
+    if(single_fifa_version){
+      fifa_versions <- get_available_fifa_versions() %>%
+        .[. == fifa_version]
+    } else {
+      fifa_versions <- get_available_fifa_versions() %>%
+        .[. >= fifa_version]
+    }
+    
+  } else {
+    fifa_versions <- get_available_fifa_versions() %>%
+      .[. == fifa_version]
+  }
   
   Sys.sleep(1)
   
@@ -156,11 +190,23 @@ get_squads_full_by_season <- function(league_id, fifa_vers, port = 4124L){
   club_squads_frame <- NULL
   
   # iterate through all extracted fifa versions
-  for (i in 1:length(fifa_version)) {
-    available_refs_dates <- get_available_refs_and_dates(league_url, fifa_version[i])
+  for (i in 1:length(fifa_versions)) {
+    available_refs_dates <- get_available_refs_and_dates(league_url, fifa_versions[i])
     
-    url_for_date <- available_refs_dates[[1]]
-    available_dates <- available_refs_dates[[2]]
+    if(is.null(max_date_in_database)){
+      url_for_date <- available_refs_dates[[1]]
+      available_dates <- available_refs_dates[[2]]
+    } else {
+      url_for_date <- available_refs_dates[[1]][1]
+      available_dates <- available_refs_dates[[2]][1]
+      
+      max_date_in_database <- ymd(max_date_in_database)
+      available_dates_curr <- mdy(available_dates)
+      
+      if(!(available_dates_curr > max_date_in_database)){
+        return(NULL)
+      }
+    }
     
     
     Sys.sleep(1)
@@ -191,7 +237,7 @@ get_squads_full_by_season <- function(league_id, fifa_vers, port = 4124L){
   
       # iterate over all teams in the league
       for(k in 1:length(team_refs)){
-        print(paste0("Current fifa version: ", fifa_version[i]))
+        print(paste0("Current fifa version: ", fifa_versions[i]))
         print(paste0("Current date: ", curr_date))
         print(paste0("Current team: ", team_refs[k]))
         
@@ -229,7 +275,7 @@ get_squads_full_by_season <- function(league_id, fifa_vers, port = 4124L){
                                                       pattern = "\\."),
                                            fifa_player_name_long,
                                            fifa_player_name_short),
-                 fifa_version = fifa_version[i],
+                 fifa_version = fifa_versions[i],
                  date = mdy(curr_date),
                  league = league_name,
                  team = team_names[k],
