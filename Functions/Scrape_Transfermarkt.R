@@ -1388,3 +1388,71 @@ get_fixture_detailed_info <- function(league, league_id, season, port = 1234L,
   return(match_infos_all_season)
       
 }
+
+
+
+# function should extract the nations that are currently in the top x in the 
+# fifa world ranking list
+get_fifa_world_ranking_top_nations <- function(newest_available_date, top_nations = 15){
+  # base url
+  base_url <- "https://www.transfermarkt.com/statistik/weltrangliste"
+  
+  # fifa ranking over time variable
+  fifa_ranking_over_time <- NULL
+  
+  # extract the page content once
+  page_html <- read_html(base_url)
+  
+  # extract all available dates (back to the start date)
+  available_dates <- page_html %>%
+    html_nodes(xpath = "//option[@value]") %>%
+    html_attrs()
+  
+  # clean the dates by extracting the values from the list above
+  # (take always the first element in the list (tail(1)), sort them ascending
+  # and unname them)
+  dates <- rapply(available_dates, function(x) tail(x, 1)) %>%
+    sort() %>%
+    unname() %>%
+    ymd()
+  
+  # check if the newest available date (newest_available_date) is already in the data base
+  # and if so, return NULL
+  if(max(dates) <= ymd(newest_available_date)){
+    return(NULL)
+  }
+  
+  # iterate over all available dates
+  for(i in 1:length(dates)){
+    # paste together the final url with the dates
+    final_url <- paste0(base_url, "/statistik/stat/plus/0/galerie/0?",
+                        "datum=", dates[i])
+    
+    # extract the content of the current page
+    page_html <- read_html(final_url)
+    
+    # extract the information for the current date
+    fifa_world_ranking_table <- page_html %>%
+      html_nodes(xpath = "//table[@class='items']") %>%
+      # convert it directly into a data frame
+      html_table() %>%
+      # get the first element of the extracted list which contains the data frame
+      .[[1]] %>%
+      # get only the top_nations (default 15)
+      head(top_nations) %>%
+      # add a variable for the date
+      mutate(date = dates[i]) %>%
+      # reorder the variables
+      select(date, rank = "#", everything()) %>%
+      data.frame()
+  
+    # store the table extracted for the current date in the overall frame
+    # that stores all dates
+    fifa_ranking_over_time <- bind_rows(fifa_ranking_over_time,
+                                        fifa_world_ranking_table)
+    
+    Sys.sleep(2)
+  }
+  
+  return(fifa_ranking_over_time)
+}
