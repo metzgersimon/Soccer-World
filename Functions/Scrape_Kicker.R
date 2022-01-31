@@ -678,3 +678,173 @@ get_match_infos <- function(match_html, curr_team_name){
   return(curr_match_info)
 }
 
+
+
+# function should extract the coach information for every club in a given
+# league and season
+get_coaches_by_club <- function(league, season, port){
+  # we want to extract the last two digits of the season because the date in the
+  # kicker url is given as "season-season+1" where the second one only has two digits
+  # e.g., "2013-14"
+  last_two_digits <- substr(season, start = nchar(season)-2+1, stop = nchar(season)) %>%
+    as.numeric()
+  
+  # convert the season into a number
+  season <- as.numeric(season)
+  
+  # paste together the url we want to scrape
+  url <- paste0("https://www.kicker.de/", league, "/vereine/",
+                season, "-", last_two_digits + 1)
+  
+  all_coaches <- NULL
+  
+  # create a driver from Rselenium
+  rD <- rsDriver(browser = "firefox", port = port)
+  
+  # get the client
+  remDr <- rD$client
+  
+  # set time outs to give the page the change to first fully load before
+  # we try to get information form it
+  remDr$setTimeout(type = "implicit", milliseconds = 50000)
+  # remDr$setTimeout(type = "page load", milliseconds = 10000)
+  
+  # navigate to the created url
+  remDr$navigate(url)
+  
+  # extract the html of the page
+  page_html <- read_html(remDr$getPageSource()[[1]])
+  
+  # get all the club links
+  club_refs <- page_html %>%
+    html_nodes(xpath = "//td[@class='kick__t__a__l kick__table--ranking__metainfo']/a") %>%
+    html_attr("href") %>%
+    # match just the links that contain the string "spielplan"
+    str_match(., pattern = ".*spielplan.*") %>%
+    # remove all that did not match that string
+    .[!is.na(.)]
+  
+  Sys.sleep(1)
+  
+  # iterate over all clubs
+  for(i in 1:length(club_refs)){
+    # paste together the final club url
+    final_club_url <- paste0("https://www.kicker.de", club_refs[i])
+    
+    # navigate to the created url
+    remDr$navigate(final_club_url)
+    
+    # extract the html of the page
+    page_html <- read_html(remDr$getPageSource()[[1]])
+    
+    # get the name of the current name
+    curr_team_name <- page_html %>%
+      html_nodes(xpath = paste0("//div[@class='kick__head-breadcrumb__items']",
+                                "//span[@class='kick__head-breadcrumb__item ", "
+                                kick__head-breadcrumb__item--rest ']")) %>%
+      html_text(trim = TRUE)
+    
+    # find the "trainer" button and extract the link
+    trainer_ref <- page_html %>%
+      html_nodes(xpath = paste0("//div[@class='kick__card']//",
+                                "li[@class='kick__nav-tabs__item ",
+                                "kick__js-navbar-size-check__item']/a")) %>%
+      # extract all links available
+      html_attr("href") %>%
+      # get only that one that contains the word trainer
+      .[str_detect(., "trainer")]
+    
+    # paste togehter the url of the trainer page
+    trainer_url <- paste0("https://www.kicker.de", trainer_ref)
+    
+    # navigate to the url
+    remDr$navigate(trainer_url)
+    
+    # extract the html of the page
+    page_html <- read_html(remDr$getPageSource()[[1]])
+    
+    # get all the data about the coaches
+    coach_infos <- page_html %>%
+      html_nodes(xpath = paste0("//div[@class='kick__vita__stationen__teams-item']",
+                                "//div[@class='kick__vita__stationen__teams-item-header']"))
+    
+    # extract the dates a coach had signed
+    coach_dates <- coach_infos %>%
+      html_nodes(xpath = paste0(".//p[@class='kick__vita__stationen__teams-item-header-timeline']",
+                                "//span[2]")) %>%
+      html_text(trim = TRUE) %>%
+      # split the sign in and sign out dates
+      str_split(., pattern = " ") %>%
+      unlist() %>%
+      .[. != ""] %>%
+      # for the current coach add an empty string for the sign out date
+      append(., values = " ", after = 1) %>%
+      # convert the data into a data frame with 2 columns (sign in and out dates)
+      matrix(ncol = 2, byrow = TRUE) %>%
+      data.frame() %>%
+      # replace empty string with NA and convert the strings to dates
+      mutate(X2 = ifelse(X2 == " ",
+                         NA, X2),
+             X1 = dmy(X1),
+             X2 = dmy(X2))
+    
+    colnames(coach_dates) <- c("coach_since", "coach_up_to")
+    
+    # extract coach names
+    coach_firstnames <- coach_infos %>%
+      html_nodes(xpath = paste0(".//li//td[@class='kick__vita__stationen__teams-",
+                                "item-header-trainer']/a[2]//p/span")) %>%
+      html_text(trim = TRUE) %>%
+      data.frame("coach_firstname" = .)
+    
+    coach_lastnames <- coach_infos %>%
+      html_nodes(xpath = paste0(".//li//td[@class='kick__vita__stationen__teams-",
+                                "item-header-trainer']/a[2]//p/text()[1]")) %>%
+      html_text(trim = TRUE) %>%
+      data.frame("coach_lastname" = .)
+    
+    # paste the names together (firstname lastname)
+    coach_names <- paste0(coach_firstnames$coach_firstname, " ",
+                          coach_lastnames$coach_lastname) %>%
+      data.frame("coach_name" = .)
+    
+    # extract the form of the coach in the club, i.e., number of wins, draws 
+    # and losses
+    coach_form <- coach_infos %>%
+      html_nodes(xpath = paste0(".//span[@class='kick__badge-game kick__badge-game--win']",
+                                "|", 
+                                ".//span[@class='kick__badge-game kick__badge-game--draw']",
+                                "|",
+                                ".//span[@class='kick__badge-game kick__badge-game--lose']")) %>%
+      html_text(trim = TRUE) %>%
+      # into data frame with 3 columns
+      matrix(ncol = 3, byrow = TRUE) %>%
+      data.frame() %>%
+      mutate(across(c(X1:X3), as.numeric)) %>%
+      select(coach_wins = X1,
+             coach_draws = X2,
+             coach_losses = X3)
+    
+    # bind all the information together into one data frame
+    curr_team_coach_data <- bind_cols(coach_names, coach_firstnames, 
+                                      coach_lastnames, coach_form, coach_dates) %>%
+      mutate(team_name = curr_team_name) %>%
+      # reorder the data frame
+      select(team_name, coach_name, coach_firstname, coach_lastname,
+             coach_wins, coach_draws, coach_losses, coach_since, coach_up_to)
+    
+    # map the club names
+    curr_team_coach_data$team_name <- sapply(curr_team_coach_data$team_name,
+                                             club_name_mapping) %>%
+      unname()
+    
+    # append the coach data of the current club to the overall frame
+    all_coaches <- bind_rows(all_coaches, curr_team_coach_data)
+    
+    Sys.sleep(2)
+
+  }
+  
+  return(all_coaches)
+}
+
