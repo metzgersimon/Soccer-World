@@ -1,3 +1,4 @@
+
 # global file should provide the shiny app with the needed
 # packages and data 
 # for this, we source the setup file to get all the needed functions
@@ -12,17 +13,41 @@ seasons <- c(paste0(sort(c(2015:2021),
                               decreasing = TRUE))
 )
 
+# setup a connection to the database
+con <- dbConnect(RMariaDB::MariaDB(), 
+                 host='127.0.0.1',
+                 dbname='testdb',
+                 username='root',
+                 password='my-secret-pw')
+
+
+####### with datenbank
+# match infos
+buli_matches_2010_2021 <- tbl(con, "buli_matches_2010_2021") %>% data.frame()
+buli_fixture_events_2010_to_2021  <- tbl(con, "buli_fixture_events_2010_to_2021") %>% data.frame()
+
+# player infos
+major_five_league_transfers <- tbl(con, "major_five_league_transfers") %>% data.frame()
+fifa_squads_buli2_2015_2022<- tbl(con, "fifa_squads_buli2_2015_2022") %>% data.frame()
+fifa_squads_buli_2015_2022<- tbl(con, "fifa_squads_buli_2015_2022") %>% data.frame()
+buli_fixture_lineups_2015_2021<- tbl(con, "buli_fixture_lineups_2015_2021") %>% data.frame()
+buli_squads_tm <- tbl(con, "buli_squads_tm") %>% data.frame()
+
+player_team_join <- major_six_leagues_team_infos_2010_2021 %>% left_join(buli_squads_tm, by=c("team_name"="club"))
+
+
+######################## old ################
 # map all club names in all available data frames 
 # with the mapping function club_name_mapping we created
 # to be able to join over the names
 all_seasons_running_table$club <- sapply(all_seasons_running_table$club,
                                          club_name_mapping)
 
-all_season_infos$team_name <- sapply(all_season_infos$team_name,
-                                         club_name_mapping)
+#all_season_infos$team_name <- sapply(all_season_infos$team_name,
+#                                         club_name_mapping)
 
 squads_season_2020$club_name <- sapply(squads_season_2020$club_name,
-                                          club_name_mapping)
+                                       club_name_mapping)
 
 fixtures_bundesliga_2010_2021$club_name_home <-
   sapply(fixtures_bundesliga_2010_2021$club_name_home,
@@ -38,12 +63,13 @@ all_seasons_from_2010_squads$club_name <-
 
 
 # combine all data frames together
-season_players_joined <- all_seasons_running_table %>%
-  inner_join(all_seasons_from_2010_squads,
-             by = c("club" = "club_name",
-                    "season_start_year" = "season")) %>%
-  inner_join(all_season_infos,
-             by = c("club" = "team_name"))
+#season_players_joined <- all_seasons_running_table %>%
+#  inner_join(all_seasons_from_2010_squads,
+#             by = c("club" = "club_name",
+#                    "season_start_year" = "season")) 
+#%>%
+#  inner_join(all_season_infos,
+#             by = c("club" = "team_name"))
 
 
 # fixtures_with_stats 2021
@@ -54,28 +80,37 @@ fixtures_with_stats_2021$team_name <- sapply(fixtures_with_stats_2021$team_name,
                                              club_name_mapping)
 
 fixtures_with_stats_2021$club_name_home <- sapply(fixtures_with_stats_2021$club_name_home,
-                                             club_name_mapping)
+                                                  club_name_mapping)
 
 fixtures_with_stats_2021$club_name_away <- sapply(fixtures_with_stats_2021$club_name_away,
-                                             club_name_mapping)
+                                                  club_name_mapping)
 
 market_values_over_time$club <- sapply(market_values_over_time$club,
                                        club_name_mapping)
 
-bayern_transfers$from_team_name <- sapply(bayern_transfers$from_team_name,
-                                          club_name_mapping)
+#bayern_transfers$from_team_name <- sapply(bayern_transfers$from_team_name,
+#                                          club_name_mapping)
 
-bayern_transfers$to_team_name <- sapply(bayern_transfers$to_team_name,
-                                          club_name_mapping)
+#bayern_transfers$to_team_name <- sapply(bayern_transfers$to_team_name,
+#                                          club_name_mapping)
 
-all_transfers$from_team_name <- sapply(all_transfers$from_team_name,
-                                          club_name_mapping)
+#all_transfers$from_team_name <- sapply(all_transfers$from_team_name,
+#                                          club_name_mapping)
 
-all_transfers$to_team_name <- sapply(all_transfers$to_team_name,
-                                        club_name_mapping)
+#all_transfers$to_team_name <- sapply(all_transfers$to_team_name,
+#                                        club_name_mapping)
 
 player_stats_2021_buli$team_name <- sapply(player_stats_2021_buli$team_name,
                                            club_name_mapping)
 
-buli_fixture_events_2019_2021_18_12_21$team_name <- sapply(buli_fixture_events_2019_2021_18_12_21$team_name,
-                                                           club_name_mapping)
+#buli_fixture_events_2019_2021_18_12_21$team_name <- sapply(buli_fixture_events_2019_2021_18_12_21$team_name,
+#                                                           club_name_mapping)
+
+
+
+
+
+
+
+
+

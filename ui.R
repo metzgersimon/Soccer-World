@@ -20,7 +20,8 @@ ui <- dashboardPage(
       menuItem("Prediction", tabName = "prediction", icon = icon("battle-net"),
                startExpanded = TRUE,
                menuSubItem("Model", tabName = "prediction-model"),
-               menuSubItem("Investment", tabName = "prediction-investment"))
+               menuSubItem("Investment", tabName = "prediction-investment")),
+      menuItem("About", tabName = "about", icon = icon("address-book"))
     )
   ),
   dashboardBody(
@@ -31,9 +32,6 @@ ui <- dashboardPage(
     # use the shinyjs package to improve the user experience
     # of the app
     useShinyjs(),
-    # use the shinyalert package to improve the user experience
-    # of the app by making great alert messages (for errors etc.)
-    useShinyalert(),
     
     # call the sub-uis for the several pages
     tabItems(
@@ -42,7 +40,8 @@ ui <- dashboardPage(
       tab_information_league_match_ui(),
       tab_information_team_ui(),
       tab_information_player_ui(),
-      tab_prediction_investment_ui()
+      tab_prediction_investment_ui(),
+      tab_about_ui()
     )
   )
 )
