@@ -37,6 +37,13 @@ spi_538_matches <-
          home_team_adjusted_goals = adj_score1, 
          away_team_adjusted_goals = adj_score2)
 
+# map the club names
+spi_538_matches$home_team <- sapply(spi_538_matches$home_team,
+                                    club_name_mapping)
+
+spi_538_matches$away_team <- sapply(spi_538_matches$away_team,
+                                    club_name_mapping)
+
 spi_538_matches_new <- spi_538_matches %>%
   anti_join(spi_538_available_matches, by = c("season", "date", "league",
                                               "home_team", "away_team")) %>%

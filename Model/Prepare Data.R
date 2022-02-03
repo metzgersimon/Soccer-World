@@ -7,6 +7,15 @@ prepare_venue_data <- function(){
   return(venues)
 }
 
+# function should compute the distance in kilometers of two venues
+prepare_venue_distance <- function(venue1, venue2){
+  venue_distance <- distm(c(venue1$longitude, venue1$latitude), 
+                          c(venue2$longitude, venue2$latitude), 
+                          fun = distHaversine)/1000
+  
+  return(venue_distance)
+}
+
 ############# pseudo code cronjob lineup ############
 # check for the latest available matchday
 latest_matchday <- buli_matches %>%
@@ -67,7 +76,18 @@ prepare_lineup_data <- function(match_id, max_season = 2021){
            matchday < match_information$league_round) %>%
     mutate(player_lastname = str_to_title(sub(".*?\\s", "", player_name)),
            # map all special characters to plain ones
-           player_lastname2 = stri_trans_general(player_lastname, id = "Latin-ASCII")) %>%
+           player_lastname2 = stri_trans_general(player_lastname, id = "Latin-ASCII"),
+           # map transfermarkt positions to match API positions
+           player_pos_API = ifelse(str_detect(player_pos, pattern = "Goal"),
+                                   "G",
+                                   ifelse(str_detect(player_pos, pattern = "Back|Sweeper"),
+                                          "D",
+                                          ifelse(str_detect(player_pos, pattern = "Midfield"),
+                                                 "M",
+                                                 ifelse(str_detect(player_pos, pattern = "Winger|Striker|Forward"),
+                                                        "F",
+                                                        player_pos))))) %>%
+    ############## AFFE WIEDER RAUSNEHMEN! ################
     mutate(player_lastname2 = ifelse(player_name == "Fabian Kunze", "Affe", player_lastname2))
     
     
@@ -111,10 +131,25 @@ prepare_lineup_data <- function(match_id, max_season = 2021){
                             match_information$club_name_away))
   
   
+  
+  ############ bedeutet nur, dass er nicht in dem team ist mit der nummer
+  
   # if not_matched_players is not empty, i.e., there is at least one player
   # that is now, i.e., not in the historical data of transfermarkt
   if(nrow(not_matched_players) != 0){
+    missing_player_stats <- not_matched_players %>%
+      inner_join(lineups_tm, by = c("team_name" = "team",
+                                    "player_pos" = "player_pos_API"))
+    ####### API STATS VERWENDEN, 
+    
+    
+    
     # search for the player in the player_fixture_stats of the league
+    ###### WIR BRAUCHEN AGGREGIERTE TM DATEN NICHT API
+    missing_player_stats_TM <- lineups_tm %>%
+      filter(player_lastname2 == not_matched_players$player_lastname2)
+    
+    
     missing_player_stats <- buli_player_fixture_stats %>%
       filter(league_season == match_information$league_season,
              player_id == not_matched_players$player_id) %>%
@@ -141,6 +176,9 @@ prepare_lineup_data <- function(match_id, max_season = 2021){
     }
   }
   
+  
+  # 
+  
   # now get the player stats for all players that are in the current lineup
   
   
@@ -150,6 +188,7 @@ prepare_lineup_data <- function(match_id, max_season = 2021){
   # Stats für die lineups berechnen (missing_players) vor aggregierung einfügen
   player_stats_lineup <- player_stats %>%
     filter(player_id %in% matched_players$player_id) %>%
+    ##### missing player einfügen
     group_by(team_id, games_position) %>%
     summarize(across(c(games_minutes, games_rating, goals_total:cards_red),
                      ~median(.x, na.rm = TRUE)))
@@ -161,5 +200,81 @@ prepare_lineup_data <- function(match_id, max_season = 2021){
               by = c("team_id",  "player_id")) %>%
     select(-c(#player_lastname, 
       player_lastname.x, player_lastname.y))
+  
+}
+
+
+# function converts a data frame with 2 rows (unsuitable for the model)
+# into one row 
+convert_two_lines_into_one <- function(frame_to_convert, columns_to_drop = NULL,
+                                       join_columns = NULL){
+  frame_to_convert <- frame_to_convert %>%
+    group_by(match_group = rep(row_number(), length.out = n(), each = 2)) %>%
+    ungroup() 
+  
+  home_part <- frame_to_convert %>%
+    group_by(match_group) %>%
+    filter(row_number(desc(match_group)) == 1) %>%
+    ungroup() %>%
+    select(-c(contains("away"),
+              match_group))
+  
+  away_part <- frame_to_convert %>%
+    group_by(match_group) %>%
+    filter(row_number(desc(match_group)) == 2) %>%
+    ungroup() %>%
+    select(-c(contains("home"),
+              match_group,
+              columns_to_drop))
+  
+  one_line_frame <- home_part %>%
+    inner_join(away_part, by = join_columns, suffix = c("_home", "_away"))
+  
+  return(one_line_frame)
+}
+
+
+
+# prepare the match stats for every club by aggregating the data
+# and convert it into one row per match
+# Immer nur für aktuelle Saison neu, für historische einmalig
+prepare_team_match_stats_historical <- function(){
+  match_stats_historical <- buli_fixture_stats %>%
+    # get only past seaons and remove matchdays that are not the regular season,
+    # i.e., relegation matches
+    filter(season < max(season),
+           !is.na(matchday)) %>%
+    # group by the league and team id
+    group_by(league_id, team_id) %>%
+    # because we do not have the stats for e.g. matchday 1 at matchday 1
+    # we lag the variables we consider for prediction with a n of 1
+    mutate(across(c(shots_on_goal:passing_accuracy),
+                  ~lag(.x, n = 1))) %>%
+    # after that we calculate a cumulative running mean with a window of 2,
+    # i.e., 2 matches
+    mutate(across(c(shots_on_goal:passing_accuracy),
+                  ~runMean(.x, n = 2, cumulative = TRUE))) %>%
+    # then we use the helper function convert_two_lines_into_one to convert
+    # the data frame from two rows for 1 match into one row per match
+    convert_two_lines_into_one(., columns_to_drop = c("league_id", "season",
+                                                      "matchday", "fixture_date",
+                                                      "fixture_time"),
+                               join_columns = "fixture_id")
+    
+  
+    return(match_stats_historical)
+    
+}
+
+
+######### 538 ###############
+prepare_spi_data <- function(league_name){
+  spi_538_matches <- tbl(con, "spi_538_matches") %>%
+    filter(league == league_name) %>%
+    data.frame()
+}
+
+
+prepare_fifa15_lineup <- function(player_nationality){
   
 }
