@@ -25,8 +25,8 @@ tab_information_player_ui <- function(){
             column(width = 3, align = "center",
                    selectInput("information_player_team_selection",
                                label = "Club",
-                               choices = unique(season_players_joined$club),
-                               selected = unique(season_players_joined$club)[1]
+                               choices = unique(player_team_join$team_name),
+                               selected = unique(player_team_join$team_name)[1]
                    )
                    
             ),
@@ -45,46 +45,58 @@ tab_information_player_ui <- function(){
             # about the player
             tabPanel("Overview",
                      fluidRow(
-                       column(width = 5, 
-                              offset = 3,
-                              align = "center",
+                       column(width = 4,
+                              align = "left",
                               div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
                                   tableOutput("info_player_player_name")
                               )
                        ),
-                       # ui output to display the logo of the club
-                       column(width = 1,
-                              align = "left",
+                       # ui output to display the logo of the club and player image
+                       column(width = 4,
+                              align = "center",
                               div(style = "margin-top: 20px;",
                                   uiOutput("info_player_player_img",
+                                           width = "2px")
+                              )
+                       ),
+                       column(width = 4,
+                              align = "center",
+                              div(style = "margin-top: 20px;",
+                                  uiOutput("info_player_club_img",
                                            width = "2px")
                               )
                        )
                      )
             ),
-            tabPanel(
-              "Stats",
-              fluidRow(
-                column(width = 12, 
-                       # offset = 3,
-                       align = "center",
-                       div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
-                           reactableOutput("info_player_stats_general") %>%
-                             withSpinner(color = "blue")
-                       )
-                )
-              ),
-              fluidRow(
-                column(width = 12, 
-                       # offset = 3,
-                       align = "center",
-                       div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
-                           reactableOutput("info_player_stats_matches") %>%
-                             withSpinner(color = "blue")
-                       )
-                )
-              )
-            ),
+            tabPanel("Statistics",
+                     tabsetPanel(type = "pills",
+                                 tabPanel("general",
+                                          fluidRow(
+                                            column(
+                                              width = 12,
+                                              # offset = 3,
+                                              align = "center",
+                                              div(
+                                                style = "margin-top: 20px;",
+                                                #"border: solid 2px #FFFFFF; margin-top: 20px;",
+                                                reactableOutput("info_player_stats_general") %>%
+                                                  withSpinner(color = "blue")
+                                              )
+                                            )
+                                          )),
+                                 tabPanel("more details",
+                                          fluidRow(column(
+                                            width = 12,
+                                            # offset = 3,
+                                            align = "center",
+                                            div(
+                                              style = "margin-top: 20px;",
+                                              #"border: solid 2px #FFFFFF; margin-top: 20px;",
+                                              reactableOutput("info_player_stats_matches") %>%
+                                                withSpinner(color = "blue")
+                                            )
+                                          )))
+                     )),  
             tabPanel(
               "Transfers",
               fluidRow(
@@ -103,3 +115,6 @@ tab_information_player_ui <- function(){
   )
   
 }
+
+
+

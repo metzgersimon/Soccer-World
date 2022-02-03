@@ -10,16 +10,16 @@ information_player_server <- function(input, output, session){
   #                     )
   # })
   
-  
+  fifa_squads_buli_buli2_2015_2022 <- rbind(fifa_squads_buli_2015_2022,fifa_squads_buli2_2015_2022)
   
   # create an observer to display for the club selection to display
   # only those players that are present in the selected club
   observeEvent(input$information_player_team_selection, {
     updateSelectInput(session, 
                       inputId = "information_player_player_selection",
-                      choices = unique(season_players_joined %>%
+                      choices = unique(buli_squads_tm %>%
                                          filter(club == input$information_player_team_selection,
-                                                season_start_year == as.numeric(
+                                                season == as.numeric(
                                                   str_split(input$information_player_season_selection,
                                                             pattern = "/")[[1]][1])) %>%
                                          select(player_name) %>%
@@ -27,7 +27,7 @@ information_player_server <- function(input, output, session){
                                          unname()),
                       selected = ""
     )
-
+    
   })
   
   
@@ -36,31 +36,16 @@ information_player_server <- function(input, output, session){
   output$info_player_player_name <- renderTable({
     # there has to be a player selected
     req(input$information_player_player_selection)
-
+    
     # filter the data for the selected club and the selected player
-    player_infos <- season_players_joined %>%
+    player_infos <- buli_squads_tm %>%
       filter(club == input$information_player_team_selection,
              player_name == input$information_player_player_selection,
-             season_start_year == max(season_start_year)) %>%
-      select(player_name, country.x, position, birth_date,
-             age, height, joining_date, contract_date,
-             market_value_in_million_euro, club,
-             league) %>%
+             season == max(season)) %>%
       data.frame() %>%
       unique()
     
-    player_infos <- season_players_joined %>%
-      filter(club == "FC Bayern Munich",
-             player_name == "Manuel Neuer",
-             season_start_year == max(season_start_year)) %>%
-      select(player_name, country.x, position, birth_date,
-             age, height, joining_date, contract_date,
-             market_value_in_million_euro, club,
-             league) %>%
-      data.frame() %>%
-      unique()
-
-    
+    club <- unique(player_infos$club)
     # extract the name of the player
     name <- unique(player_infos$player_name)
     
@@ -68,68 +53,77 @@ information_player_server <- function(input, output, session){
     league <- unique(player_infos$league) 
     
     # extract the nationality of the player
-    country <- unique(player_infos$`country.x`)
+    nationality <- unique(player_infos$player_nationality)
     
     # extract the position the player plays on
     position <- unique(player_infos$position)
-    
+
     # extract the age of the player
-    age <- unique(player_infos$age)
+    age <- unique(player_infos$player_age)
     
     # extract the birth date of the player
-    birth_date <- unique(player_infos$birth_date)
+    birth_date <- unique(player_infos$player_birth_date)
     
     # extract the height of the player
-    height <- unique(player_infos$height)
+    height <- unique(player_infos$player_height)
     
     # extract the date the player joined its current club
-    joining_date <- unique(player_infos$joining_date)
+    joining_date <- unique(player_infos$player_joining_date)
     
     # extract the market value of the player
-    market_value <- unique(player_infos$market_value_in_million_euro)
+    market_value <- unique(player_infos$player_market_value_in_million_euro)
+    contract_date <- unique(player_infos$player_contract_date)
     
-   
     # create the texts for the table
-    country_text <- paste0("Country: ", country)
+    country_text <- paste0("Country: ", nationality)
     position_text <- paste0("Position: ", position)
+    birthday_text <- paste0("Birthday: ", birth_date)
     age_text <- paste0("Age: ", age)
     height_text <- paste0("Height: ", height)
     joining_date_text <- paste0("Joined: ", joining_date)
     market_value_text <- paste0("Market value: ", market_value)
+    contract_text <- paste0("Contract to: ", contract_date)
     
-    # put all the information together into a data frame
-    # with 2 columns and 3 rows
-    player_info_frame <- data.frame(matrix(c(country_text, position_text, 
-                                           age_text, height_text, 
-                                           joining_date_text,
-                                           market_value_text), ncol = 2,
-                                           nrow = 3,
-                                           byrow = TRUE)
-                                    ) 
-   
+    player_info_frame <-
+      data.frame(matrix(
+        c(
+          country_text,
+          position_text,
+          birthday_text,
+          age_text,
+          height_text,
+          market_value_text,
+          joining_date_text,
+          contract_text
+        ),
+        ncol = 2,
+        nrow = 4,
+        byrow = TRUE
+      )
+    ) 
+    
+    `colnames<-`(player_info_frame , NULL)
     # set the NA format in a kable table to an empty string 
-    options(knitr.kable.NA = "")
+    # options(knitr.kable.NA = "")
     
     # create a kable table with the data
-    player_info_frame %>%
-      kableExtra::kable("html", row.names = FALSE, col.names = NULL
-      ) %>%
-      kable_minimal() %>%
-      kable_styling(full_width = F)
-    
+    #player_info_frame %>%
+    #  kableExtra::kable("html", row.names = FALSE, col.names = NULL
+    #  ) %>%
+    #  kable_minimal() %>%
+    #  kable_styling(full_width = F)
     
   })
   
-  
-  # output for the club logo
+  # output for the player logo
   output$info_player_player_img <- renderUI({
-    # we need the user to select a club first
+    # we need the user to select a player first
     req(input$information_player_player_selection)
     
     print(input$information_player_player_selection)
     # extract image from the data
     player_image <- player_stats_2021_buli %>%
-      filter(name %like% input$information_player_player_selection) %>%
+      filter(name == input$information_player_player_selection) %>%
       select(photo) %>%
       unlist() %>%
       unname() %>%
@@ -139,6 +133,26 @@ information_player_server <- function(input, output, session){
     
     # set the img on the extracted image
     tags$img(src = player_image)
+  })
+  
+  # output for the club logo
+  output$info_player_club_img <- renderUI({
+    # we need the user to select a player first
+    req(input$information_player_team_selection)
+    
+    print(input$information_player_team_selection)
+    # extract image from the data
+    club_image <- player_stats_2021_buli %>%
+      filter(team_name == input$information_player_team_selection) %>%
+      select(team_logo) %>%
+      unlist() %>%
+      unname() %>%
+      unique()
+    
+    print(club_image)
+    
+    # set the img on the extracted image
+    tags$img(src = club_image)
   })
   
   
@@ -170,21 +184,21 @@ information_player_server <- function(input, output, session){
                   searchInputStyle = list(width = "100%",
                                           color = "black")
                 )
-                )#, 
-                # modify the layout and names of the columns
-      #           columns = list(
-      #             date = colDef(name = "Date",
-      #                           align = "left"),
-      #             player_name = colDef(name = "Player",
-      #                                  align = "center"),
-      #             type = colDef(name = "Type",
-      #                           align = "center"),
-      #             from_team_name = colDef(name = "From Team",
-      #                                     align = "center"),
-      #             to_team_name = colDef(name = "To Team",
-      #                                   align = "center")
-      #           )
-      # )
+      )#, 
+    # modify the layout and names of the columns
+    #           columns = list(
+    #             date = colDef(name = "Date",
+    #                           align = "left"),
+    #             player_name = colDef(name = "Player",
+    #                                  align = "center"),
+    #             type = colDef(name = "Type",
+    #                           align = "center"),
+    #             from_team_name = colDef(name = "From Team",
+    #                                     align = "center"),
+    #             to_team_name = colDef(name = "To Team",
+    #                                   align = "center")
+    #           )
+    # )
   })
   
   
