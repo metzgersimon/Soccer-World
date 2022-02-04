@@ -122,9 +122,9 @@ information_player_server <- function(input, output, session){
     
     print(input$information_player_player_selection)
     # extract image from the data
-    player_image <- player_stats_2021_buli %>%
-      filter(name == input$information_player_player_selection) %>%
-      select(photo) %>%
+    player_image <- buli_player_fixture_stats %>%
+      filter(player_name == input$information_player_player_selection) %>%
+      select(player_photo) %>%
       unlist() %>%
       unname() %>%
       unique()
@@ -142,7 +142,7 @@ information_player_server <- function(input, output, session){
     
     print(input$information_player_team_selection)
     # extract image from the data
-    club_image <- player_stats_2021_buli %>%
+    club_image <- buli_player_fixture_stats %>%
       filter(team_name == input$information_player_team_selection) %>%
       select(team_logo) %>%
       unlist() %>%
@@ -160,31 +160,38 @@ information_player_server <- function(input, output, session){
   output$info_player_stats_general <- renderReactable({
     req(input$information_player_player_selection)
     
-    last_name <- str_split(input$information_player_player_selection, " ")[[1]][-1]
-    # last_name <- "Baumann"
+    # last_name <- str_split(input$information_player_player_selection, " ")[[1]][-1]
     
-    
-    player_stats_2021_buli %>%
-      # filter(name == input$information_player_player_selection) %>%
-      filter(lastname %like% last_name) %>%
-      select(team_name, 
+    buli_player_fixture_stats %>%
+      filter(player_name == input$information_player_player_selection &
+             league_season == as.numeric(
+               str_split(input$information_player_season_selection,
+                         pattern = "/")[[1]][1])) %>%
+      select(team_name, fixture_date,
              contains("games"),
-             contains("substitutes")) %>%
-      reactable(sortable = TRUE,
-                highlight = TRUE,
-                borderless = TRUE, 
-                # set the theme for the table
-                theme = reactableTheme(
-                  borderColor = "#000000",
-                  color = "#000000",
-                  backgroundColor = "#004157",
-                  highlightColor = "#2f829e",
-                  cellPadding = "8px 12px",
-                  style = list(color = "white"),
-                  searchInputStyle = list(width = "100%",
-                                          color = "black")
-                )
-      )#, 
+             contains("goals")) %>%
+      reactable(
+        defaultColDef = colDef(
+          align = "center",
+          minWidth = 150,
+          headerStyle = list(background = "darkblue")
+        ),
+        searchable = TRUE,
+        striped = TRUE,
+        highlight = TRUE,
+        borderless = TRUE,
+        # set the theme for the table
+        theme = reactableTheme(
+          borderColor = "#000000",
+          color = "#000000",
+          backgroundColor = "#004157",
+          highlightColor = "#2f829e",
+          cellPadding = "8px 12px",
+          style = list(color = "white"),
+          searchInputStyle = list(width = "100%",
+                                  color = "black")
+        )
+      )#,
     # modify the layout and names of the columns
     #           columns = list(
     #             date = colDef(name = "Date",
@@ -206,28 +213,35 @@ information_player_server <- function(input, output, session){
   output$info_player_stats_matches <- renderReactable({
     req(input$information_player_player_selection)
     
-    last_name <- str_split(input$information_player_player_selection, " ")[[1]][-1]
-    # last_name <- "Baumann"
+    # last_name <- str_split(input$information_player_player_selection, " ")[[1]][-1]
     
-    
-    player_stats_2021_buli %>%
-      # filter(name == input$information_player_player_selection) %>%
-      filter(lastname %like% last_name) %>%
-      select(team_name, shots_total:penalty_saved) %>%
-      reactable(sortable = TRUE,
-                highlight = TRUE,
-                borderless = TRUE, 
-                # set the theme for the table
-                theme = reactableTheme(
-                  borderColor = "#000000",
-                  color = "#000000",
-                  backgroundColor = "#004157",
-                  highlightColor = "#2f829e",
-                  cellPadding = "8px 12px",
-                  style = list(color = "white"),
-                  searchInputStyle = list(width = "100%",
-                                          color = "black")
-                )
+    buli_player_fixture_stats %>%
+      filter(player_name == input$information_player_player_selection &
+               league_season == as.numeric(
+                 str_split(input$information_player_season_selection,
+                           pattern = "/")[[1]][1])) %>%
+      select(team_name, fixture_date, shots_total:tackles_total) %>%
+      reactable(
+        defaultColDef = colDef(
+          align = "center",
+          minWidth = 150,
+          headerStyle = list(background = "darkblue")
+        ),
+        searchable = TRUE,
+        striped = TRUE,
+        highlight = TRUE,
+        borderless = TRUE,
+        # set the theme for the table
+        theme = reactableTheme(
+          borderColor = "#000000",
+          color = "#000000",
+          backgroundColor = "#004157",
+          highlightColor = "#2f829e",
+          cellPadding = "8px 12px",
+          style = list(color = "white"),
+          searchInputStyle = list(width = "100%",
+                                  color = "black")
+        )
       )#, 
     # modify the layout and names of the columns
     #           columns = list(
@@ -254,16 +268,22 @@ information_player_server <- function(input, output, session){
     last_name <- str_split(input$information_player_player_selection, " ")[[1]][-1]
     
     major_five_league_transfers %>%
-      filter(player_name %like% last_name,
-             from_team_name == input$information_player_team_selection |
-               to_team_name == input$information_player_team_selection) %>%
+      filter(player_name %like% last_name) %>% 
+          #   from_team_name == input$information_player_team_selection |
+          #     to_team_name == input$information_player_team_selection) %>%
       select(date, player_name, type, from_team_name,
              to_team_name) %>%
       distinct() %>%
       arrange(desc(date)) %>%
-      reactable(sortable = TRUE,
-                highlight = TRUE,
-                borderless = TRUE, 
+      reactable(defaultColDef = colDef(
+        align = "center",
+        minWidth = 150,
+        headerStyle = list(background = "darkblue")
+      ),
+      searchable = TRUE,
+      striped = TRUE,
+      highlight = TRUE,
+      borderless = TRUE, 
                 # set the theme for the table
                 theme = reactableTheme(
                   borderColor = "#000000",
