@@ -6,7 +6,7 @@ tab_information_player_ui <- function(){
           # for the league, club and player in one row
           fluidRow(
             column(width = 3, align = "center",
-                   selectInput("information_player_league_selection",
+                   selectizeInput("information_player_league_selection",
                                label = "League",
                                choices = c("Bundesliga",
                                            "2. Bundesliga",
@@ -15,24 +15,24 @@ tab_information_player_ui <- function(){
                    
             ),
             column(width = 3, align = "center",
-                   selectInput("information_player_season_selection",
-                               label = "Season",
+                   selectizeInput("information_player_season_selection",
+                               label = "Season",multiple = TRUE,
                                choices = seasons,
                                selected = seasons[1]
                    )
                    
             ),
             column(width = 3, align = "center",
-                   selectInput("information_player_team_selection",
-                               label = "Club",
+                   selectizeInput("information_player_team_selection",
+                               label = "Club",multiple = TRUE,
                                choices = unique(player_team_join$team_name),
                                selected = unique(player_team_join$team_name)[1]
                    )
                    
             ),
             column(width = 3, align = "center",
-                   selectInput("information_player_player_selection",
-                               label = "Player",
+                   selectizeInput("information_player_player_selection",
+                               label = "Player",multiple = TRUE,
                                choices = c("")
                    )
                    
