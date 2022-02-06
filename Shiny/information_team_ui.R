@@ -3,10 +3,18 @@ tab_information_team_ui <- function(){
   # set the tabname to reference it from the main ui
   tabItem(tabName = "information-team",
           fluidRow(
+            column(width = 3, align = "center",
+                   selectizeInput("info_team_league_selection",
+                               label = "League",
+                               choices = c("Bundesliga",
+                                           "2. Bundesliga",
+                                           "3. Liga")
+                   )
+                   
+            ),
             # create one column with an offset of 4 (to be in the center)
             # for the club selection
-            column(width = 3, 
-                   offset = 4,
+            column(width = 3,
                    align = "center",
                    # create a selectizeinput which makes it possible to 
                    # select a club from a list but also to type in the name
@@ -14,11 +22,11 @@ tab_information_team_ui <- function(){
                                   label = "Club",
                                   multiple = TRUE,
                                   selected = NULL,
-                                  choices = season_players_joined %>%
-                                    filter(season_start_year == as.numeric(
+                                  choices = player_team_join %>%
+                                    filter(season == as.numeric(
                                       str_split(seasons[1],
                                                 pattern = "/")[[1]][1])) %>%
-                                    select(club) %>%
+                                    select(team_name) %>%
                                     unlist() %>%
                                     unname() %>%
                                     unique(),
@@ -49,16 +57,24 @@ tab_information_team_ui <- function(){
             tabPanel("Overview",
                      fluidRow(
                        # table output for the team information
-                       column(width = 5, 
-                              offset = 3,
+                       column(width = 4, 
+                              #offset = 3,
                               align = "center",
                               div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
                                   tableOutput("info_team_team_name")
                               )
                        ),
+                       column(width = 4, 
+                              #offset = 3,
+                              align = "center",
+                              div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
+                                  tableOutput("info_team_venue_image")
+                              )
+                       ),
                        # ui output to display the logo of the club
-                       column(width = 1,
-                              align = "left",
+                       column(width = 3,
+                              offset = 1,
+                              align = "right",
                               div(style = "margin-top: 20px;",
                                   uiOutput("info_team_team_logo",
                                            width = "2px")
@@ -68,59 +84,72 @@ tab_information_team_ui <- function(){
             ),
             # season tab which should contain information about the current season
             # such as form, previous matches, future matches, etc.
-            tabPanel("Season",
+            tabPanel("Match & Stats",
                      tabsetPanel(
                        type = "pills",
-                       tabPanel(
-                         "Matches",
-                         fluidRow(
-                           column(width = 12,
+                       tabPanel("Matches",
+                                fluidRow(column(
+                                  width = 12,
                                   align = "center",
-                                  div(style = paste0("border: solid 1px #000000;",
-                                                     "margin-top: 20px;",
-                                                     "background-color: #004157;"),
-                                      p("Next Match", 
-                                        style = paste0("background-color: #004157;",
-                                                       "color: white;",
-                                                       "margin-top: 10px;",
-                                                       "font-size: 18px;",
-                                                       "font-weight: bold;")),
-                                      reactableOutput("info_team_next_match")
+                                  div(
+                                    style = paste0(
+                                      "border: solid 1px #000000;",
+                                      "margin-top: 20px;",
+                                      "background-color: #004157;"
+                                    ),
+                                    p(
+                                      "Upcoming Match",
+                                      style = paste0(
+                                        "background-color: #004157;",
+                                        "color: white;",
+                                        "margin-top: 10px;",
+                                        "font-size: 18px;",
+                                        "font-weight: bold;"
+                                      )
+                                    ),
+                                    reactableOutput("info_team_next_match")
                                   )
-                           )
-                         ),
-                         fluidRow(
-                           column(width = 12,
+                                )),
+                                fluidRow(column(
+                                  width = 12,
                                   align = "center",
-                                  div(style = paste0("border: solid 1px #000000;",
-                                                     "margin-top: 20px;",
-                                                     "background-color: #004157;"),
-                                      p("Last Matches", 
-                                        style = paste0("background-color: #004157;",
-                                                       "color: white;",
-                                                       "margin-top: 10px;",
-                                                       "font-size: 18px;",
-                                                       "font-weight: bold;")),
-                                      reactableOutput("info_team_season")
+                                  div(
+                                    style = paste0(
+                                      "border: solid 1px #000000;",
+                                      "margin-top: 20px;",
+                                      "background-color: #004157;"
+                                    ),
+                                    p(
+                                      "Past Matches",
+                                      style = paste0(
+                                        "background-color: #004157;",
+                                        "color: white;",
+                                        "margin-top: 10px;",
+                                        "font-size: 18px;",
+                                        "font-weight: bold;"
+                                      )
+                                    ),
+                                    reactableOutput("info_team_season")
                                   )
-                           )
-                         )
-                       ),
-                       tabPanel(
-                         "Statistics",
-                         fluidRow(
-                           column(width = 8,
-                                  offset = 2,
-                                  align = "center",
-                                  div(style = "margin-top: 20px;",
-                                      reactableOutput("info_team_stats")
+                                ))),
+                       tabPanel("Statistics",
+                                fluidRow(
+                                  column(
+                                    width = 12,
+                                    align = "center",
+                                    div(style = "margin-top: 20px;",
+                                        reactableOutput("info_team_stats"))
                                   )
-                           )
-                         )
-                       )
-                     )
-                     
-            ), 
+                                ),
+                                fluidRow(
+                                  column(
+                                    width = 12,
+                                    div(#style = "margin-top: 20px;",
+                                        verbatimTextOutput("info_team_summary"))
+                                  )
+                                )
+                                )
+                     )), 
             # squad panel to see the current squad of the club
             tabPanel("Squad",
                      #reactableOutput("info_team_squad")
@@ -185,7 +214,7 @@ tab_information_team_ui <- function(){
                        )
                      ),
             tabPanel(
-              "Over time",
+              "Over Time",
               tabsetPanel(
                 type = "pills",
                 tabPanel(

@@ -16,7 +16,7 @@ tab_information_player_ui <- function(){
             ),
             column(width = 3, align = "center",
                    selectizeInput("information_player_season_selection",
-                               label = "Season",multiple = TRUE,
+                               label = "Season",
                                choices = seasons,
                                selected = seasons[1]
                    )
@@ -24,7 +24,7 @@ tab_information_player_ui <- function(){
             ),
             column(width = 3, align = "center",
                    selectizeInput("information_player_team_selection",
-                               label = "Club",multiple = TRUE,
+                               label = "Club",
                                choices = unique(player_team_join$team_name),
                                selected = unique(player_team_join$team_name)[1]
                    )
@@ -32,7 +32,7 @@ tab_information_player_ui <- function(){
             ),
             column(width = 3, align = "center",
                    selectizeInput("information_player_player_selection",
-                               label = "Player",multiple = TRUE,
+                               label = "Player",
                                choices = c("")
                    )
                    
