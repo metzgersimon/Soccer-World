@@ -23,7 +23,7 @@ get_next_fixture_by_team <- function(team_name, league_id, season){
     # in the future
     filter(diff_time > 0) %>%
     # take the match with the smallest diff (it is closest to today)
-    filter(diff_time == min(diff_time)) %>%
+    filter(diff_time == min(diff_time,na.rm = TRUE)) %>%
     # drop the diff_time column from the data frame
     select(-diff_time)
   
