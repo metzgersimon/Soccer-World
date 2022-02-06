@@ -13,4 +13,7 @@ server <- function(input, output, session){
   
   prediction_investment_server(input, output, session)
   
+  about_server(input, output, session)
+  
+  
 }
