@@ -1,4 +1,3 @@
-source("Setup.R")
 sql_pusher <- function (folder = "./Clean Data files/") {
   loadRData <- function(fileName){
     #loads an RData file, and returns it
