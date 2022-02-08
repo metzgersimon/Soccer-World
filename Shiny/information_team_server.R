@@ -1,47 +1,40 @@
 # subserver for the team-tab in the information menu item
 information_team_server <- function(input, output, session){
-  
   # create an observer to display for the club selection
-  # only those clubs that are present for the selected season
-  # observe({
-  #   updateSelectInput(session,
-  #                     inputId = "info_team_club_selection",
-  #                     choices = c("",
-  #                                 unique(season_players_joined %>%
-  #                                          filter(season_start_year == 
-  #                                                   as.numeric(
-  #                                                     str_split(input$info_team_season_selection,
-  #                                                               pattern = "/")[[1]][1])
-  #                                          ) %>%
-  #                                          select(club) %>%
-  #                                          unlist() %>%
-  #                                          unname()
-  #                                 )
-  #                     )
-  #   )
-  # })
+  # only those clubs that are present for the selected league
+  observeEvent(input$info_team_league_selection, {
+    updateSelectInput(session,
+                      inputId = "info_team_club_selection",
+                      choices = c(
+                        "",
+                        unique(
+                          all_leagues_tm_squads %>% filter(league == input$info_team_league_selection) %>% select(club) %>%
+                            unlist() %>%
+                            unname()
+                        )
+                      ))
+  })
   
-  # create an observer to display for the club selection
-  # only those clubs that are present for the selected season
-  # observeEvent(input$info_team_season_selection, {
-  #   updateSelectInput(session, 
-  #                     inputId = "info_team_club_selection",
-  #                     choices = c("",
-  #                                 unique(season_players_joined %>%
-  #                                          filter(season_start_year == 
-  #                                                   as.numeric(
-  #                                                     str_split(input$info_team_season_selection,
-  #                                                               pattern = "/")[[1]][1])
-  #                                          ) %>%
-  #                                          select(club) %>%
-  #                                          unlist() %>%
-  #                                          unname()
-  #                                 )
-  #                     )
-  #   )
-  # })
+  # create an observer to display for the season selection
+  # only those clubs that are present for the selected club
+  observeEvent(input$info_team_club_selection, {
+    updateSelectInput(session,
+                      inputId = "info_team_season_selection",
+                      choices = c(
+                        "",
+                        unique(
+                          all_leagues_tm_squads %>% filter(
+                            league == input$info_team_league_selection &
+                              club == input$info_team_club_selection
+                          ) %>%
+                            select(season) %>%
+                            unlist() %>%
+                            unname()
+                        )
+                      ))
+  })
   
-  
+
   # create the output for the table on the overview page
   output$info_team_team_name <- function(){
     # there has to be a club selected
@@ -513,37 +506,28 @@ information_team_server <- function(input, output, session){
    
   })
   
-  # reactive to prepare the data
+############## squads infos #########################
+  
   squad_reactive <- reactive({
-    # needs the inputs for club and season
+    req(input$info_team_league_selection)
     req(input$info_team_club_selection)
     req(input$info_team_season_selection)
     
-    club <- input$info_team_club_selection
-    # convert the season in a number one can work with
-    season_selection <- as.numeric(str_split(
-      input$info_team_season_selection,
-      pattern = "/")[[1]][1]
-    )
-    
-    # filter the data for the season and the club that are selected
-    squads_filtered <- 
-      buli_squads_tm %>%
-      filter(club == club &
-             season == season_selection)
-    
-    return(squads_filtered)
+    squads_filtered <-
+      all_leagues_tm_squads %>%
+      filter(
+        club == input$info_team_club_selection &
+          season == input$info_team_season_selection &
+          league == input$info_team_league_selection
+      )
     
   })
   
   # function to filter the data for the selected area
   # e.g., defense, order it and return it 
-  get_data_for_reactables <- function(position_area){
-    req(squad_reactive())
+  get_data_for_reactables <- function(filter_data, position_area){
     
-    squad <- squad_reactive()
-    
-    squad_for_positions <- squad %>%
+    squad_for_positions <- filter_data %>%
       filter(str_detect(player_position, position_area)) %>%
       select(player_name, player_nationality, player_position, player_age,
              player_market_value_in_million_euro) %>%
@@ -554,12 +538,10 @@ information_team_server <- function(input, output, session){
     
   }
   
-  
-  
-  
   # attack table
   output$info_team_squad_attack <- renderReactable({
-    midfield_squad <- get_data_for_reactables("Striker|Winger|Forward")
+    
+    midfield_squad <- get_data_for_reactables(squad_reactive(), "Striker|Winger|Forward")
     
     reactable(midfield_squad,
               columns = list(
@@ -594,10 +576,9 @@ information_team_server <- function(input, output, session){
     
   })
   
-  
   # midfield table
   output$info_team_squad_midfield <- renderReactable({
-    midfield_squad <- get_data_for_reactables("Midfield")
+    midfield_squad <- get_data_for_reactables(squad_reactive(), "Midfield")
     
     reactable(midfield_squad,
               columns = list(
@@ -634,7 +615,7 @@ information_team_server <- function(input, output, session){
   
   # defense table
   output$info_team_squad_defense <- renderReactable({
-    defense_squad <- get_data_for_reactables("Back")
+    defense_squad <- get_data_for_reactables(squad_reactive(), "Back")
     
     reactable(defense_squad,
               columns = list(
@@ -671,7 +652,7 @@ information_team_server <- function(input, output, session){
   
   # goalkeeper table
   output$info_team_squad_goalkeepers <- renderReactable({
-    keeper_squad <- get_data_for_reactables("Goalkeeper")
+    keeper_squad <- get_data_for_reactables(squad_reactive(), "Goalkeeper")
     
     reactable(keeper_squad,
               columns = list(
@@ -707,65 +688,37 @@ information_team_server <- function(input, output, session){
   })
   
   
-  
-  # create the table for the squad
-  #output$info_team_squad <- renderReactable({
-    # we need the user to select a club first 
-   # req(input$info_team_club_selection)
-    
-    # create the table
-  #  season_players_joined %>%
-      # filter the data for the selected club
-  #    filter(club == input$info_team_club_selection) %>%
-      # selected only columns of interest
-   #   select(c(player_name, country, position, age, 
-  #             joining_date, contract_date, market_value_in_million_euro)) %>%
-      # create the actual table
-   #   reactable(
-        # set general options for the table
-        # such as the possibility to filter or sort the table
-        # but also insert a search field
-        # modify the layout and names of the columns
-     #   columns = list(
-     #     player_name = colDef(name = "Name",
-     #                          align = "left"),
-     #     country = colDef(name = "Nationality",
-     #                      align = "center"),
-     #     position = colDef(name = "Position",
-     #                      align = "center"),
-     #     age = colDef(name = "Age",
-     #                  align = "center"),
-     #     joining_date = colDef(name = "Joining Date",
-     #                           align = "center"),
-     #     contract_date = colDef(name = "Contract till",
-     #                            align = "center"),
-     #     market_value_in_million_euro = colDef(name = "Market value",
-     #                                           format = colFormat(
-     #                                             prefix = "\u20ac",
-     #                                             suffix = "M",
-     #                                           ),
-     #                                           align = "right"
-     #     )
-     #   )
-     # )
-#})
-  
-  
+ ############### over time ################# 
   # create a plot for the market value over time
-  output$info_team_market_value_over_time <- renderPlotly({
-    # we need the user to select a club first 
+  
+  market_value_reactive <- reactive({
+    req(input$info_team_league_selection)
     req(input$info_team_club_selection)
+
+    if(input$info_team_league_selection=="Bundesliga 2"){
+      league <- "2. Bundesliga"
+    } else {league <- input$info_team_league_selection}
     
-    market_values <- market_values_over_time %>%
+    market_value_filtered <-
+      market_values_over_time %>%
+      filter(
+        club == input$info_team_club_selection &
+          league_then == league
+      )
+    
+  })
+  
+  output$info_team_market_value_over_time <- renderPlotly({
+    market_values <- market_value_reactive() %>%
       # currently we have to filter out these dates
-      filter(cut_off_day != "2011-07-01",
-             cut_off_day != "2020-07-01",
-             cut_off_day != "2014-06-01",
-             cut_off_day != "2014-07-01",
-             cut_off_day != "2014-08-01",
-             cut_off_day != "2014-09-01",
-             cut_off_day != "2014-10-01",
-             club == input$info_team_club_selection) %>%
+      # filter(cut_off_day != "2011-07-01",
+      #       cut_off_day != "2020-07-01",
+      #       cut_off_day != "2014-06-01",
+      #       cut_off_day != "2014-07-01",
+      #       cut_off_day != "2014-08-01",
+      #       cut_off_day != "2014-09-01",
+      #       cut_off_day != "2014-10-01",
+      #       club == input$info_team_club_selection) %>%
       # transform the market value at the given time to a numeric
       mutate(value_then = as.numeric(str_remove_all(value_then,"[\u20AC|m]")) * 1000000) %>%
       # create actual plot for the market value over time by club
@@ -782,6 +735,40 @@ information_team_server <- function(input, output, session){
     market_values
   })
   
+  # create a plot for the fifa rating over time
+  output$info_team_fifa_rating_over_time <- renderPlotly({
+    # we need the user to select a club first
+    req(input$info_team_club_selection)
+    data <- fifa_team_stats_buli_2015_2021 %>%
+      # currently we have to filter out these dates
+      filter(club == input$info_team_club_selection) %>%
+      pivot_longer(
+        fifa_overall_rating:fifa_international_prestige,
+        names_to = "variable",
+        values_to = "value"
+      )
+    
+    fifa_rating <- data %>%
+      # create actual plot for the market value over time by club
+      plot_ly(
+        x = ~ date,
+        y = ~ value,
+        color =  ~ variable,
+        type = "scatter",
+        visible = "legendonly"
+      ) %>%
+      layout(
+        title = "Fifa team rating over time",
+        yaxis = list(title = "Rating"),
+        xaxis = list(title = "Year"),
+        font = list(color = "white"),
+        plot_bgcolor = "rgba(0, 65, 87, 10)",
+        paper_bgcolor = "rgba(0, 65, 87, 10)",
+        fig_bg_color = "rgba(0, 65, 87, 10)"
+      )
+    
+    fifa_rating
+  })
   
   # create a table for past transfers
   output$info_team_transfers_over_time <- renderReactable({

@@ -7,11 +7,11 @@ tab_information_team_ui <- function(){
                    selectizeInput("info_team_league_selection",
                                label = "League",
                                choices = c("Bundesliga",
-                                           "2. Bundesliga",
-                                           "3. Liga")
+                                           "Bundesliga 2",
+                                           "Premier League",
+                                           "Ligue 1")
                    )
-                   
-            ),
+                   ),
             # create one column with an offset of 4 (to be in the center)
             # for the club selection
             column(width = 3,
@@ -228,6 +228,19 @@ tab_information_team_ui <- function(){
                                  withSpinner(color = "blue")
                                )
                            )
+                    )
+                  ),
+                tabPanel(
+                    "FIFA Rating",
+                    fluidRow(
+                      column(width = 12,
+                             align = "center",
+                             div(style = paste0("border: solid 1px #000000;",
+                                                "margin-top: 20px;"),
+                                 plotlyOutput("info_team_fifa_rating_over_time") %>%
+                                   withSpinner(color = "blue")
+                             )
+                      )
                     )
                   ),
                 tabPanel(
