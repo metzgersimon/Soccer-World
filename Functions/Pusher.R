@@ -1,10 +1,12 @@
 sql_pusher <- function (folder = "./Clean Data files/") {
-  loadRData <- function(fileName){
-    #loads an RData file, and returns it
-    load(fileName)
-    get(ls()[ls() != "fileName"])
+  # this function solves the problem of loading and renaming .RData objects
+  # source: https://stackoverflow.com/questions/5577221/how-can-i-load-an-object
+  # -into-a-variable-name-that-i-specify-from-an-r-data-file
+  # Posted by user: https://stackoverflow.com/users/1453172/ricardo
+  get_data <- function(name){
+    load(name)
+    get(ls()[ls() != "name"])
   }
-  
   con <- dbConnect(RMariaDB::MariaDB(), 
                    host='127.0.0.1',
                    dbname='Soccer_Prediction_Data',
@@ -14,7 +16,7 @@ sql_pusher <- function (folder = "./Clean Data files/") {
   file_names = list.files(path = substr(folder, 1, nchar(folder)-1))
   
   for (naming in file_names) {
-    interm <- loadRData(paste(folder, naming, sep = ""))
+    interm <- get_data(paste(folder, naming, sep = ""))
     print(naming)
     dbWriteTable(con,name = naming, interm, overwrite = TRUE )
   }
