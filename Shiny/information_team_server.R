@@ -16,13 +16,14 @@ information_team_server <- function(input, output, session){
   })
   
   # create an observer to display for the season selection
-  # only those clubs that are present for the selected club
+  # only those seasons that are present for the selected club
+  paste("Hello", "world", sep=" ")
   observeEvent(input$info_team_club_selection, {
     updateSelectInput(session,
                       inputId = "info_team_season_selection",
                       choices = c(
                         "",
-                        unique(
+                        paste0(unique(
                           all_leagues_tm_squads %>% filter(
                             league == input$info_team_league_selection &
                               club == input$info_team_club_selection
@@ -31,7 +32,15 @@ information_team_server <- function(input, output, session){
                             unlist() %>%
                             unname()
                         )
-                      ))
+                      ,"/",unique(
+                        all_leagues_tm_squads %>% filter(
+                          league == input$info_team_league_selection &
+                            club == input$info_team_club_selection
+                        ) %>%
+                          select(season) %>%
+                          unlist() %>%
+                          unname()
+                      )+1)))
   })
   
 
@@ -50,7 +59,6 @@ information_team_server <- function(input, output, session){
       filter(team_name == input$info_team_club_selection,
              season == season_year)
 
-    
     # extract the club name
     name <- team_infos %>%
       select(team_name) %>%
@@ -517,7 +525,9 @@ information_team_server <- function(input, output, session){
       all_leagues_tm_squads %>%
       filter(
         club == input$info_team_club_selection &
-          season == input$info_team_season_selection &
+          season == as.numeric(
+            str_split(input$info_team_season_selection,
+                      pattern = "/")[[1]][1]) &
           league == input$info_team_league_selection
       )
     
