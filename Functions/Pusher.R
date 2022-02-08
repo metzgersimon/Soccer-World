@@ -21,7 +21,7 @@ sql_pusher <- function (folder = "./Clean Data files/") {
     
     for (naming in file_names) {
       interm <- get_data(paste(folder, naming, sep = ""))
-      naming <- substr(folder, 1, nchar(folder)-5)
+      naming <- substr(naming, 1, nchar(naming)-6)
       print(naming)
       dbWriteTable(con,name = naming, interm, overwrite = TRUE )
     }
