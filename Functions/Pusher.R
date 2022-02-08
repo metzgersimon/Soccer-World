@@ -13,13 +13,21 @@ sql_pusher <- function (folder = "./Clean Data files/") {
                    username='root',
                    password='my-secret-pw')
   
-  file_names = list.files(path = substr(folder, 1, nchar(folder)-1))
+  file_names <- list.files(path = substr(folder, 1, nchar(folder)-1))
+  old <- dbListTables(con)
   
-  for (naming in file_names) {
-    interm <- get_data(paste(folder, naming, sep = ""))
-    print(naming)
-    dbWriteTable(con,name = naming, interm, overwrite = TRUE )
-  }
+  if (length(old) >= 1) {
+    
+    file_names <- setdiff(file_names, paste(old, ".RData", sep = ""))
+    
+    for (naming in file_names) {
+      interm <- get_data(paste(folder, naming, sep = ""))
+      naming <- substr(folder, 1, nchar(folder)-5)
+      print(naming)
+      dbWriteTable(con,name = naming, interm, overwrite = TRUE )
+    }
+  } else
+    print("no changes to push")
   
 }
 
