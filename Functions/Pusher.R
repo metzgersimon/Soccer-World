@@ -15,10 +15,9 @@ sql_pusher <- function (folder = "./Clean Data files/") {
   
   file_names <- list.files(path = substr(folder, 1, nchar(folder)-1))
   old <- dbListTables(con)
+  file_names <- setdiff(file_names, paste(old, ".RData", sep = ""))
   
-  if (length(old) >= 1) {
-    
-    file_names <- setdiff(file_names, paste(old, ".RData", sep = ""))
+  if (length(file_names) >= 1) {
     
     for (naming in file_names) {
       interm <- get_data(paste(folder, naming, sep = ""))
