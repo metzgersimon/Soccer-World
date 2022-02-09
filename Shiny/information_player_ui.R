@@ -10,10 +10,10 @@ tab_information_player_ui <- function(){
                                label = "League",
                                choices = c("Bundesliga",
                                            "2. Bundesliga",
-                                           "3. Liga")
+                                           "English Premier League",
+                                           "Ligue 1")
                    )
-                   
-            ),
+                   ),
             column(width = 3, align = "center",
                    selectizeInput("information_player_season_selection",
                                label = "Season",
