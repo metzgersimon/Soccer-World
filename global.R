@@ -21,7 +21,6 @@ con <- dbConnect(RMariaDB::MariaDB(),
 
 
 ####### with datenbank
-<<<<<<< HEAD
 ### match tab data
 all_leagues_matches <- tbl(con, "all_leagues_matches") %>% data.frame()
 
@@ -68,10 +67,7 @@ all_leagues_venue_information<- tbl(con, "all_leagues_venue_information") %>% da
 
 
 ###### old
-=======
 # match infos
-buli_matches_2010_2021 <- tbl(con, "buli_matches_2010_2021") %>% data.frame()
-buli_fixture_events_2010_to_2021  <- tbl(con, "buli_fixture_events_2010_to_2021") %>% data.frame()
 all_leagues_spi_538_available_matches <- tbl(con, "all_leagues_spi_538") %>%
   data.frame()
 
@@ -89,29 +85,12 @@ player_team_join <- major_six_leagues_team_infos_2010_2021 %>% left_join(buli_sq
 # map all club names in all available data frames 
 # with the mapping function club_name_mapping we created
 # to be able to join over the names
-all_seasons_running_table$club <- sapply(all_seasons_running_table$club,
-                                         club_name_mapping)
+#all_seasons_running_table$club <- sapply(all_seasons_running_table$club,
+#                                         club_name_mapping)
 
 #all_season_infos$team_name <- sapply(all_season_infos$team_name,
 #                                         club_name_mapping)
 
-squads_season_2020$club_name <- sapply(squads_season_2020$club_name,
-                                       club_name_mapping)
-
-fixtures_bundesliga_2010_2021$club_name_home <-
-  sapply(fixtures_bundesliga_2010_2021$club_name_home,
-         club_name_mapping)
-
-fixtures_bundesliga_2010_2021$club_name_away <-
-  sapply(fixtures_bundesliga_2010_2021$club_name_away,
-         club_name_mapping)
-
-all_seasons_from_2010_squads$club_name <-
-  sapply(all_seasons_from_2010_squads$club_name,
-         club_name_mapping)
-
-
->>>>>>> acb0f7bd224cacf30d6d952c810d072ca1437eff
 # combine all data frames together
 #season_players_joined <- all_seasons_running_table %>%
 #  inner_join(all_seasons_from_2010_squads,
