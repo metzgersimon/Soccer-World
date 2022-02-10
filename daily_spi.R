@@ -9,6 +9,8 @@ con <- dbConnect(RMariaDB::MariaDB(),
                  username='root',
                  password='my-secret-pw')
 
+
+
 # get most recent table
 all_leagues_spi_538_available_matches <- tbl(con, "all_leagues_spi_538") %>%
   data.frame()
