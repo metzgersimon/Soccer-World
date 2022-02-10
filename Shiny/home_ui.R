@@ -12,7 +12,8 @@ tab_home_ui <- function() {
         choices = c("Bundesliga 1",
                     "Bundesliga 2",
                     "Premier League",
-                    "Ligue 1")
+                    "Ligue 1"),
+        selected = "Bundesliga 1"
       ),
       tableOutput("home_league_flag")
     ),
