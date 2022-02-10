@@ -4,6 +4,9 @@ club_name_mapping <- function(club_name){
     return(club_name)
   }
   
+  # remove special characters such as apostrophs
+  club_name <- stri_trans_general(club_name, id = "Latin-ASCII")
+  
   club_name <- tolower(club_name)
   
   # currently bundesliga
@@ -103,11 +106,85 @@ club_name_mapping <- function(club_name){
   } else if(str_detect(club_name, ".*heidenheim.*")){
     return("1. FC Heidenheim")
   }
-    
+  
+  
+  
+  ################ Ligue 1 ##########################
+  else if(str_detect(club_name, ".*bastia")){
+    return("SC Bastia")
+  } else if(str_detect(club_name, ".*monaco.*")){
+    return("AS Monaco")
+  } else if(str_detect(club_name, ".*bordeaux.*")){
+    return("Girondins Bordeaux")
+  } else if(str_detect(club_name, ".*caen.*")){
+    return("SM Caen")
+  } else if(str_detect(club_name, ".*montpellier.*")){
+    return("HSC Montpellier")
+  } else if(str_detect(club_name, ".*dijon.*")){
+    return("FCO Dijon")
+  } else if(str_detect(club_name, ".*metz.*")){
+    return("FC Metz")
+  } else if(str_detect(club_name, ".*nancy.*|.*lorraine.*")){
+    return("AS Nancy-Lorraine")
+  } else if(str_detect(club_name, ".*nice|nizza*")){
+    return("OGC Nice")
+  } else if(str_detect(club_name, ".*marseille")){
+    return("Olympique Marseille")
+  } else if(str_detect(club_name, ".*lyon.*")){
+    return("Olympique Lyon")
+  } else if(str_detect(club_name, ".*nantes.*")){
+    return("FC Nantes")
+  } else if(str_detect(club_name, ".*angers.*")){
+    return("SCO Angers")
+  } else if(str_detect(club_name, ".*lille.*")){
+    return("OSC Lille")
+  } else if(str_detect(club_name, ".*rennes|rennais.*")){
+    return("Stade Rennes")
+  } else if(str_detect(club_name, ".*toulouse")){
+    return("FC Toulouse")
+  } else if(str_detect(club_name, ".*lorient")){
+    return("FC Lorient")
+  } else if(str_detect(club_name, ".*guingamp.*")){
+    return("EA Guingamp")
+  } else if(str_detect(club_name, ".*s.*t.*etienne")){
+    return("AS Saint-Etienne")
+  } else if(str_detect(club_name, ".*paris st.*|psg")){
+    return("Paris Saint-Germain")
+  } else if(str_detect(club_name, ".*troyes.*")){
+    return("ES Troyes AC")
+  } else if(str_detect(club_name, ".*amiens")){
+    return("SC Amiens")
+  } else if(str_detect(club_name, ".*stra[sß]b[ou]?u?rg")){
+    return("Racing Strasbourg")
+  } else if(str_detect(club_name, ".*reims")){
+    return("Stade Reims")
+  } else if(str_detect(club_name, ".*nimes")){
+    return("Olympique Nimes")
+  } else if(str_detect(club_name, ".*brest")){
+    return("Stade Brest")
+  } else if(str_detect(club_name, ".*lens")){
+    return("RC Lens")
+  } else if(str_detect(club_name, ".*clermont.*")){
+    return("Clermont Foot")
+  } else if(str_detect(club_name, ".*auxerre")){
+    return("AJ Auxerre")
+  } else if(str_detect(club_name, "gfc|gazelec.*ajaccio")){
+    return("GFC Ajaccio")
+  } else if(str_detect(club_name, "ac.*ajaccio|ajaccio")){
+    return("AC Ajaccio")
+  } else if(str_detect(club_name, ".*evian.*")){
+    return("FC Evian Thonon Gaillard")
+  } else if(str_detect(club_name, ".*arles.*")){
+    return("AC Arles-Avignon")
+  } else if(str_detect(club_name, ".*valenciennes.*")){
+    return("FC Valenciennes")
+  } else if(str_detect(club_name, ".*sochaux.*")){
+    return("FC Sochaux")
+  }
+  
+  
+  
+  
 
   return(str_to_title(club_name))
 }
-
-# clubs_fifa <- unique(fifa_team_stats_over_time_clean$club)
-# clubs_fifa_mapped <- sapply(clubs_fifa, FUN = club_name_mapping)
-# as.data.frame(clubs_fifa_mapped)
