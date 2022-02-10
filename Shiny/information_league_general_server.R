@@ -80,7 +80,6 @@ information_league_general_server <- function(input, output, session){
   
   
   # create the output for the table on the overview page
-  
   overview_data <- reactive({
     req(input$info_team_league_selection)
     req(input$info_team_season_selection)
@@ -183,7 +182,7 @@ information_league_general_server <- function(input, output, session){
              " (",
              max_avg_age$avg_age, ")")
     avg_market_value_text <-
-      paste0("Average market value: ", avg_market_value)
+      paste0("Average market value: ", avg_market_value, " million")
     most_valuable_player_text <-
       paste0(
         "Most valuable Player: ",
@@ -191,7 +190,7 @@ information_league_general_server <- function(input, output, session){
         " ","- ",
         most_valuable_player$club_name_home ,
         " (",
-        most_valuable_player$player_market_value_in_million_euro,")"
+        most_valuable_player$player_market_value_in_million_euro," million)"
       )
     
     # put all the information together into a data frame
