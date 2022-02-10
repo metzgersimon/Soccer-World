@@ -16,7 +16,7 @@ seasons <- c(paste0(sort(c(2015:2021),
 # setup a connection to the database
 con <- dbConnect(RMariaDB::MariaDB(), 
                  host='127.0.0.1',
-                 dbname='testdb',
+                 dbname='Soccer_Prediction_Data',
                  username='root',
                  password='my-secret-pw')
 
@@ -25,6 +25,8 @@ con <- dbConnect(RMariaDB::MariaDB(),
 # match infos
 buli_matches_2010_2021 <- tbl(con, "buli_matches_2010_2021") %>% data.frame()
 buli_fixture_events_2010_to_2021  <- tbl(con, "buli_fixture_events_2010_to_2021") %>% data.frame()
+all_leagues_spi_538_available_matches <- tbl(con, "all_leagues_spi_538") %>%
+  data.frame()
 
 # player infos
 major_five_league_transfers <- tbl(con, "major_five_league_transfers") %>% data.frame()
