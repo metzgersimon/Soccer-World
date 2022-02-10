@@ -134,7 +134,7 @@ club_name_mapping <- function(club_name){
     return("Olympique Lyon")
   } else if(str_detect(club_name, ".*nantes.*")){
     return("FC Nantes")
-  } else if(str_detect(club_name, ".*angers.*")){
+  } else if(str_detect(club_name, ".*angers.*&^[.*park rangers.*]")){
     return("SCO Angers")
   } else if(str_detect(club_name, ".*lille.*")){
     return("OSC Lille")
@@ -182,9 +182,83 @@ club_name_mapping <- function(club_name){
     return("FC Sochaux")
   }
   
+  ################ Premiere League ##########################
+  else if(str_detect(club_name, ".*arsenal.*")){
+    return("FC Arsenal")
+  } else if(str_detect(club_name, ".*burnley.*")){
+    return("FC Burnley")
+  } else if(str_detect(club_name, ".*chelsea.*")){
+    return("FC Chelsea")
+  } else if(str_detect(club_name, ".*hull city.*")){
+    return("Hull City")
+  } else if(str_detect(club_name, ".*leicester.*")){
+    return("Leicester City")
+  } else if(str_detect(club_name, ".*liverpool.*")){
+    return("FC Liverpool")
+  } else if(str_detect(club_name, ".*manchester united.*")){
+    return("Manchester United")
+  } else if(str_detect(club_name, ".*southampton.*")){
+    return("FC Southampton")
+  } else if(str_detect(club_name, ".*swansea.*")){
+    return("Swansea City")
+  } else if(str_detect(club_name, ".*watford.*")){
+    return("FC Watford")
+  } else if(str_detect(club_name, ".*manchester city.*")){
+    return("Manchester City")
+  } else if(str_detect(club_name, ".*tottenham.*")){
+    return("Tottenham Hotspur")
+  } else if(str_detect(club_name, ".*west ham.*")){
+    return("West Ham United")
+  } else if(str_detect(club_name, ".*crystal palace.*")){
+    return("Crystal Palace")
+  } else if(str_detect(club_name, ".*stoke City.*")){
+    return("Stoke City")
+  } else if(str_detect(club_name, ".*bournemouth.*")){
+    return("AFC Bournemouth")
+  } else if(str_detect(club_name, ".*middlesbrough*")){
+    return("FC Middlesbrough ")
+  } else if(str_detect(club_name, ".*sunderland.*")){
+    return("AFC Sunderland")
+  } else if(str_detect(club_name, ".*west brom.*")){
+    return("West Bromwich Albion")
+  } else if(str_detect(club_name, ".*everton.*")){
+    return("FC Everton")
+  } else if(str_detect(club_name, ".*huddersfield.*")){
+    return("Huddersfield Town")
+  } else if(str_detect(club_name, ".*newcastle.*")){
+    return("Newcastle United")
+  } else if(str_detect(club_name, ".*brighton.*")){
+    return("Brighton & Hove Albion")
+  } else if(str_detect(club_name, ".*fulham.*")){
+    return("FC Fulham")
+  } else if(str_detect(club_name, ".*wolves.*")){
+    return("Wolverhampton Wanderers")
+  } else if(str_detect(club_name, ".*cardiff.*")){
+    return("Cardiff City")
+  } else if(str_detect(club_name, ".*aston villa.*")){
+    return("Aston Villa")
+  } else if(str_detect(club_name, ".*norwich.*")){
+    return("Norwich City")
+  } else if(str_detect(club_name, ".*sheffield.*")){
+    return("Sheffield United")
+  } else if(str_detect(club_name, ".*leeds.*")){
+    return("Leeds United")
+  } else if(str_detect(club_name, ".*brentford.*")){
+    return("FC Brentford")
+  } else if(str_detect(club_name, ".*reading.*")){
+    return("FC Reading")
+  } else if(str_detect(club_name, ".*park rangers.*")){
+    return("Queens Park Rangers")
+  } else if(str_detect(club_name, ".*wigan athletic.*")){
+    return("Wigan Athletic")
+  } else if(str_detect(club_name, ".*blackpool.*")){
+    return("FC Blackpool")
+  } 
   
   
   
 
   return(str_to_title(club_name))
 }
+
+
