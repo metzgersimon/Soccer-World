@@ -1,14 +1,13 @@
 # subserver for the team-tab in the information menu item
 information_team_server <- function(input, output, session){
-  # create an observer to display for the club selection
-  # only those clubs that are present for the selected league
+  
   observeEvent(input$info_team_league_selection, {
     updateSelectInput(session,
                       inputId = "info_team_club_selection",
                       choices = c(
                         "",
                         unique(
-                          all_leagues_tm_squads %>% filter(league == input$info_team_league_selection) %>% select(club) %>%
+                          all_infos_club %>% filter(league == input$info_team_league_selection) %>% select(club) %>%
                             unlist() %>%
                             unname()
                         )
@@ -17,14 +16,14 @@ information_team_server <- function(input, output, session){
   
   # create an observer to display for the season selection
   # only those seasons that are present for the selected club
-  paste("Hello", "world", sep=" ")
+  # paste("Hello", "world", sep=" ")
   observeEvent(input$info_team_club_selection, {
     updateSelectInput(session,
                       inputId = "info_team_season_selection",
                       choices = c(
                         "",
                         paste0(unique(
-                          all_leagues_tm_squads %>% filter(
+                          all_infos_club %>% filter(
                             league == input$info_team_league_selection &
                               club == input$info_team_club_selection
                           ) %>%
@@ -32,21 +31,28 @@ information_team_server <- function(input, output, session){
                             unlist() %>%
                             unname()
                         )
-                      ,"/",unique(
-                        all_leagues_tm_squads %>% filter(
-                          league == input$info_team_league_selection &
-                            club == input$info_team_club_selection
-                        ) %>%
-                          select(season) %>%
-                          unlist() %>%
-                          unname()
-                      )+1)))
+                        ,"/",unique(
+                          all_infos_club %>% filter(
+                            league == input$info_team_league_selection &
+                              club == input$info_team_club_selection
+                          ) %>%
+                            select(season) %>%
+                            unlist() %>%
+                            unname()
+                        )+1)),selected = NULL)
   })
   
-
   # create the output for the table on the overview page
   output$info_team_team_name <- function(){
+    
+    # to have all infos of clubs (to gather country infos)
+    all_infos_club <- inner_join(all_leagues_tm_squads, unique(all_leagues_matches[,c(2,3,19)]), by=c("club"="club_name_home", "league"="league_name"))
+   
+    # to gather venue infos 
+    # <- all_infos_club %>% left_join(all_leagues_venue_information[,c(4,8,10:15)], by=c("club"="team_name")) 
+    
     # there has to be a club selected
+    req(input$info_team_league_selection)
     req(input$info_team_club_selection)
     req(input$info_team_season_selection)
     
@@ -55,13 +61,13 @@ information_team_server <- function(input, output, session){
                                         pattern = "/")[[1]][1])
     
     # filter the huge data frame on the club selected
-    team_infos <- player_team_join %>%
-      filter(team_name == input$info_team_club_selection,
+    team_infos <- all_infos_club %>%
+      filter(league==  input$info_team_league_selection &club == input$info_team_club_selection &
              season == season_year)
 
     # extract the club name
     name <- team_infos %>%
-      select(team_name) %>%
+      select(club) %>%
       unlist() %>%
       unname() %>%
       unique()
@@ -71,7 +77,7 @@ information_team_server <- function(input, output, session){
     
     # extract the country of the club
     country <- team_infos %>%
-      select(country) %>%
+      select(league_country) %>%
       unlist() %>%
       unname() %>%
       unique()
@@ -106,7 +112,8 @@ information_team_server <- function(input, output, session){
     
     
     # extract the information for the stadium
-    venue_info <- team_infos %>%
+    venue_info <- all_leagues_venue_information %>% filter(league==  input$info_team_league_selection &team_name == input$info_team_club_selection &
+                                                           season == season_year)%>%
       select(venue_name, venue_city,
              venue_capacity) %>%
       unique()
@@ -157,14 +164,17 @@ information_team_server <- function(input, output, session){
   
   # output for the club logo
   output$info_team_team_logo <- renderUI({
-    # we need the user to select a club first
+    req(input$info_team_league_selection)
     req(input$info_team_club_selection)
     
     print(input$info_team_club_selection)
     # extract the logo from the frame
-    team_image <- player_team_join %>%
-      filter(team_name == input$info_team_club_selection&
-               league_id == 78) %>%
+    team_image <- all_leagues_venue_information %>%mutate(
+      league = if_else(all_leagues_venue_information$league_id == 78, "Bundesliga",if_else(venues_with_coordinates$league_id == 79, "Bundesliga 2", 
+                                                                                             if_else(all_leagues_venue_information$league_id == 39,"Premier League",
+                                                                                                     if_else(all_leagues_venue_information$league_id == 61,  "Ligue 1","none"))))) %>%
+                                                                                                     
+      filter(league== input$info_team_league_selection &team_name == input$info_team_club_selection) %>%
       select(logo) %>%
       unlist() %>%
       unname() %>%
@@ -176,14 +186,16 @@ information_team_server <- function(input, output, session){
   
   # output for the club logo
   output$info_team_venue_image <- renderUI({
-    # we need the user to select a club first
+    req(input$info_team_league_selection)
     req(input$info_team_club_selection)
     
     print(input$info_team_club_selection)
     # extract the logo from the frame
-    venue_image <- player_team_join %>%
-      filter(team_name == input$info_team_club_selection&
-               league_id == 78) %>%
+    venue_image <- all_leagues_venue_information %>%mutate(
+      league = if_else(all_leagues_venue_information$league_id == 78, "Bundesliga",if_else(venues_with_coordinates$league_id == 79, "Bundesliga 2", 
+                                                                                           if_else(all_leagues_venue_information$league_id == 39,"Premier League",
+                                                                                                   if_else(all_leagues_venue_information$league_id == 61,  "Ligue 1","none"))))) %>%
+      filter(league==  input$info_team_league_selection &team_name == input$info_team_club_selection) %>%
       select(venue_image) %>%
       unlist() %>%
       unname() %>%
@@ -197,8 +209,8 @@ information_team_server <- function(input, output, session){
   # create the table for the next match of the selected
   # club
   output$info_team_next_match <- renderReactable({
-    # we need the user to select a club and
-    # a season first
+    # we need the user to select a club and a season first
+    req(input$info_team_league_selection)
     req(input$info_team_club_selection)
     req(input$info_team_season_selection)
     
@@ -211,11 +223,22 @@ information_team_server <- function(input, output, session){
     # selected_club <- "FC Bayern Munich"
     # selected_season <- 2021
     
-     get_next_fixture_by_team(league_id = 78,
+    if (input$info_team_league_selection == "Bundesliga") {
+      league_id <- 78
+    } else if (input$info_team_league_selection == "Bundesliga 2") {
+      league_id <- 79
+    } else if (input$info_team_league_selection == "Premier League") {
+      league_id <- 39
+    } else if (input$info_team_league_selection == "Ligue 1") {
+      league_id <- 61
+    }
+    
+    
+     get_next_fixture_by_team(league_id = league_id,
                               team_name = selected_club,
                               season = selected_season) %>%
     # only select important columns
-      select(c(fixture_date, fixture_time,
+      select(c(fixture_date.x, fixture_time.x,
                league_round, venue_city,
                club_name_home, club_name_away)) %>%
       reactable(defaultColDef = colDef(
@@ -238,9 +261,9 @@ information_team_server <- function(input, output, session){
                 ), 
                 # modify the layout and names of the columns
                 columns = list(
-                  fixture_date = colDef(name = "Date",
+                  fixture_date.x = colDef(name = "Date",
                                        align = "left"),
-                  fixture_time = colDef(name = "Time",
+                  fixture_time.x = colDef(name = "Time",
                                            align = "center"),
                   venue_city = colDef(name = "City",
                                         align = "center"),
@@ -291,7 +314,9 @@ information_team_server <- function(input, output, session){
   # club
   output$info_team_season <- renderReactable({
     # we need the user to select a club first 
+    req(input$info_team_league_selection)
     req(input$info_team_club_selection)
+    req(input$info_team_season_selection)    
     
     selected_club <- input$info_team_club_selection
     # convert the season in a number one can work with
@@ -301,15 +326,15 @@ information_team_server <- function(input, output, session){
     )
       
     # filter the data for the clubs and the season
-    buli_matches_2010_2021 %>%
+    all_leagues_matches %>%
       filter(club_name_home == selected_club |
                club_name_away == selected_club,
-             league_season == selected_season) %>%
+             league_season == selected_season, 
+             league_name == input$info_team_league_selection) %>%
       mutate(game_score = paste0(fulltime_score_home, ":", 
                                  fulltime_score_away)) %>%
       select(fixture_date, fixture_time, club_name_home,
-             game_score,
-             club_name_away) %>%
+             game_score,club_name_away) %>%
       arrange(fixture_date, fixture_time) %>%
       # create the actual table
       reactable(defaultColDef = colDef(
@@ -351,9 +376,7 @@ information_team_server <- function(input, output, session){
           
         ))
   })
-  #team_stats_reactive <- reactive({
-    
-  #})
+
   output$info_team_stats <- renderReactable({
     
     # general_shots <- buli_fixture_stats %>% select(contains("shots"), contains("score"))

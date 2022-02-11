@@ -43,9 +43,9 @@ tab_information_team_ui <- function(){
                    align = "center",
                    selectInput(
                      "info_team_season_selection", 
-                     label = "Season",
-                     choices = seasons,
-                     selected = seasons[1]
+                     label = "Season", 
+                     selected = NULL,
+                     choices = seasons
                    )
             )
           ), 
