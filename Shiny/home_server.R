@@ -1,7 +1,5 @@
 # subserver for the home menu item
 home_server <- function(input, output, session){
-
-  
   output$map <- renderLeaflet({   
     venues_with_coordinates_home <-
       all_leagues_venue_information %>% mutate(

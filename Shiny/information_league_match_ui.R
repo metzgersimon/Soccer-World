@@ -8,10 +8,13 @@ tab_information_league_match_ui <- function(){
                    div(style = "margin-top: 20px;",
                        selectInput("info_match_league",
                                    "League",
-                                   choices = "Bundesliga",
+                                   choices = c("Bundesliga",
+                                               "Bundesliga 2",
+                                               "Premier League",
+                                               "Ligue 1")
+                       ),
                                    selected = "Bundesliga")
-                   )
-            ),
+                   ),
             column(width = 2,
                    align = "center",
                    div(style = "margin-top: 20px;",
@@ -25,7 +28,7 @@ tab_information_league_match_ui <- function(){
                    align = "center",
                    div(style = "margin-top: 20px;",
                        selectInput("info_match_team1",
-                                   "Team",
+                                   "Home Team",
                                    choices = c("", "Borussia Dortmund"),
                                    selected = NULL
                        )
@@ -35,7 +38,7 @@ tab_information_league_match_ui <- function(){
                    align = "center",
                    div(style = "margin-top: 20px;",
                        selectInput("info_match_team2",
-                                   "Team",
+                                   "Away Team",
                                    choices = c("", "FC Bayern Munich"),
                                    selected = NULL
                        )

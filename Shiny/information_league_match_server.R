@@ -1,34 +1,47 @@
 # subserver for the match-tab in the information menu item
 information_league_match_server <- function(input, output, session){
 
-  # create an observer to display for the club selection (home team) to display
-  # only those clubs that are present for the selected season
-  observeEvent(input$info_match_season, {
+  observeEvent(input$info_match_league, {
     updateSelectInput(session, 
-                      inputId = "info_match_team1",
+                      inputId = "info_match_season",
                       choices = c("",
-                                  unique(fixtures_with_stats_2021 %>%
-                                           filter(league_season == 
-                                                    as.numeric(
-                                                      str_split(input$info_match_season,
-                                                                pattern = "/")[[1]][1])
-                                                    ) %>%
-                                    select(club_name_home) %>%
-                                    unlist() %>%
-                                    unname()
+                                  unique(all_league_fixture_stats %>%
+                                           filter(league_name == input$info_match_league
+                                           ) %>%
+                                           select(league_season) %>%
+                                           unlist() %>%
+                                           unname()
                                   )
                       )
     )
   })
-  
-  # create an observer to display for the club selection (away team) to display
-  # only those clubs that are present for the selected season
+    # create an observer to display for the season selection (home team) to display
+  # only those clubs that are present for the selected leagues
+  observeEvent(input$info_match_season, {
+    updateSelectInput(session, 
+                      inputId = "info_match_team1",
+                      choices = c("",
+                                  unique(all_league_fixture_stats %>%
+                                           filter(league_name == input$info_match_league &
+                                                    league_season == 
+                                                    as.numeric(
+                                                      str_split(input$info_match_season,
+                                                                pattern = "/")[[1]][1])
+                                                  ) %>%
+                                           select(club_name_home) %>%
+                                           unlist() %>%
+                                           unname()
+                                  )
+                      )
+    )
+  })
   observeEvent(input$info_match_season, {
     updateSelectInput(session, 
                       inputId = "info_match_team2",
                       choices = c("",
-                                  unique(fixtures_with_stats_2021 %>%
-                                           filter(league_season == 
+                                  unique(all_league_fixture_stats %>%
+                                           filter(league_name == input$info_match_league &
+                                                    league_season == 
                                                     as.numeric(
                                                       str_split(input$info_match_season,
                                                                 pattern = "/")[[1]][1])
@@ -40,7 +53,6 @@ information_league_match_server <- function(input, output, session){
                       )
     )
   })
-  
 
   
   # reactive function (is executed every time something changes)
@@ -48,6 +60,7 @@ information_league_match_server <- function(input, output, session){
   # plot
   matches_reactive <- reactive({
     # need the user inputs before continue
+    req(input$info_match_league)
     req(input$info_match_season)
     req(input$info_match_team1)
     req(input$info_match_team2)
@@ -61,7 +74,7 @@ information_league_match_server <- function(input, output, session){
     season_half_selection <- input$info_match_season_half
     
     # extract the number of matchdays
-    number_of_rounds <- max(fixtures_with_stats_2021$league_round,
+    number_of_rounds <- max(all_league_fixture_stats$matchday,
                             na.rm = TRUE)
     
     # half the number of matchdays to see how many days are in the
@@ -70,12 +83,10 @@ information_league_match_server <- function(input, output, session){
     
     
     # extract the data which matches the selected inputs
-    fixture_stats <- fixtures_with_stats_2021 %>%
-      filter(league_season == 
-               as.numeric(
-                 str_split(input$info_match_season,
-                           pattern = "/")[[1]][1]),
-             season == as.numeric(
+    fixture_stats <- #buli_matches_2010_2021 
+      all_league_fixture_stats  %>%
+      filter(league_name == input$info_match_league &
+               league_season == as.numeric(
                str_split(input$info_match_season,
                          pattern = "/")[[1]][1]),
              # take only those rows where the clubs match
@@ -118,11 +129,11 @@ information_league_match_server <- function(input, output, session){
     # if everything is fine, work with the data
     fixture_stats <- fixture_stats %>%
       # select only the important variables
-      select(fixture_date = `fixture_date.x`, fixture_time = `fixture_time.x`, 
-             venue_name, venue_city, league_round,
-             referee, club_name_home, club_name_away, team_name, halftime_score_home,
-             halftime_score_away, fulltime_score_home = `fulltime_score_home.x`, 
-             fulltime_score_away = `fulltime_score_away.x`, 
+      select(fixture_date.y , fixture_time.y, 
+             venue_name, venue_city, matchday,
+             referee, club_name_home, club_name_away, halftime_score_home,
+             halftime_score_away, fulltime_score_home, 
+             fulltime_score_away, 
              shots_total, shots_on_goal, shots_off_goal,
              shots_blocked, shots_inside_box, shots_outside_box,
              goalkeeper_saves, fouls, corners,
@@ -162,8 +173,8 @@ information_league_match_server <- function(input, output, session){
                                                       "passes_total", "passes_accurate", "passing_accuracy"))) %>%
       # group by team name and use this as key to spread the data 
       # into wide format again
-      group_by(team_name) %>%
-      spread(key = team_name,
+      group_by(club_name_home) %>%
+      spread(key = club_name_home,
              value = values) %>%
       # rename the newly generated columns into a dynamic useable format
       # with team_1 and team_2 as names
@@ -205,18 +216,19 @@ information_league_match_server <- function(input, output, session){
     # team2 <- "Borussia Dortmund"
     # season_half_selection <- "First half"
     
-    # convert the season input into a number
-    season <- as.numeric(str_split(input$info_match_season,
-                                    pattern = "/")[[1]][1])
-    
     season_half_selection <- input$info_match_season_half
     
     # get the data for the year
     current_season_lineups <- #get(paste0("lineups_messy_", season))
-      buli_2021_lineups
+      #buli_2021_lineups 
+     buli_fixture_lineups_2015_2021 %>% filter(season == as.numeric(
+        str_split(input$info_match_season,
+                  pattern = "/")[[1]][1]) ) %>%
+      data.frame()
+    
     
     # extract the number of matchdays
-    number_of_rounds <- max(fixtures_with_stats_2021$league_round,
+    number_of_rounds <- max(current_season_lineups$matchday,
                             na.rm = TRUE)
     
     # number_of_rounds <- 34
@@ -240,11 +252,11 @@ information_league_match_server <- function(input, output, session){
     loop_ended <- FALSE
     
     # iterate over all selected matchdays
-    # for(matchday in important_matchdays){
-    for(i in 1:length(current_season_lineups)){
+    for(matchday in important_matchdays){
+    # for(i in 1:length(current_season_lineups)){
       # select the matchday for the given iteration
-      # curr_matchday <- current_season_lineups[[matchday]]
-      curr_match_infos <- current_season_lineups[[i]]
+      curr_matchday <- current_season_lineups[[matchday]]
+      #curr_match_infos <- current_season_lineups[[i]]
       
       curr_match <- curr_match_infos[[1]]
       
