@@ -1,14 +1,15 @@
-
-spi_538_available_matches2 <- tbl(con, "spi_538_matches") %>%
-  data.frame()
-
-spi_538_matches <- 
+### script should update the spi data set daily ###
+# get the current csv from the 538 web page 
+all_leagues_spi_538_matches <- 
   read.csv("https://projects.fivethirtyeight.com/soccer-api/club/spi_matches.csv",
            encoding = "UTF-8") %>%
+  # filter for only those leagues that are important to us
   filter(league %in% c("Barclays Premier League", "Italy Serie A",
                        "Spanish Primera Division", "French Ligue 1",
                        "German Bundesliga", "German 2. Bundesliga")) %>%
+  # drop the league id because we do not need it
   select(-league_id) %>%
+  # rename the leagues to names we can work with
   mutate(league = ifelse(league == "Barclays Premier League",
                          "Premier League",
                          ifelse(league == "Italy Serie A",
@@ -22,8 +23,11 @@ spi_538_matches <-
                                                      ifelse(league == "German 2. Bundesliga",
                                                             "Bundesliga 2",
                                                             league)))))),
+         # convert the date variable into an actual date
          date = ymd(date)) %>%
+  # filter for only those matches that are in the past
   filter(date < Sys.Date()) %>%
+  # reorder (and rename) all the variables we want to use
   select(league, season, date, home_team = team1, away_team = team2,
          home_team_spi = spi1, away_team_spi = spi2, home_team_win_prob = prob1,
          away_team_win_prob = prob2, draw_prob = probtie, 
@@ -37,71 +41,26 @@ spi_538_matches <-
          home_team_adjusted_goals = adj_score1, 
          away_team_adjusted_goals = adj_score2)
 
-# map the club names
-spi_538_matches$home_team <- sapply(spi_538_matches$home_team,
-                                    club_name_mapping)
+# map the club names (home and away) with the club_name_mapping function
+all_leagues_spi_538_matches$home_team <- sapply(all_leagues_spi_538_matches$home_team,
+                                                club_name_mapping)
 
-spi_538_matches$away_team <- sapply(spi_538_matches$away_team,
-                                    club_name_mapping)
+all_leagues_spi_538_matches$away_team <- sapply(all_leagues_spi_538_matches$away_team,
+                                                club_name_mapping)
 
-spi_538_matches_new <- spi_538_matches %>%
-  anti_join(spi_538_available_matches, by = c("season", "date", "league",
-                                              "home_team", "away_team")) %>%
+# filter for only those matches that are not already in the data base
+all_leagues_spi_538_matches_new <- all_leagues_spi_538_matches %>%
+  # use an anti join to get all of those matches that are not in the data base
+  anti_join(all_leagues_spi_538_available_matches, 
+            by = c("season", "date", "league",
+                   "home_team", "away_team")) %>%
+  # filter for only those that are in the past
   filter(date < Sys.Date())
 
-if(nrow(spi_538_matches_new) != 0){
+# only if there are new matches we do not have in the data base already
+# we write them (by appending) it to the data base
+if(nrow(all_leagues_spi_538_matches_new) != 0){
   
-  dbWriteTable(con, "spi_538_matches", spi_538_matches_new,
+  dbWriteTable(con, "all_leagues_spi_538", all_leagues_spi_538_matches_new,
                overwrite = FALSE, append = TRUE)
 }
-  
-# spi_538_past_matches_all_important_leagues <- spi_538_past_matches
-
-# dbWriteTable(con, name = "spi_538_past_matches_all_important_leagues", spi_538_past_matches_all_important_leagues)
-
-# spi_538_buli <- spi_538_past_matches %>% filter(league == "Bundesliga")
-# spi_538_buli$team1 <- sapply(spi_538_buli$team1, club_name_mapping)
-# spi_538_buli$team2 <- sapply(spi_538_buli$team2, club_name_mapping)
-
-
-# spi_538_global_ranking <- 
-#   read.csv("https://projects.fivethirtyeight.com/soccer-api/club/spi_global_rankings.csv",
-#            encoding = "UTF-8") %>%
-#   filter(str_detect(str_to_lower(league), pattern = "premier league|bundesliga|serie a|ligue 1|primera division"))
-# 
-# global_ranking_buli1 <- spi_538_global_ranking %>%
-#   filter(league == "German Bundesliga") %>%
-#   mutate(league = "Bundesliga") %>%
-#   select(spi_rank = rank, team_name = name,
-#          league, spi_off = off, spi_def = def,
-#          spi)
-# 
-# global_ranking_buli1$team_name <- sapply(global_ranking_buli1$team_name, 
-#                                          club_name_mapping)
-# 
-# global_ranking_buli2 <- spi_538_global_ranking %>%
-#   filter(league == "German 2. Bundesliga") %>%
-#   mutate(league = "Bundesliga 2") %>%
-#   select(spi_rank = rank, team_name = name,
-#          league, spi_off = off, spi_def = def,
-#          spi)
-# 
-# global_ranking_buli2$team_name <- sapply(global_ranking_buli2$team_name, 
-#                                          club_name_mapping)
-# 
-# buli_buli2_spi_rankings <- bind_rows(global_ranking_buli1,
-#                                      global_ranking_buli2)
-
-# global_ranking_pl <- spi_538_global_ranking %>%
-#   filter(league == "Barclays Premier League")
-# 
-# global_ranking_serie_a <- spi_538_global_ranking %>%
-#   filter(league == "Italy Serie A")
-# 
-# global_ranking_la_liga <- spi_538_global_ranking %>%
-#   filter(league == "Spanish Primera Division")
-# 
-# global_ranking_ligue1 <- spi_538_global_ranking %>%
-#   filter(league == "French Ligue 1")
-
-# test <- read_html(base_url)
