@@ -1,5 +1,39 @@
+############## get_api_calls_left #################
+# function should return the number of calls that are still available 
+# for the current day
+get_api_calls_left <- function(){
+  # set the endpoint for the status
+  endpoint <- "https://v3.football.api-sports.io/status"
+  
+  # create a get request to that API with the API key
+  # and the selected parameters (league via league_id and season)
+  response <- GET(endpoint, 
+                  add_headers('x-apisports-key' = football_api_key))
+  
+  # check if the request was successful and only then go on with the 
+  # transformation of the data
+  if(status_code(response) >= 200 & status_code(response) < 300){
+    # extract the content from the response
+    content <- content(response)$response
+    
+    # get the requests list of the content
+    requests_info <- content$requests
+    
+    # compute the requests that are still available today
+    calls_left <- as.numeric(requests_info$limit_day) - 
+      as.numeric(requests_info$current)
+    
+    # get the calls we already used
+    # if the request was not successful print an error 
+  } else {
+    print(paste0("Error: The request was not successful. \nStatus code: ",
+                 status_code(response)))
+  }
+  
+  return(calls_left)
+}
 
-
+  
 ############## get_standing_by_season #################
 # inputs: league_id, season
 # outputs: should return a data frame containing information about the 
@@ -304,20 +338,14 @@ get_team_stats_in_league_by_season <- function(league_id, team_id, season, match
         mutate(across(.cols = everything(), as.numeric))
         
       
-      matchday_frame <- data.frame("matchday" = i)
+      matchday_frame <- data.frame("matchday" = fixtures_info$fixtures_played_total)
       
       team_stats_complete <- bind_cols(league_info, matchday_frame, team_info, 
                                       fixtures_info, form_info, goal_info,
                                       penalty_info, biggest_info, clean_sheet_info, 
-                                      failed_to_score_info, cards_info)#, 
-                                      #lineups_info)
+                                      failed_to_score_info, cards_info)
       
-      # if(sum(str_detect(colnames(team_stats_complete), "value")) > 0){
-      #   print(i)
-      #   team_stats_complete <- team_stats_complete %>%
-      #     select(-value)
-      # }
-      
+
       all_season_team_stats <- bind_rows(all_season_team_stats,
                                          team_stats_complete)
       
@@ -333,6 +361,49 @@ get_team_stats_in_league_by_season <- function(league_id, team_id, season, match
     
   }
   
+  # do some final mutations such as splitting the biggest_wins/loses columns
+  # into a goal difference such that we can use it numerically
+  all_season_team_stats <- all_season_team_stats %>%
+  separate(col = biggest_wins_home, sep = "-",
+           into = c("biggest_wins_home_goals_home",
+                    "biggest_wins_home_goals_away"),
+           convert = TRUE) %>%
+    separate(col = biggest_wins_away, sep = "-",
+             into = c("biggest_wins_away_goals_home",
+                      "biggest_wins_away_goals_away"),
+             convert = TRUE) %>%
+    separate(col = biggest_loses_home, sep = "-",
+             into = c("biggest_loses_home_goals_home",
+                      "biggest_loses_home_goals_away"),
+             convert = TRUE) %>%
+    separate(col = biggest_loses_away, sep = "-",
+             into = c("biggest_loses_away_goals_home",
+                      "biggest_loses_away_goals_away"),
+             convert = TRUE) %>%
+    # create variables for the biggest goal differences for wins and loses
+    # at home and away
+    mutate(biggest_wins_home_diff = as.numeric(biggest_wins_home_goals_home) -
+             as.numeric(biggest_wins_home_goals_away),
+           biggest_wins_away_diff = as.numeric(biggest_wins_away_goals_away) -
+             as.numeric(biggest_wins_away_goals_home),
+           biggest_loses_home_diff = as.numeric(biggest_loses_home_goals_home) -
+             as.numeric(biggest_loses_home_goals_away),
+           biggest_loses_away_diff = as.numeric(biggest_loses_away_goals_away) -
+             as.numeric(biggest_loses_away_goals_home)) %>%
+    # drop the biggest variables we do not need anymore
+    select(-c(biggest_wins_home_goals_home,
+              biggest_wins_home_goals_away,
+              biggest_wins_away_goals_away,
+              biggest_wins_away_goals_home,
+              biggest_loses_home_goals_home,
+              biggest_loses_home_goals_away,
+              biggest_loses_away_goals_away,
+              biggest_loses_away_goals_home)) %>%
+    # reoder variables
+    select(contains("league"), matchday, contains("team"),
+           contains("fixtures"), current_form, contains("goals"),
+           contains("penalty"), contains("biggest"), contains("clean"),
+           contains("failed"), contains("cards"))
 
   # return the list containing statistics about the given team
   # in the league for the given season
@@ -610,7 +681,8 @@ get_fixtures_in_league_by_season <- function(league_id, season, matchday = NULL)
       
       # rename all variables in the frame
       fixture_team_info <- fixture_team_info %>%
-        select(-c(home_winner, away_winner)) %>%
+        # drop, if available these columns
+        select(-any_of(home_winner, away_winner)) %>%
         rename(club_id_home = home_id,
                club_name_home = home_name,
                club_logo_home = home_logo,
@@ -742,6 +814,7 @@ get_fixture_stats <- function(fixture_id){
     # extract the content from the response
     content <- content(response)$response
     
+    # if there is no content we return NULL
     if(length(content) == 0){
       return(NULL)
     }
@@ -814,6 +887,10 @@ get_fixture_stats <- function(fixture_id){
       )
     }
     
+    # now we want to map the team names
+    fixture_stats$team_name <- sapply(fixture_stats$team_name,
+                                      club_name_mapping)
+    
     # reorder the variables in the data frame
     fixture_stats <- fixture_stats %>%
       select(fixture_id, team_id, team_name, team_logo,
@@ -854,6 +931,11 @@ get_fixture_events <- function(fixture_id){
     # extract the content from the response
     content <- content(response)$response
     
+    # if there is no content we return NULL
+    if(length(content) == 0){
+      return(NULL)
+    }
+    
     # pre-allocate a data frame with all necessary variables
     fixture_events <- data.frame(time_elapsed = rep(NA, length(content)),
                                  time_extra = rep(NA, length(content)),
@@ -874,31 +956,52 @@ get_fixture_events <- function(fixture_id){
       # to extract the needed content 
       curr_events <- get_content_for_list_element(content,
                                                   i,
-                                                  name_elem = "")
+                                                  name_elem = "") %>%
+        rename(event_type = type, 
+               event_detail = detail)
       
       # use the helper function to add columns that are not currently 
       # present in the data 
       curr_events <- api_football_fixtures_general_complete_check(curr_events,
-                                                                  "fixture_events")
+                                                                  "fixture_events") %>%
+        # rename the comments variables
+        rename(event_comments = comments) %>%
+        # convert the variables into proper type
+        mutate(time_elapsed = as.numeric(time_elapsed),
+               time_extra = as.numeric(time_extra),
+               team_id = as.numeric(team_id),
+               player_id = as.numeric(player_id),
+               assist_id = as.numeric(assist_id),
+               assist_name = as.character(assist_name),
+               event_comments = as.character(event_comments)
+               ) %>%
+        # rename the abbreviation subst into Substitution
+        # and replace the NAs for time extra to 0s
+        mutate(event_type = ifelse(event_type == "subst",
+                                   "Substitution",
+                                   event_type),
+               time_extra = replace_na(time_extra, 0))
+      
+      # map the club names
+      curr_events$team_name <- sapply(curr_events$team_name,
+                                      club_name_mapping)
+      
+      
       
       # insert the current data in the data frame pre-allocated above
       fixture_events[i, ] <- curr_events
 
     }
     
-    # give the variables the appropriate data type
-    # and add an additional variable for the fixture_id
+    #add an additional variable for the fixture_id
     # as the first variable
     fixture_events <- fixture_events %>%
-      mutate(time_elapsed = as.numeric(time_elapsed),
-             time_extra = as.numeric(time_extra),
-             team_id = as.numeric(team_id),
-             player_id = as.numeric(player_id),
-             assist_id = as.numeric(assist_id),
-             event_type = ifelse(event_type == "subst",
-                                 "Substitution",
-                                 event_type)) %>%
       add_column(fixture_id, .before = 1)
+    
+    # join these fixture infos with basic match information such as fixture date
+    fixture_events_data <- all_leagues_matches %>%
+      # join by fixture_id
+      inner_join(fixture_events, by = "fixture_id")
     
     # if the request was not successful print an error 
   } else {
@@ -907,7 +1010,7 @@ get_fixture_events <- function(fixture_id){
   }
   
   # return a data frame containing all events of a fixture
-  return(fixture_events)
+  return(fixture_events_data)
 
 }
 
@@ -937,6 +1040,11 @@ get_fixture_lineups <- function(fixture_id){
     
     # extract the content from the response
     content <- content(response)$response
+    
+    # if there is no content we return NULL
+    if(length(content) == 0){
+      return(NULL)
+    }
     
     # iterate over both team statistics
     for(i in 1:length(content)){
@@ -1067,6 +1175,15 @@ get_fixture_lineups <- function(fixture_id){
                                    curr_team_lineup_info)
       
     }
+    
+    # add the fixture id as new variable to the lineup information
+    # to be able to join the lineup information with the match data
+    fixture_lineups <- fixture_lineups %>%
+      mutate("fixture_id" = fixture_id)
+    
+    # finally, combine the lineup information with the match information
+    fixture_lineups_data <- all_leagues_matches %>%
+      inner_join(fixture_lineups, by = "fixture_id")
   
     # if the request was not successful print an error 
   } else {
@@ -1075,262 +1192,10 @@ get_fixture_lineups <- function(fixture_id){
   }
   
   # return the lineups for the fixture
-  return(fixture_lineups)
+  return(fixture_lineups_data)
   
 }
 
-
-
-# function should convert the data frame which gets returned by the function
-# get_fixture_lineups into a format the model can work with, i.e., 
-# one row and aggregated data
-transform_lineups_for_model <- function(lineups_data){
-  team_names <- unique(lineups_data$team_name)
-  
-  home_team_lineup <- lineups_data %>%
-    filter(team_name == team_names[1])
-  
-  home_team_starting_grid <- home_team_lineup %>%
-    filter(is_starting_grid)
-}
-
-
-
-
-################### map lineups ##################
-get_mapped_lineups <- function(match_id, max_season = 2021){
-  # match_information <- tbl(con, "buli_matches_2010_2021") %>%
-  #   filter(fixture_id == fixture_id) %>%
-  #   data.frame()
-  match_id <- 719494
-  match_information <- buli_matches_2010_2021 %>%
-    filter(fixture_id == match_id) %>%
-    mutate(fixture_date = ymd(fixture_date)) %>%
-    data.frame()
-  
-  # get the lineups from the API
-  # lineups_API <- get_fixture_lineups(match_id) %>%
-    lineups_API2 <- lineups_API %>%
-      # prepare the name of the players to map the API and the TM data
-    mutate(player_lastname = str_remove(player_name, pattern = ".*\\. |.*\\s"),
-           # map all special characters to plain ones
-           player_lastname2 = stri_trans_general(player_lastname, id = "Latin-ASCII"))
-           # player_lastname2 = get_plain_name(player_lastname))
-  
-  
-  lineups_tm <- buli_fixture_lineups_2015_2021_tm %>%
-    filter(season == match_information$league_season,
-           team %in% c(match_information$club_name_home,
-                      match_information$club_name_away),
-           matchday < match_information$league_round) %>%
-    # prepare the name of the players to map the API and the TM data
-    mutate(player_lastname = str_to_title(sub(".*?\\s", "", player_name)),
-           # map all special characters to plain ones
-           player_lastname2 = stri_trans_general(player_lastname, id = "Latin-ASCII"))
-           # player_lastname2 = get_plain_name(player_lastname)) 
-  
-  all_players_gathered <- FALSE
-  season_completed <- FALSE
-  
-  players_list <- NULL
-  
-  names_to_search_for <- select(lineups_API2, player_name, player_lastname2)
-  
-  while(!all_players_gathered){
-    if(match_information$league_round == 1){
-      lineups_tm <- buli_fixture_lineups_2015_2021_tm %>%
-        filter(season == match_information$league_season - 1)
-      
-    } else {
-      lineups_tm <- buli_fixture_lineups_2015_2021_tm %>%
-        filter(season == match_information$league_season)
-    }
-    
-    lineups_tm <- lineups_tm %>%
-      filter(team %in% c(match_information$club_name_home,
-                         match_information$club_name_away),
-             matchday < match_information$league_round) %>%
-      mutate(player_lastname = str_to_title(sub(".*?\\s", "", player_name)),
-             # map all special characters to plain ones
-             player_lastname2 = stri_trans_general(player_lastname, id = "Latin-ASCII"))
-             # player_lastname2 = get_plain_name(player_lastname))
-    
-    curr_player_list <- lineups_API2 %>%
-      inner_join(lineups_tm, by = c("team_name" = "team", "player_number",
-                                    "player_lastname2")) %>%
-      group_by(player_lastname2) %>%
-      filter(match_date == max(match_date)) %>%
-      ungroup()
-    
-    players_list <- bind_rows(players_list,
-                              curr_player_list)
-    
-    if(all(players_list$`player_name.x` %in% names_to_search_for$player_name)){
-      all_players_gathered <- TRUE
-    }
-  }
-  
-  # do the final variable transformations and ordering
-  players_list2 <- players_list %>%
-    rename(player_name_API = `player_name.x`,
-           player_pos_API = `player_pos.x`,
-           player_lastname_to_map = player_lastname2,
-           player_name_TM = `player_name.y`,
-           player_pos_TM = `player_pos.y`) %>%
-    mutate(fixture_id = match_id)
-  
-  
-  # aggregate player fixture data
-  player_agg_data_up_to_match <- buli_player_fixture_stats %>%
-    mutate(player_lastname = str_to_title(sub(".*?\\s", "", player_name)),
-           # map all special characters to plain ones
-           player_lastname_map = stri_trans_general(player_lastname, id = "Latin-ASCII")) %>%
-    filter(league_season == match_information$league_season,
-           league_round < match_information$league_round,
-           team_name %in% c(match_information$club_name_home,
-                                 match_information$club_name_away),
-           player_id %in% players_list2$player_id) %>%
-    group_by(team_id, player_id) %>%
-    summarize(across(c(games_minutes, games_rating, goals_total:cards_red),
-                     list(median = median, sum = sum))) %>% 
-    ungroup()
-  
-  
-  
-  # player_data_with_stats_API <- tbl(con, "buli_player_stats_season")
-  player_data_with_stats <- players_list2 %>%
-    # left_join(buli_player_stats_season_2021_API_unique,
-    left_join(., player_agg_data_up_to_match,
-              by = c("team_id",  "player_id")) %>%
-    # rename(#player_age = `player_age.x`,
-           #player_nationality = `player_nationality.x`,
-           #player_lastname_to_map = `player_lastname_to_map.x`) %>%
-    select(-c(#player_lastname, 
-      player_lastname.x, player_lastname.y))
-              #player_age.y, 
-      #player_nationality.y, 
-      # player_lastname_to_map.y))
-    # select(league, season, contains("match"), #matchday, match_date, match_time,)
-    #        contains("team"), contains("player"),
-    #        formation) %>%
-  
-  
-  ######################## compute the stats grouped by team and position #############
-  player_data_with_stats_agg <- player_data_with_stats %>%
-    group_by(team_id, player_pos_API) %>%
-    summarize(across(c(player_market_value_in_million_euro:cards_red_sum),
-                     list(mean = mean)))
-  
-  
-  
-  
-   
-  
-  # players_team_agg <- players_list2 %>%
-  #   group_by(team_name) %>%
-  #   summarize(number_defenders = sum(player_pos_API == "D", na.rm = TRUE),
-  #             number_midfielders = sum(player_pos_API == "M", na.rm = TRUE),
-  #             number_attackers = sum(player_pos_API == "F", na.rm = TRUE),
-  #             number_returnees = sum(player_is_returnee, na.rm = TRUE),
-  #             number_new_transfers = sum(player_is_new_transfer, na.rm = TRUE),
-  #             number_new_winter_transfers = sum(player_is_new_winter_transfer,
-  #                                               na.rm = TRUE),
-  #             player_avg_age = mean(player_age, na.rm = TRUE),
-  #             player_avg_market_value = mean(player_market_value_in_million_euro,
-  #                                            na.rm = TRUE))
-  # 
-  # players_team_pos_agg <- players_list2 %>%
-  #   group_by(team_name, player_pos_API) %>%
-  #   summarize(number_returnees = sum(player_is_returnee, na.rm = TRUE),
-  #             number_new_transfers = sum(player_is_new_transfer, na.rm = TRUE),
-  #             number_new_winter_transfers = sum(player_is_new_winter_transfer,
-  #                                               na.rm = TRUE),
-  #             player_avg_age = mean(player_age, na.rm = TRUE),
-  #             player_avg_market_value = mean(player_market_value_in_million_euro,
-  #                                            na.rm = TRUE))
-  # 
-  # 
-  # players_starting_grid_team_agg <- players_list2 %>%
-  #   filter(is_starting_grid) %>%
-  #   group_by(team_name) %>%
-  #   summarize(number_defenders = sum(player_pos_API == "D"),
-  #             number_midfielders = sum(player_pos_API == "M"),
-  #             number_attackers = sum(player_pos_API == "F"),
-  #             number_returnees = sum(player_is_returnee),
-  #             number_new_transfers = sum(player_is_new_transfer),
-  #             number_new_winter_transfers = sum(player_is_new_winter_transfer),
-  #             player_avg_age = mean(player_age, na.rm = TRUE),
-  #             player_avg_market_value = mean(player_market_value_in_million_euro,
-  #                                            na.rm = TRUE)) 
-  # 
-  # 
-  # # compute the aggregated stats for each team and position
-  # players_starting_grid_team_pos_agg <- player_data_with_stats %>%
-  #   # only for the starting grid
-  #   filter(is_starting_grid) %>%
-  #   group_by(team_name, player_pos_API) %>%
-  #   # summarize all variables that are relevant and compute the mean and
-  #   # the standard deviation of them
-  #   summarize(across(c(player_age, player_market_value_in_million_euro,
-  #                      player_weight_kg, player_height_cm), 
-  #                    list(mean = ~mean(.x, na.rm = TRUE), 
-  #                         sd = ~sd(.x, na.rm = TRUE)),
-  #                    .names = "{.col}_{.fn}"),
-  #             across(c(games_appearences:games_minutes), list(means = ~mean(.x, na.rm = TRUE),
-  #                                                             sds = ~sd(.x, na.rm = TRUE)),
-  #                    .names = "{.col}_{.fn}"),
-  #             across(c(games_rating:penalty_saved), list(mean = ~mean(.x, na.rm = TRUE),
-  #                                                        sd = ~sd(.x, na.rm = TRUE)),
-  #                    .names = "{.col}_{.fn}"),
-  #             ) %>%
-  #   pivot_wider(names_from = team_name, values_from = c(player_age_mean:penalty_saved_sd)) %>%
-  #   pivot_wider(names_from = player_pos_API, values_from = c(2:ncol(.)))
-  # 
-  # 
-  # 
-  # # buli_player_stats_season_2021 <- get_player_stats_season(78, 2021)
-  # 
-  # players_list2_starting_grid$player_age_goalkeeper <- 
-  #   players_list2_starting_grid$player_market_value_in_million_euro
-  # #################
-  # players_list2_starting_grid$player_avg_age_defenders <- 
-  #   mean(players_list2_starting_grid$player_market_value_in_million_euro, na.rm = TRUE)
-  # 
-  # 
-  #   group_by(team_name, is_starting_grid) %>%
-  #   # compute the number of defenders, midfielders and attackers
-  #   mutate(number_defenders = sum(player_pos_API == "D"),
-  #          number_midfielders = sum(player_pos_API == "M"),
-  #          number_attackers = sum(player_pos_API == "F"),
-  #          number_returnees = sum(player_is_returnee),
-  #          number_new_transfers = sum(player_is_new_transfer),
-  #          number_new_winter_transfers = sum(player_is_new_winter_transfer),
-  #          player_avg_age = mean(player_age),
-  #          player_avg_market_value = mean(player_market_value_in_million_euro,
-  #                                         na.rm = TRUE))
-    
-  
-  # current_squad <- tm_squads_buli_2010_2021 %>%
-  #   filter(season == match_information$league_season,
-  #          club %in% c(match_information$club_name_home,
-  #                      match_information$club_name_away)) %>%
-  #   mutate(player_lastname = str_remove(player_name, pattern = ".* "),
-  #          player_lastname2 = to_plain(player_lastname))
-  # 
-  # players_list3 <- players_list2 %>%
-  #   left_join(current_squad, by = c("team_name" = "club",
-  #                                   "player_number", 
-  #                                   "player_lastname_to_map" = "player_lastname2")) %>%
-  #   filter(!is.na(player_name))
-  
-  
-  # lineups_converted <- 
-
-  
-  
- 
-  
-}
 
 
 
@@ -1497,10 +1362,10 @@ get_player_stats_fixture <- function(fixture_id){
     
     
     # do some final transformations such as reordering variables
-    players_all <- players_all %>%
-      select(contains("league"), fixture_date, fixture_time, 
-             fixture_id, venue_name, venue_city, venue_id, referee, everything()) %>%
-      arrange(league_id, league_season, league_round, fixture_date, fixture_time)
+    # players_all <- players_all %>%
+    #   select(contains("league"), fixture_date, fixture_time, 
+    #          fixture_id, venue_name, venue_city, venue_id, referee, everything()) %>%
+    #   arrange(league_id, league_season, league_round, fixture_date, fixture_time)
     
     # if the request was not successful print an error 
   } else {
@@ -1547,7 +1412,10 @@ add_fixture_infos_to_player_fixture_stats <- function(league_id, match_id){
       filter(fixture_id == match_id) %>%
       data.frame()
   } else if(league_id == 61){
-    match_information <- tbl(con, "ligue1_matches") %>%
+    # match_information <- tbl(con, "ligue1_matches") %>%
+    #   filter(fixture_id == match_id) %>%
+    #   data.frame()
+    match_information <- ligue1_matches %>%
       filter(fixture_id == match_id) %>%
       data.frame()
   } else {
