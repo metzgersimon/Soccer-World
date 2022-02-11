@@ -61,35 +61,12 @@ get_match_data_todays_games <- function(matches_today){
 get_times_for_lineup_scraping <- function(all_actual_matches){
   # we need the time and the match id
   matches_with_times <- all_actual_matches %>%
-    # create a posixct date
-    mutate(fixture_POSIXct = as.POSIXct(paste0(fixture_date, " ", fixture_time))) %>%
-    select(fixture_POSIXct, fixture_id) %>%
+    select(fixture_time, fixture_id) %>%
     # group by the fixture time
-    group_by(fixture_POSIXct) %>%
+    group_by(fixture_time) %>%
     # add another variable which indicates when we need to get the lineups
-    # (first time 30 minutes before the match, second 20 minutes before the match)
-    mutate(lineup_time_1 = fixture_POSIXct - minutes(30),
-           lineup_time_2 = fixture_POSIXct - minutes(20)) %>%
-    # transform the lineup into a format we can work with for the cronjob,
-    # e.g. "minute hour day month *" ("45 20 06 02 *")
-    mutate(lineup_time1_cronjob = paste0(minute(lineup_time_1),
-                                         " ",
-                                         hour(lineup_time_1),
-                                         " ",
-                                         day(lineup_time_1),
-                                         " ",
-                                         month(lineup_time_1),
-                                         " *"),
-           lineup_time2_cronjob = paste0(minute(lineup_time_2),
-                                         " ",
-                                         hour(lineup_time_2),
-                                         " ",
-                                         day(lineup_time_2),
-                                         " ",
-                                         month(lineup_time_2),
-                                         " *"))
-  
-  return(matches_with_times)
+    # (first time 30 minutes before the match)
+    mutate(lineup_time_1 = hm(fixture_time) - minutes(30))
 }
 
 
