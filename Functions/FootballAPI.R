@@ -592,9 +592,6 @@ get_fixtures_in_league_by_season <- function(league_id, season, matchday = NULL)
         data.frame() %>%
         # drop uncessessary columns
         select(-any_of(c("timestamp", "periods.first", "periods.second")))
-        # select(-c(timestamp, `periods.first`, `periods.second`))
-      
-      
       
       # check if the data frame contains all columns it should contain
       # with a helper function called "api_football_fixtures_general_complete_check"
@@ -682,7 +679,7 @@ get_fixtures_in_league_by_season <- function(league_id, season, matchday = NULL)
       # rename all variables in the frame
       fixture_team_info <- fixture_team_info %>%
         # drop, if available these columns
-        select(-any_of(home_winner, away_winner)) %>%
+        select(-any_of("home_winner", "away_winner")) %>%
         rename(club_id_home = home_id,
                club_name_home = home_name,
                club_logo_home = home_logo,

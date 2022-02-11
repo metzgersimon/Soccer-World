@@ -1,14 +1,23 @@
-get_venue_coordinates <- function(port = 9741L){
-  full_addresses <- major_six_leagues_team_infos_2010_2021 %>%
+### get_venue_coordinates ###
+# function should return the venue information combined with 
+# the geospatial data (longitude and latitude) of these venues
+get_venue_coordinates <- function(){
+  # get the venue information for all teams with seasons newer than 2015
+  # and drop the "3. Liga"
+  full_addresses <- venues_with_coordinates %>%
     filter(season >= 2015,
            league_id != 80)
-  # full_addresses <- venues_with_coordinates %>%
-  #   filter(!str_detect(longitude, pattern = "[0-9]+\\.[0-9]+"),
-  #          !str_detect(latitude, pattern = "[0-9]+\\.[0-9]+"))
   
+  # get an random port 
+  port <- randomPort()
+
   # get the unique venue names
   venue_names <- unique(full_addresses$venue_name)
   
+  # rename a lot of venues such that they can be entered in wikipedia
+  # and the correct venue is directly found 
+  # otherwise we do not land on the wikipedia page itself but on a page 
+  # that contains different proposals to match the query
   venue_names <- ifelse(
     venue_names == "Mercedes-Benz-Arena",
     "Mercedes-Benz-Arena (Stuttgart)",
@@ -93,35 +102,8 @@ get_venue_coordinates <- function(port = 9741L){
                                                         ifelse(
                                                           venue_names == "Visit Mallorca Estadi",
                                                           "Estadi de Son Moix",
-                                                          venue_names
-                                                        )
-                                                      )
-                                                    )
-                                                  )
-                                                )
-                                              )
-                                            )
-                                          )
-                                        )
-                                      )
-                                    )
-                                  )
-                                )
-                              )
-                            )
-                          )
-                        )
-                      )
-                    )
-                  )
-                )
-              )
-            )
-          )
-        )
-      )
-    )
-  )
+                                                          venue_names))))))))))))))))))))))))))))
+                                                        
   
   # create a driver from Rselenium
   rD <- rsDriver(browser = "firefox", port = port)
@@ -132,19 +114,19 @@ get_venue_coordinates <- function(port = 9741L){
   # set time outs to give the page the change to first fully load before
   # we try to get information form it
   remDr$setTimeout(type = "implicit", milliseconds = 50000)
+  remDr$setTimeout(type = "script", milliseconds = 50000)
+  remDr$setTimeout(type = "page load", milliseconds = 500000)
+  
+  # use the external function set_implicit_wait
+  set_implicit_wait(remDr, milliseconds = 50000)
   
   # create an empty variable to store the coordinates of all clubs
   all_club_coordinates <- NULL
   
-  # empty flag variable
-  # has_dash <- FALSE
-  dash_counter <- 0
-  
   # iterate over all venues in the data base
   for(i in 1:length(venue_names)){
-    print(paste0("Current iteration: ", i))
-    print(paste0("Current venue name: ", venue_names[i]))
    
+    # set the base url
     base_url <- "https://www.wikipedia.org/"
     
     # navigate to the created url
@@ -153,62 +135,20 @@ get_venue_coordinates <- function(port = 9741L){
     # store the webpage
     page_html <- read_html(remDr$getPageSource()[[1]])
     
-    # check if the string contains a dash
-    # if(str_detect(venue_names[i], pattern = "-")){
-    #   has_dash <- TRUE
-    # }
-    dash_counter <- str_count(venue_names[i], pattern = "-")
-    
-    # split the venue name into pieces because the function needs it that way
-    # first, replace "-" with a space
-    modified_name <- str_replace_all(venue_names[i], pattern = "-",
-                            replacement = " ")
-    
-    # then split the strings by the space
-    modified_name <- str_split(modified_name, pattern = " ") %>%
-      unlist()
-    
-    # cut the name into pieces and add spaces
-    final_vector <- c(rep(NA, length(modified_name)))
-    
-    # word counter
-    word_counter <- 1
-    # iterate over the modified_name vector and add after every string that
-    # is not the last a space
-    # for(curr_string in 1:length(modified_name)){
-    #   if(curr_string != length(modified_name)){
-    #     while(word_counter <= dash_counter){
-    #       final_vector[curr_string] <- paste0(modified_name[curr_string], "-")
-    #     }
-    #     
-    #     final_vector[curr_string] <- paste0(modified_name[curr_string], " ")
-    #     
-    #   } else {
-    #     final_vector[curr_string] <- modified_name[curr_string]
-    #   }
-    # }
-    
-    # deal with the case that there is just one string
-    # then we need to add another empty string to be able to use
-    # the sendkeystoelement function
-    # if(length(final_vector) == 1){
-    #   final_vector[2] <- ""
-    # }
     
     Sys.sleep(5)
     
-    # search the search input field
+    # look for the search input field
     search_field <- remDr$findElement(using = "xpath",
                                       paste0("//div[@id='search-input']//input"))
     
     # click it
     search_field$clickElement()
-    # write into the field the string we dismembered above
-    # search_field$sendKeysToElement(final_vector)
+
+    # send^the current venue name to the input field and hit enter
     search_field$sendKeysToElement(list(venue_names[i], key = "enter"))
-    # hit the enter button to browse this string
-    # search_field$sendKeysToElement(list(key = "enter"))
     
+    # wait for 10 seconds to prevent the page from breaking down
     Sys.sleep(10)
     
     # store the web page
@@ -253,9 +193,6 @@ get_venue_coordinates <- function(port = 9741L){
       curr_coordinates
     )
     
-    if(i %% 10 == 0){
-      save(all_club_coordinates, file = paste0("all_club_coordinates_", i, ".RData"))
-    }
     
     Sys.sleep(2)
 
@@ -274,6 +211,7 @@ get_venue_coordinates <- function(port = 9741L){
   rD$server$stop()
   rm(rD)
   gc()
+  closeAllConnections()
   
   
   return(all_club_coordinates)
