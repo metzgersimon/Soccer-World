@@ -17,12 +17,13 @@ slots <- timeslots %>%
           select(lineup_time1_cronjob) %>%
           unique()
 
-for (sl in slots) {
+for (sl in slots[[1]]) {
   # add the right syntax for skript
   cron_add(command = cron_rscript("./Scheduled/lineup_cron.R"), 
            frequency = sl, 
            ask = FALSE)
 }
+
 
 
 
