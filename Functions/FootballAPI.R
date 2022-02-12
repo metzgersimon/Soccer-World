@@ -357,8 +357,6 @@ get_team_stats_in_league_by_season <- function(league_id, team_id, season, match
                    status_code(response)))
     }
     
-    ################## FRAME IS EMPTY ######################
-    
   }
   
   # do some final mutations such as splitting the biggest_wins/loses columns
@@ -714,6 +712,8 @@ get_fixtures_in_league_by_season <- function(league_id, season, matchday = NULL)
       # check if there is no score available and if so fill the columns with NAs
       if(nrow(fixture_score_info) == 0){
         fixture_score_info[1,] <- NA
+        fixture_score_info <- fixture_score_info %>%
+          mutate(across(.cols = everything(), as.numeric))
       }
       
       # in case the frame is empty
