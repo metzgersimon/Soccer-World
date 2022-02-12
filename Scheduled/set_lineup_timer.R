@@ -1,5 +1,8 @@
 source("Setup.R")
 
+# clear the cron tab
+cron_clear(ask = FALSE, user = "ubuntu")
+
 # get the matches actually scheduled for today
 leagues_today <- get_leagues_playing_today()
 matches_today <- get_match_data_todays_games(leagues_today)
