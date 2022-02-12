@@ -6,7 +6,7 @@ tab_information_team_ui <- function(){
             column(width = 3, align = "center",
                    selectizeInput("info_team_league_selection",
                                label = "League",
-                               choices = c("Bundesliga",
+                               choices = c("Bundesliga 1",
                                            "Bundesliga 2",
                                            "Premier League",
                                            "Ligue 1")
