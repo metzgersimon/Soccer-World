@@ -1,6 +1,7 @@
 #### Loading libraries needed ####
 if (!require("binman")) install.packages("binman")
 if (!require("caret")) install.packages("caret")
+if (!require("cronR")) install.packages("cronR")
 if (!require("dashboardthemes")) install.packages("dashboardthemes")
 if (!require("data.table")) install.packages("data.table")
 if (!require("DBI")) install.packages("DBI")
@@ -49,6 +50,7 @@ if (!require("xml2")) install.packages("xml2")
 
 library(binman)
 library(caret)
+library(cronR)
 library(dashboardthemes)
 library(data.table)
 library(DBI)
