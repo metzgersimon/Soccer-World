@@ -19,12 +19,9 @@ slots <- timeslots %>%
 
 for (sl in slots[[1]]) {
   # add the right syntax for skript
-  cron_add(command = cron_rscript("./Scheduled/lineup_cron.R"), 
+  cron_add(
+           command = cron_rscript("./Scheduled/lineup_cron.R"), 
            frequency = sl, 
-           ask = FALSE)
+           ask = FALSE,
+           id = as.character(paste(Sys.time(), sl, sep = "0000")))
 }
-
-
-
-
-
