@@ -8,12 +8,11 @@ api_football_fixtures_general_complete_check <- function(data_frame_to_observe,
   # produce and based on that create an emtpy data frame with the correct
   # column names in the right order
   if(content_type == "general"){
-    data_frame_template <- data.frame(matrix(ncol = 13,
+    data_frame_template <- data.frame(matrix(ncol = 9,
                                              nrow = 0))
     
     
-    colnames(data_frame_template) <- c("id", "referee", "timezone", "date",
-                                       "timestamp", "periods.first", "periods.second",
+    colnames(data_frame_template) <- c("id", "referee", "date",
                                        "venue.id", "venue.name", "venue.city", 
                                        "status.long", "status.short", "status.elapsed")
   } else if(content_type == "league"){
@@ -29,16 +28,17 @@ api_football_fixtures_general_complete_check <- function(data_frame_to_observe,
                                              nrow = 0))
     
     
-    colnames(data_frame_template) <- c("home.id", "home.name", "home.logo",
-                                       "home.winner", "away.id", "away.name",
-                                       "away.logo", "away.winner")
+    colnames(data_frame_template) <- c("home_id", "home_name", "home_logo",
+                                       "home_winner", "away_id", "away_name",
+                                       "away_logo", "away_winner")
   } else if(content_type == "score"){
     data_frame_template <- data.frame(matrix(ncol = 4,
                                              nrow = 0))
     
     
-    colnames(data_frame_template) <- c("halftime.home", "halftime.away", 
-                                       "fulltime.home", "fulltime.away")
+    colnames(data_frame_template) <- c("halftime_home", "halftime_away", 
+                                       "fulltime_home", "fulltime_away")
+    
   } else if(content_type == "standing"){
     data_frame_template <- data.frame(matrix(ncol = 29,
                                              nrow = 0))
@@ -54,7 +54,8 @@ api_football_fixtures_general_complete_check <- function(data_frame_to_observe,
                                        "away_win", "away_draw", "away_lose",
                                        "away_goals_for", "away_goals_against",
                                        "update")
-  } else if(content_type == "player_stats"){
+    
+  } else if(content_type == "player_stats_fixture"){
     data_frame_template <- data.frame(matrix(ncol = 33,
                                              nrow = 0))
     
@@ -75,6 +76,41 @@ api_football_fixtures_general_complete_check <- function(data_frame_to_observe,
                                        "penalty_commited", "penalty_scored",
                                        "penalty_missed", "penalty_saved")
     
+  } else if(content_type == "player_stats_season"){
+    data_frame_template <- data.frame(matrix(ncol = 57,
+                                             nrow = 0))
+    
+    colnames(data_frame_template) <- c("league_id", "league_name" , "league_country",
+                                       "league_logo", "league_flag", "league_season",
+                                       "team_id", "team_name", "team_logo", 
+                                       "player_id",
+                                       "player_name", "player_firstname", "player_lastname",
+                                       "player_age", "player_birth_date",     
+                                       "player_birth_place", "player_birth_country",
+                                       "player_nationality", "player_injured",
+                                       "player_photo", "player_weight",     
+                                       "player_height", 
+                                       "games_appearences",     
+                                       "games_lineups", "games_minutes", "games_position",
+                                       "games_rating", 
+                                       "substitutes_in",
+                                       "substitutes_out", "substitutes_bench",
+                                       "shots_total", "shots_on", 
+                                       "goals_total", 
+                                       "goals_conceded", "goals_assists", "goals_saves",
+                                       "passes_total", "passes_key", "passes_accuracy",
+                                       "tackles_total", "tackles_blocks", 
+                                       "tackles_interceptions", "duels_total", 
+                                       "duels_won", "dribbles_attempts", 
+                                       "dribbles_success", "dribbles_past",
+                                       "fouls_drawn", "fouls_committed",
+                                       "cards_yellow",
+                                       "cards_yellowred",  "cards_red",
+                                       "penalty_won",  "penalty_commited",     
+                                       "penalty_scored", "penalty_missed",
+                                       "penalty_saved")
+
+    
   } else if(content_type == "fixture_events"){
     data_frame_template <- data.frame(matrix(ncol = 12,
                                              nrow = 0))
@@ -83,13 +119,14 @@ api_football_fixtures_general_complete_check <- function(data_frame_to_observe,
                                        "team_id", "team_name", "team_logo",
                                        "player_id", "player_name",
                                        "assist_id", "assist_name",
-                                       "type", "detail", "comments")
+                                       "event_type", "event_detail", "comments")
     
   } else if(content_type == "team_transfer"){
-    data_frame_template <- data.frame(matrix(ncol = 10,
+    data_frame_template <- data.frame(matrix(ncol = 11,
                                              nrow = 0))
     
     colnames(data_frame_template) <- c("player_id", "player_name", "date", "type",
+                                       "transfer_sum_mil_euro",
                                        "from_team_id", "from_team_name",
                                        "from_team_logo", "to_team_id", 
                                        "to_team_name", "to_team_logo")
@@ -241,7 +278,7 @@ api_football_fixtures_general_complete_check <- function(data_frame_to_observe,
                                        "cards_red_106-120_total",
                                        "cards_red_106-120_percentage")
     
-  }
+  } 
   
   # get the colnames of the data frame we want to check and 
   # of the one that is how it should be
