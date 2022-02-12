@@ -1,3 +1,4 @@
+setwd("/home/ubuntu/project/Soccer-Prediction-App")
 source("Setup.R")
 
 # load the timetable
