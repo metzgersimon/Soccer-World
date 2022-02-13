@@ -119,7 +119,7 @@ api_football_fixtures_general_complete_check <- function(data_frame_to_observe,
                                        "team_id", "team_name", "team_logo",
                                        "player_id", "player_name",
                                        "assist_id", "assist_name",
-                                       "event_type", "event_detail", "comments")
+                                       "type", "detail", "comments")
     
   } else if(content_type == "team_transfer"){
     data_frame_template <- data.frame(matrix(ncol = 11,
