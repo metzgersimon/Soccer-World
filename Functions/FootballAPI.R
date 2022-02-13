@@ -953,16 +953,16 @@ get_fixture_events <- function(fixture_id){
       # to extract the needed content 
       curr_events <- get_content_for_list_element(content,
                                                   i,
-                                                  name_elem = "") %>%
-        rename(event_type = type, 
-               event_detail = detail)
+                                                  name_elem = "") 
       
       # use the helper function to add columns that are not currently 
       # present in the data 
       curr_events <- api_football_fixtures_general_complete_check(curr_events,
                                                                   "fixture_events") %>%
-        # rename the comments variables
-        rename(event_comments = comments) %>%
+        # rename the event variables
+        rename(event_comments = comments,
+               event_type = type, 
+               event_detail = detail) %>%
         # convert the variables into proper type
         mutate(time_elapsed = as.numeric(time_elapsed),
                time_extra = as.numeric(time_extra),
@@ -970,8 +970,7 @@ get_fixture_events <- function(fixture_id){
                player_id = as.numeric(player_id),
                assist_id = as.numeric(assist_id),
                assist_name = as.character(assist_name),
-               event_comments = as.character(event_comments)
-               ) %>%
+               event_comments = as.character(event_comments)) %>%
         # rename the abbreviation subst into Substitution
         # and replace the NAs for time extra to 0s
         mutate(event_type = ifelse(event_type == "subst",
@@ -1745,17 +1744,37 @@ get_team_transfers <- function(team_id){
       # if there is no type information, we create a data frame and fill it with NA
       # otherwise, we create a data frame and fill it with the type data
       if(is.null(type)){
-        type <- data.frame("type" = NA) %>%
-          mutate(transfer_sum_mil_euro = NA)
+        type <- data.frame("type" = as.character(NA)) %>%
+          mutate(transfer_sum_mil_euro = as.numeric(NA))
         
       } else {
+        # create a data frame with the type
         type <- data.frame("type" = type) %>%
-          mutate(transfer_sum_mil_euro = str_extract(type, pattern = "[0-9]+.*"),
+          # transform the transfer sum (extract it from the type variable)
+          mutate(transfer_sum_mil_euro = type,
+                 # create the type variable in a clean format that is easy to understand
+                 type = ifelse(str_detect(type, pattern = ".*[0-9].*"),
+                               "Paid",
+                               ifelse(type == "N/A",
+                                      as.character(NA),
+                                      type)),
+                 # transform the transfer sum properly
+                 transfer_sum_mil_euro = str_extract(transfer_sum_mil_euro, pattern = "[0-9]+(\\.?[0-9]+)?[MK]?"),
+                 # if it ends with M (millions) leave it as it is (because the variable
+                 # is in millions)
                  transfer_sum_mil_euro = ifelse(endsWith(transfer_sum_mil_euro, "M"),
                                                          as.numeric(str_remove(transfer_sum_mil_euro,
                                                                                "M")),
-                                                         as.numeric(str_extract(transfer_sum_mil_euro,
-                                                                                "[0-9]+"))/1000))
+                                                # if the its ends with K (1000) we
+                                                # divide by 1000
+                                                as.numeric(str_remove(transfer_sum_mil_euro,
+                                                                      "K"))/1000)) %>%
+          # if the type is Free or Loan we want to set the transfer sum to 0
+          mutate(transfer_sum_mil_euro = ifelse(type %in% c("Free", "Loan"),
+                                                0, 
+                                                transfer_sum_mil_euro))
+                                                 
+                 
       }
         
       # extract the information about the teams involved in the transfer
@@ -1773,12 +1792,9 @@ get_team_transfers <- function(team_id){
       # the player is a young player who was scouted. Then we create a data frame 
       # and fill it with NA 
       if(nrow(team_infos_from) == 0){
-        team_infos_from <- data.frame("from_team_id" = NA,
-                                      "from_team_name" = NA,
-                                      "from_team_logo" = NA) %>%
-          mutate(from_team_id = as.numeric(from_team_id),
-                 from_team_name = as.character(from_team_name),
-                 from_team_logo = as.character(from_team_logo))
+        team_infos_from <- data.frame("from_team_id" = as.numeric(NA),
+                                      "from_team_name" = as.character(NA),
+                                      "from_team_logo" = as.character(NA))
       } 
       
       
@@ -1796,13 +1812,18 @@ get_team_transfers <- function(team_id){
       # the player ends his career. Then we create a data frame 
       # and fill it with NA 
       if(nrow(team_infos_to) == 0){
-        team_infos_to <- data.frame("to_team_id" = NA,
-                                    "to_team_name" = NA,
-                                    "to_team_logo" = NA) %>%
-          mutate(to_team_id = as.numeric(to_team_id),
-                 to_team_name = as.character(to_team_name),
-                 to_team_logo = as.character(to_team_logo))
+        team_infos_to <- data.frame("to_team_id" = as.numeric(NA),
+                                    "to_team_name" = as.character(NA),
+                                    "to_team_logo" = as.character(NA))
       }
+      
+      # map the team names (from_team_name and to_team_name) with the
+      # mapping function club_name_mapping
+      team_infos_from$from_team_name <- sapply(team_infos_from$from_team_name,
+                                               club_name_mapping)
+      
+      team_infos_to$to_team_name <- sapply(team_infos_to$to_team_name,
+                                           club_name_mapping)
       
       
       # combine all information into one data frame
@@ -1815,6 +1836,32 @@ get_team_transfers <- function(team_id){
       curr_transfer_infos <- api_football_fixtures_general_complete_check(curr_transfer_infos,
                                                                           "team_transfer")
       
+      # do some final variable mutations
+      # convert the team information
+      curr_transfer_infos <- curr_transfer_infos %>%
+        mutate(from_team_id = as.numeric(from_team_id),
+               from_team_name = as.character(from_team_name),
+               from_team_logo = as.character(from_team_logo),
+               to_team_id = as.numeric(to_team_id),
+               to_team_name = as.character(to_team_name),
+               to_team_logo = as.character(to_team_logo),
+               # convert the player id into numeric
+               player_id = as.numeric(player_id),
+               # convert the date into an actual date
+               transfer_date = ymd(date),
+               # rename some variables
+               transfer_type = type,
+               transfer_sum_mil_euro,
+               # add a variable that indicates which team we currently observe
+               "team_id" = team_id) %>%
+        # reorder the variables
+        select(team_id, player_id, player_name, transfer_date, transfer_type,
+               transfer_sum_mil_euro, from_team_id, from_team_name, from_team_logo,
+               to_team_id, to_team_name, to_team_logo) %>%
+        # lastly, filter for only those transfers that actually are finished
+        filter(transfer_date < Sys.Date())
+        
+      
       # now combine the data extracted for the current transfer with the
       # data collected earlier into one frame by binding rows
       transfer_frame <- bind_rows(
@@ -1822,16 +1869,6 @@ get_team_transfers <- function(team_id){
         curr_transfer_infos
       )
     }
-    
-    # lastly, add a column at the beginning of the frame for the team id
-    transfer_frame <- bind_cols(data.frame(team_id),
-                                transfer_frame) %>%
-      # convert the date column into an actual date
-      mutate(date = ymd(date)) %>%
-      # get only those transfers that are already done
-      filter(date <= Sys.Date())
-    
-    
     
     # if the request was not successful print an error 
   } else {
@@ -2011,24 +2048,6 @@ check_for_value_column <- function(frame_to_observe){
 
 
 
-
-# get_plain_name <- function(original_name){
-#   # set the substitutions which maps one old letter to one new letter
-#   old_chars <- "šžþàáâãäåçèéêëìíîïðñòóôõöùúûüý"
-#   new_chars <- "szyaaaaaaceeeeiiiidnooooouuuuy"
-#   s1 <- chartr(old_chars, new_chars, original_name)
-#   
-#   # set the substitutions for special letters where one letter maps also to
-#   # two new letters
-#   old_special_chars <- c("œ", "ß", "æ", "ø")
-#   new_special_chars <- c("oe", "ss", "ae", "oe")
-#   s2 <- s1
-#   for(i in seq_along(old_special_chars)){
-#     s2 <- gsub(old_special_chars[i], new_special_chars[i], s2, fixed = TRUE)
-#   } 
-#   
-#   return(s2)
-# }
 
 
 city_name_mapping <- function(city_name){
