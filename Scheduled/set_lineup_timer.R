@@ -12,7 +12,7 @@ timeslots <- get_times_for_lineup_scraping(matches_today)
 save(timeslots, file = "./Scheduled/timeslots.RData")
 
 # delete cron tabs from the day before
-cron_clear(ask = FALSE, user = ubuntu)
+cron_clear(ask = FALSE, user = "ubuntu")
 
 # initialise new cronR tabs for today
 
