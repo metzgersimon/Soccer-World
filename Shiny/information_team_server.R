@@ -20,6 +20,7 @@ information_team_server <- function(input, output, session){
   observeEvent(input$info_team_club_selection, {
     updateSelectInput(session,
                       inputId = "info_team_season_selection",
+                      selected = NULL,
                       choices = c(
                         "",
                         paste0(unique(
@@ -39,7 +40,7 @@ information_team_server <- function(input, output, session){
                             select(season) %>%
                             unlist() %>%
                             unname()
-                        )+1)),selected = NULL)
+                        )+1)))
   })
   
   # create the output for the table on the overview page
@@ -169,20 +170,37 @@ information_team_server <- function(input, output, session){
     
     print(input$info_team_club_selection)
     # extract the logo from the frame
-    team_image <- all_leagues_venue_information %>%mutate(
-      league = if_else(all_leagues_venue_information$league_id == 78, "Bundesliga",if_else(venues_with_coordinates$league_id == 79, "Bundesliga 2", 
-                                                                                             if_else(all_leagues_venue_information$league_id == 39,"Premier League",
-                                                                                                     if_else(all_leagues_venue_information$league_id == 61,  "Ligue 1","none"))))) %>%
-                                                                                                     
-      filter(league== input$info_team_league_selection &team_name == input$info_team_club_selection) %>%
+    team_image <- all_leagues_venue_information %>% mutate(league = if_else(
+      all_leagues_venue_information$league_id == 78,
+      "Bundesliga",
+      if_else(
+        venues_with_coordinates$league_id == 79,
+        "Bundesliga 2",
+        if_else(
+          all_leagues_venue_information$league_id == 39,
+          "Premier League",
+          if_else(
+            all_leagues_venue_information$league_id == 61,
+            "Ligue 1",
+            "none"
+          )
+        )
+      )
+    )) %>%
+      
+      filter(
+        league == input$info_team_league_selection &
+          team_name == input$info_team_club_selection
+      ) %>%
       select(logo) %>%
       unlist() %>%
       unname() %>%
       unique()
-      
+    
     # set the img on the extracted logo
     tags$img(src = team_image)
   })
+  
   
   # output for the club logo
   output$info_team_venue_image <- renderUI({
@@ -191,11 +209,27 @@ information_team_server <- function(input, output, session){
     
     print(input$info_team_club_selection)
     # extract the logo from the frame
-    venue_image <- all_leagues_venue_information %>%mutate(
-      league = if_else(all_leagues_venue_information$league_id == 78, "Bundesliga",if_else(venues_with_coordinates$league_id == 79, "Bundesliga 2", 
-                                                                                           if_else(all_leagues_venue_information$league_id == 39,"Premier League",
-                                                                                                   if_else(all_leagues_venue_information$league_id == 61,  "Ligue 1","none"))))) %>%
-      filter(league==  input$info_team_league_selection &team_name == input$info_team_club_selection) %>%
+    venue_image <- all_leagues_venue_information %>% mutate(league = if_else(
+      all_leagues_venue_information$league_id == 78,
+      "Bundesliga",
+      if_else(
+        venues_with_coordinates$league_id == 79,
+        "Bundesliga 2",
+        if_else(
+          all_leagues_venue_information$league_id == 39,
+          "Premier League",
+          if_else(
+            all_leagues_venue_information$league_id == 61,
+            "Ligue 1",
+            "none"
+          )
+        )
+      )
+    )) %>%
+      filter(
+        league ==  input$info_team_league_selection &
+          team_name == input$info_team_club_selection
+      ) %>%
       select(venue_image) %>%
       unlist() %>%
       unname() %>%
@@ -434,16 +468,41 @@ information_team_server <- function(input, output, session){
     #                         "Goals for", "Avg Goals for", "Goals agaist",
     #                         "Avg Goals against", "Goal Difference",
     #                         "Failed to score", "Clean sheets")
+    league <- if_else(
+        input$info_team_league_selection =="Bundesliga 1",
+        league_id == 78,
+        if_else(
+          input$info_team_league_selection =="Bundesliga 2",
+          league_id == 79,
+          if_else(
+            input$info_team_league_selection =="Premier League",
+            league_id == 39,
+            if_else(
+              input$info_team_league_selection =="Ligue 1",
+              league_id == 61,
+          )
+        )
+      ))
     
-    buli_fixture_stats %>%
-      filter(team_name == input$info_team_club_selection &
-               season == as.numeric(
+    all_club_stats <-
+      left_join(
+        all_leagues_club_stats,
+        all_leagues_matches,
+       by = c("team_name" = "club_name_home", "league_season" = "league_season", "league_id" = "league_id" ,"league_country" = "league_country")
+     )
+    
+    
+    all_club_stats %>%
+      filter(league_id == league_id &
+        team_name == input$info_team_club_selection &
+               league_season == as.numeric(
                  str_split(input$info_team_season_selection,
                            pattern = "/")[[1]][1]))  %>%    
       mutate(game_score = paste0(fulltime_score_home, ":", fulltime_score_away)) %>%
-      select(fixture_date, game_score, contains("shots"), passing_accuracy,
-             ball_possession, fouls, corners, offsides, 
-             contains("passes"), contains("cards"), goalkeeper_saves) %>% 
+ #     select(fixture_date, game_score, contains("home"), passing_accuracy,
+ #            ball_possession, fouls, corners, offsides, 
+ #            contains("passes"), contains("cards"), goalkeeper_saves) %>% 
+ #     select(fixture_date, game_score,goals_for_total_home)
       reactable(
         defaultColDef = colDef(
           align = "center",
@@ -544,6 +603,10 @@ information_team_server <- function(input, output, session){
     req(input$info_team_club_selection)
     req(input$info_team_season_selection)
     
+    if(input$info_team_league_selection=="Bundesliga 1"){
+      league <- "Bundesliga"
+    } else {league <- input$info_team_league_selection}
+    
     squads_filtered <-
       all_leagues_tm_squads %>%
       filter(
@@ -551,7 +614,7 @@ information_team_server <- function(input, output, session){
           season == as.numeric(
             str_split(input$info_team_season_selection,
                       pattern = "/")[[1]][1]) &
-          league == input$info_team_league_selection
+          league == league
       )
     
   })
@@ -728,37 +791,28 @@ information_team_server <- function(input, output, session){
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
 
-    if(input$info_team_league_selection=="Bundesliga 2"){
-      league <- "2. Bundesliga"
+    if(input$info_team_league_selection=="Bundesliga 1"){
+      league <- "Bundesliga"
     } else {league <- input$info_team_league_selection}
     
     market_value_filtered <-
-      market_values_over_time %>%
+      all_leagues_market_values_over_time %>%
       filter(
         club == input$info_team_club_selection &
-          league_then == league
+          league == league
       )
     
   })
   
   output$info_team_market_value_over_time <- renderPlotly({
     market_values <- market_value_reactive() %>%
-      # currently we have to filter out these dates
-      # filter(cut_off_day != "2011-07-01",
-      #       cut_off_day != "2020-07-01",
-      #       cut_off_day != "2014-06-01",
-      #       cut_off_day != "2014-07-01",
-      #       cut_off_day != "2014-08-01",
-      #       cut_off_day != "2014-09-01",
-      #       cut_off_day != "2014-10-01",
-      #       club == input$info_team_club_selection) %>%
       # transform the market value at the given time to a numeric
-      mutate(value_then = as.numeric(str_remove_all(value_then,"[\u20AC|m]")) * 1000000) %>%
+      # mutate(value_then = as.numeric(str_remove_all(value_then,"[\u20AC|m]")) * 1000000) %>%
       # create actual plot for the market value over time by club
-      plot_ly(x = ~cut_off_day, y = ~value_then) %>%
+      plot_ly(x = ~date, y = ~value_then_mil_euro) %>%
       add_lines() %>%
-      layout(title = "Market value over time",
-             yaxis = list(title = "Current Market Value"),
+      layout(title = list(text = "Market value over time", y = 0.95, x = 0.5),
+             yaxis = list(title = "Market Value (million euro)"),
              xaxis = list(title = "Year"),
              font = list(color = "white"),
              plot_bgcolor = "rgba(0, 65, 87, 10)",
@@ -768,13 +822,31 @@ information_team_server <- function(input, output, session){
     market_values
   })
   
+  
+  ############# fifa team rating plot #####################
+  fifa_team_reactive <- reactive({
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    
+    if(input$info_team_league_selection=="Bundesliga 1"){
+      league <- "Bundesliga"
+    } else {league <- input$info_team_league_selection}
+    
+    fifa_team_filtered <-
+      all_leagues_fifa_team_stats %>%
+      filter(
+        club == input$info_team_club_selection &
+          league == league
+      )
+    
+  })
   # create a plot for the fifa rating over time
   output$info_team_fifa_rating_over_time <- renderPlotly({
     # we need the user to select a club first
+    req(input$info_team_league_selection)
     req(input$info_team_club_selection)
-    data <- fifa_team_stats_buli_2015_2021 %>%
-      # currently we have to filter out these dates
-      filter(club == input$info_team_club_selection) %>%
+    
+    data <- fifa_team_reactive() %>%
       pivot_longer(
         fifa_overall_rating:fifa_international_prestige,
         names_to = "variable",
@@ -811,7 +883,7 @@ information_team_server <- function(input, output, session){
     # test <- major_five_leagues_transfers %>%
     #   filter(from_team_name == "VfB Stuttgart" |
     #            to_team_name == "VfB Stuttgart")
-    # 
+     
     major_five_league_transfers %>%
       filter(from_team_name == input$info_team_club_selection |
                to_team_name == input$info_team_club_selection) %>%
