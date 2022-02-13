@@ -81,7 +81,7 @@ tab_information_player_ui <- function(){
                        )
                      )
             ),
-            tabPanel("Statistics",
+            tabPanel("Statistics",  
                      tabsetPanel(type = "pills",
                                  tabPanel("General",
                                           fluidRow(
@@ -91,14 +91,7 @@ tab_information_player_ui <- function(){
                                                 collapsible = TRUE,
                                                 reactableOutput("info_player_stats_general_games") %>%
                                                 withSpinner(color = "black")
-                                              #width = 12,
-                                              # offset = 3,
-                                              #align = "center",
-                                              #div(
-                                               # style = "margin-top: 20px; color= white",
-                                                #"border: solid 2px #FFFFFF; margin-top: 20px;",
-                                               # reactableOutput("info_player_stats_general") %>%
-                                               #  withSpinner(color = "black")
+                
                                               )),
                                           fluidRow(
                                             box(title = "Goals infos", 
@@ -163,10 +156,10 @@ tab_information_player_ui <- function(){
                                             # offset = 3,
                                             align = "center",
                                             div(
-                                              style = "margin-top: 20px;color= white",
+                                              style = "margin-top: 20px;",
                                               #"border: solid 2px #FFFFFF; margin-top: 20px;",
                                               plotlyOutput("info_player_stats_rating") %>%
-                                                withSpinner(color = "black")
+                                                withSpinner(color = "white")
                                             )
                                           )))
                      )),  
