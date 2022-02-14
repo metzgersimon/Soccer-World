@@ -38,14 +38,14 @@ home_server <- function(input, output, session){
     
   })
   
-  observe({
-    leafletProxy("map", data = venues_with_coordinates_home) %>%
-      clearShapes() %>%
-      addMarkers(~longitude, ~latitude, 
-                 label = ~team_name, 
-                 labelOptions = labelOptions(textsize = "12px"),
-                 popup = ~popup_text)
-  })
+   #observe({
+   # leafletProxy("map", data = venues_with_coordinates_home) %>%
+   #   clearShapes() %>%
+   #   addMarkers(~longitude, ~latitude, 
+   #              label = ~team_name, 
+   #              labelOptions = labelOptions(textsize = "12px"),
+   #              popup = ~popup_text)
+ # })
   
   # output for the club logo
   output$home_league_flag <- renderUI({
