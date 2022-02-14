@@ -6,7 +6,7 @@ tab_information_team_ui <- function(){
             column(width = 3, align = "center",
                    selectizeInput("info_team_league_selection",
                                label = "League",
-                               choices = c("Bundesliga 1",
+                               choices = c("Bundesliga",
                                            "Bundesliga 2",
                                            "Premier League",
                                            "Ligue 1")
@@ -22,11 +22,11 @@ tab_information_team_ui <- function(){
                                   label = "Club",
                                   multiple = TRUE,
                                   selected = NULL,
-                                  choices = player_team_join %>%
+                                  choices = all_infos_club %>%
                                     filter(season == as.numeric(
                                       str_split(seasons[1],
                                                 pattern = "/")[[1]][1])) %>%
-                                    select(team_name) %>%
+                                    select(club) %>%
                                     unlist() %>%
                                     unname() %>%
                                     unique(),
