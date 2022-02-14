@@ -7,7 +7,7 @@ get_next_fixture_by_team <- function(team_name, league_id, season){
   curr_date <- Sys.Date()
   
   # get information for the next match
-  next_fixture <- all_league_fixture_stats %>%
+  next_fixture <- all_leagues_fixture_stats %>%
     # convert the date into ymd
     mutate(fixture_date = ymd(fixture_date.x)) %>%
     # filter for the team name and the league_id
