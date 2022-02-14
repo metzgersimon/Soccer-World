@@ -12,7 +12,7 @@ timeslots <- get_times_for_lineup_scraping(matches_today)
 save(timeslots, file = "./Scheduled/timeslots.RData")
 
 # delete cron tabs from the day before
-cron_clear(ask = FALSE)
+cron_clear(ask = FALSE, user = "ubuntu")
 
 # initialise new cronR tabs for today
 
@@ -24,8 +24,9 @@ slots <- timeslots %>%
 for (sl in slots[[1]]) {
   # add the right syntax for skript
   cron_add(
-           command = cron_rscript("./Scheduled/lineup_cron.R"), 
+           command = "Rscript /home/ubuntu/project/Soccer-Prediction-App/Scheduled/set_lineup_timer.R", 
            frequency = sl, 
            ask = FALSE,
+           user = "ubuntu",
            id = as.character(paste(Sys.time(), sl, sep = "0000")))
 }
