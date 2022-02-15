@@ -1,6 +1,8 @@
 # subserver for the team-tab in the information menu item
 information_team_server <- function(input, output, session){
   
+  all_infos_club <- inner_join(all_leagues_tm_squads, unique(all_leagues_matches[,c(2,3,19)]), by=c("club"="club_name_home", "league"="league_name"))
+  
   observeEvent(input$info_team_league_selection, {
     updateSelectInput(session,
                       inputId = "info_team_club_selection",

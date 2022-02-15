@@ -26,8 +26,8 @@ tab_information_player_ui <- function(){
               selectizeInput(
                 "information_player_team_selection",
                 label = "Club",
-                choices = unique(player_team_join$team_name),
-                selected = unique(player_team_join$team_name)[1]
+                choices = unique(all_leagues_tm_squads$club),
+                selected = unique(all_leagues_tm_squads$club)[1]
               )
               
             ),            column(
