@@ -549,10 +549,9 @@ get_winning_pcts <- function(type = "home"){
            away_win_pct = (away_wins / away_played) * 100,
            away_draw_pct = (away_draws / away_played) * 100,
            away_loss_pct = (away_losses / away_played) * 100) %>%
-          
-          # lag everything
-          mutate(across(c(home_played:loss_pct),
-                        ~lag(.x, n = 1)))
+    # lag everything
+    mutate(across(c(home_played:loss_pct),
+                  ~ lag(.x, n = 1)))
   
   
   if(type == "home"){
@@ -608,43 +607,43 @@ get_winning_pcts <- function(type = "home"){
 # function should map the (historical) transfermarkt lineups data with
 # the lineup information of a soon to begin match from the API
 prepare_lineup_data <- function(match_id, max_season = 2021){
-  # match_id <- 719494
-  match_information <- all_leagues_matches %>%
-    filter(fixture_id == match_id) %>%
-    mutate(fixture_date = ymd(fixture_date)) %>%
-    data.frame()
+  # match_id <- 719539
+  # match_information <- all_leagues_matches %>%
+  #   filter(fixture_id == match_id) %>%
+  #   mutate(fixture_date = ymd(fixture_date)) %>%
+  #   data.frame()
   
-  # get the lineups from the API
-  # live call to API to get the lineups for the soon to begin lineup
-  lineups_API2 <- get_fixture_lineups(match_id) %>%
-    # lineups_API2 <- lineups_API %>%
+  # get the lineups from the data base
+  current_game_lineup <- all_leagues_lineups %>%
+    filter(fixture_id == match_id) %>%
     # prepare the name of the players to map the API and the TM data
     mutate(player_lastname = str_remove(player_name, pattern = ".*\\. |.*\\s"),
            # map all special characters to plain ones
-           player_lastname2 = stri_trans_general(player_lastname, id = "Latin-ASCII"))
+           player_lastname_map = stri_trans_general(player_lastname, id = "Latin-ASCII"))
   
   
   # check if the current matchday is the first matchday of the season
   # If it is the first matchday, we want to impute the data somehow
-  if(match_information$league_round == 1){
-    # in solchen fällen den durchschnittswert der letzten mannschaft (absteiger)
-    lineups_tm <- buli_fixture_lineups_2015_2021_tm %>%
-      filter(season == match_information$league_season - 1)
+  if(unique(current_game_lineup$league_round) == 1){
+    curr_lineups_tm <- all_leagues_lineups_tm %>%
+      filter(season == current_game_lineup$league_season - 1)
     # if it is not the first matchday, we get the current season
   } else {
-    lineups_tm <- buli_fixture_lineups_2015_2021_tm %>%
-      filter(season == match_information$league_season)
+    curr_lineups_tm <- all_leagues_lineups_tm %>%
+      filter(season == unique(current_game_lineup$league_season))
   }
   
   # search in the current season lineup data from transfermarkt for the
   # current teams (historical data)
-  lineups_tm <- lineups_tm %>%
-    filter(team %in% c(match_information$club_name_home,
-                       match_information$club_name_away),
-           matchday < match_information$league_round) %>%
-    mutate(player_lastname = str_to_title(sub(".*?\\s", "", player_name)),
+  curr_lineups_tm2 <- curr_lineups_tm %>%
+    filter(team %in% c(unique(current_game_lineup$club_name_home),
+                       unique(current_game_lineup$club_name_away)),
+           matchday < unique(current_game_lineup$league_round)) %>%
+    mutate(#player_lastname = str_to_title(sub(".*?\\s", "", player_name)),
+           player_lastname = gsub("^.* ", "", player_name),
+           # player_lastname = str_to_title(player_lastname[length(player_lastname)]),
            # map all special characters to plain ones
-           player_lastname2 = stri_trans_general(player_lastname, id = "Latin-ASCII"),
+           player_lastname_map = stri_trans_general(player_lastname, id = "Latin-ASCII"),
            # map transfermarkt positions to match API positions
            player_pos_API_to_map = ifelse(str_detect(player_pos, pattern = "Goal"),
                                           "G",
@@ -666,9 +665,10 @@ prepare_lineup_data <- function(match_id, max_season = 2021){
   
   # first check if there are any players that did not match from the API (newest data)
   # to the transfermarkt
-  not_matched_players <- lineups_API2 %>%
-    anti_join(lineups_tm, by = c("team_name" = "team", "player_number",
-                                 "player_lastname2")) 
+  not_matched_players <- current_game_lineup %>%
+    anti_join(curr_lineups_tm2, 
+              by = c("team_name" = "team", "player_number",
+                     "player_lastname_map")) 
   
   # we also want to join the all the other players
   matched_players <- lineups_API2 %>%
