@@ -548,7 +548,11 @@ get_winning_pcts <- function(type = "home"){
            home_loss_pct = (home_losses / home_played) * 100,
            away_win_pct = (away_wins / away_played) * 100,
            away_draw_pct = (away_draws / away_played) * 100,
-           away_loss_pct = (away_losses / away_played) * 100)
+           away_loss_pct = (away_losses / away_played) * 100) %>%
+          
+          # lag everything
+          mutate(across(c(home_played:loss_pct),
+                        ~lag(.x, n = 1)))
   
   
   if(type == "home"){
