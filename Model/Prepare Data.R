@@ -90,7 +90,7 @@ prepare_team_match_stats_historical <- function(){
   match_stats_historical <- all_leagues_fixture_stats %>%
     # get only past seaons and remove matchdays that are not the regular season,
     # i.e., relegation matches
-    filter(season < max(season),
+    filter(#season < max(season),
            season >= 2016,
            !is.na(matchday)) %>%
     # group by the league and team id
@@ -146,22 +146,168 @@ prepare_spi_data <- function(){
 ################# FIFA STATS ##########################
 
 prepare_fifa_team_stats <- function(){
+
+  # get the all_leagues_matches data set with just a few columns to join
+  all_leagues_matches_matcher <- all_leagues_matches %>%
+    select(league_id, league_name, league_season, league_round,
+           fixture_id, fixture_date, fixture_time)
   
-  all_leagues_fixture_stats <- all_leagues_fixture_stats %>% distinct()
+  # join the league name from the all_leagues_matches_matcher to
+  # be able to join the fifa stats later on
+  all_leagues_fixture_stats2 <- all_leagues_fixture_stats %>% 
+    distinct() %>%
+    left_join(all_leagues_matches_matcher,
+              by = c("league_id", 
+                     "season" = "league_season",
+                     "matchday" = "league_round",
+                     "fixture_date",
+                     "fixture_time",
+                     "fixture_id"))
   
+  # create the min and max dates of the team stats
   min_date_team_stats <- min(all_leagues_fifa_team_stats$date)
   max_date_team_stats <- max(all_leagues_fifa_team_stats$date)
   
-  daily_seq <- seq(as.Date(min_date_team_stats), as.Date(max_date_team_stats), "days") %>%
-    data.frame("date" = .)
+  # extract all clubs
+  unique_clubs <- unique(all_leagues_fifa_team_stats$club)
   
-  daily_seq_with_stats <- left_join(daily_seq,
-                                    all_leagues_fifa_team_stats,
-                                    by = "date") %>%
-    group_by(date, fifa_vers, league, club) %>%
-    fill(everything())
+  all_leagues_fifa_daily_team_stats <- NULL
   
-  daily_seq_with_stats_filled <- na.locf(daily_seq_with_stats %>% group_by(league, club), fromLast = TRUE)
+  # iterate over all clubs and create a data set where for every day
+  # date is an imputed value for the stats (if it is missing)
+  for(i in 1:length(unique_clubs)){
+    # create a data frame with dates from the min date to the max date
+    daily_seq <- seq(as.Date(min_date_team_stats), 
+                     as.Date(max_date_team_stats), "days") %>%
+      data.frame("date" = .)
+    
+    # filter for the current club in the fifa team stats frame
+    # and reorder it
+    curr_club_stats <- all_leagues_fifa_team_stats %>%
+      filter(club == unique_clubs[i]) %>%
+      arrange(fifa_vers, date)
+    
+    # join the club stats to the date data frame
+    daily_seq_with_stats <- left_join(daily_seq,
+                                      curr_club_stats,
+                                      by = "date") 
+    
+    # now fill all the missing values "downwards"
+    daily_stats <- daily_seq_with_stats %>%
+      fill(everything())
+    
+    # bind the data together
+    all_leagues_fifa_daily_team_stats <- bind_rows(all_leagues_fifa_daily_team_stats,
+                                                   daily_stats)
+    
+  }
+  
+  # join the fixture stats we created above with the daily team stats
+  # we created above
+  fifa_stats_joined <- all_leagues_fixture_stats2 %>%
+    mutate(date_minus1 = fixture_date - days(1)) %>%
+    left_join(all_leagues_fifa_daily_team_stats,
+              by = c("league_name" = "league",
+                     "date_minus1" = "date",
+                     "team_name" = "club"),
+              keep = TRUE)
+  
+}
+  
+  
+prepare_fifa_squads <- function(){
+  
+  # get the all_leagues_matches data set with just a few columns to join
+  all_leagues_matches_matcher <- all_leagues_matches %>%
+    select(league_id, league_name, league_season, league_round,
+           fixture_id, fixture_date, fixture_time)
+  
+  # join the league name from the all_leagues_matches_matcher to
+  # be able to join the fifa stats later on
+  all_leagues_fixture_stats2 <- all_leagues_fixture_stats %>% 
+    distinct() %>%
+    left_join(all_leagues_matches_matcher,
+              by = c("league_id", 
+                     "season" = "league_season",
+                     "matchday" = "league_round",
+                     "fixture_date",
+                     "fixture_time",
+                     "fixture_id"))
+  
+  # create the min and max dates of the team stats
+  min_date_team_stats <- min(all_leagues_fifa_squads$date)
+  max_date_team_stats <- max(all_leagues_fifa_squads$date)
+  
+  # extract all clubs
+  unique_clubs <- unique(all_leagues_fifa_squads$team)
+  
+  all_leagues_fifa_daily_squad_stats <- NULL
+  
+  # iterate over all clubs and create a data set where for every day
+  # date is an imputed value for the stats (if it is missing)
+  for(i in 1:length(unique_clubs)){
+    # create a data frame with dates from the min date to the max date
+    daily_seq <- seq(as.Date(min_date_team_stats), 
+                     as.Date(max_date_team_stats), "days") %>%
+      data.frame("date" = .)
+    
+    # filter for the current club in the fifa team stats frame
+    # and reorder it
+    curr_club_stats <- all_leagues_fifa_squads %>%
+      filter(team == unique_clubs[i]) %>%
+      arrange(fifa_version, date)
+    
+    # join the club stats to the date data frame
+    daily_seq_with_stats <- left_join(daily_seq,
+                                      curr_club_stats,
+                                      by = "date") 
+    
+    # set latest non-na date
+    latest_non_na_date <- NULL
+    
+    # latest non-na squads
+    latest_non_na_squads <- NULL
+    
+    # unique dates
+    unique_dates <- unique(daily_seq_with_stats$date)
+    for(i in 1:nrow(daily_seq_with_stats)){
+      if(!is.na(daily_seq_with_stats$fifa_version[i])){
+        latest_non_na_date <- daily_seq_with_stats$date[i]
+        
+        latest_non_na_squads <- daily_seq_with_stats %>%
+          filter(date == latest_non_na_date)
+      } else {
+        current_na_date <- daily_seq_with_stats$date[i]
+      }
+    }
+    
+    # now fill all the missing values "downwards"
+    daily_stats <- daily_seq_with_stats %>%
+      group_by(date) %>%
+      fill(everything())
+    # iterate over all values take the non-na values 
+    # and set them for every date until non-na
+    
+    # bind the data together
+    all_leagues_fifa_daily_squad_stats <- bind_rows(all_leagues_fifa_daily_squad_stats,
+                                                   daily_stats)
+    
+  }
+  
+  # join the fixture stats we created above with the daily team stats
+  # we created above
+  fifa_stats_joined <- all_leagues_fixture_stats2 %>%
+    mutate(date_minus1 = fixture_date - days(1)) %>%
+    left_join(all_leagues_fifa_daily_team_stats,
+              by = c("league_name" = "league",
+                     "date_minus1" = "date",
+                     "team_name" = "club"),
+              keep = TRUE)
+  
+}
+  
+  
+  
   
   
   test <- all_leagues_fixture_stats %>%
@@ -202,37 +348,16 @@ prepare_fifa_team_stats <- function(){
   setkey(all_leagues_fifa_squads, team, date)[, dateMatch:=date]
   test2 <- all_leagues_fifa_squads[test, roll = 'nearest']
   
-  # setkey(test, team_name, date)
-  # setkey(all_leagues_fifa_squads, team, date)
-  # test2 <- test[all_leagues_fifa_squads, roll = 'nearest']
-  
-  
 
-  
-  
-  
-  setDT(test)
-  setDT(all_leagues_fifa_squads)
-  #convert dates to 'real' dates
-  test[, date := as.IDate(date) ]
-  all_leagues_fifa_squads[, date := as.IDate(date) ]
-  #update df1 by reference with a rolling join
-  test[, randomVar := all_leagues_fifa_squads[test,  
-                                               on = .(club, date), roll = Inf ] ]
-  
-    
-  # abfangen bis zu welchem Datumz urück dates gematched werden
-  # (mit club angleichen)
-
-  
-  club_names_sofifa <- unique(important_leagues_fifa_team_stats$club)
-  club_names_api <- unique(all_leagues_fixture_stats$team_name)
-  
-  club_names_api_not_in_sofifa <- club_names_api[!(club_names_api %in% club_names_sofifa)]
-  club_names_sofifa_not_in_api <- club_names_sofifa[!(club_names_sofifa %in% club_names_api)]
 }
 
 
+
+
+######### prepare API club stats ###############
+prepare_API_club_stats <- function(){
+  all_leagues_club_stats
+}
 
 
 
@@ -313,14 +438,14 @@ get_winning_pcts <- function(type = "home"){
   #          league_season == season)
   leagues_matches <- all_leagues_matches %>%
     filter(fixture_date < Sys.Date(),
-           league_season >= 2015)
+           league_season >= 2016)
   
   # get the winning/draw/lose percentages for the team playing at home
   home_table <- leagues_matches %>%
     # group by the league and season
     group_by(league_id, league_season) %>%
     # rename the variables according to the home team
-    select(league_round, club_name = club_name_home,
+    select(league_round, club_name = club_name_home, club_id = club_id_home,
            points = home_points, goals = fulltime_score_home, 
            goals_against = fulltime_score_away) %>%
     # add a variable for the potential points a team could have scored at this
@@ -328,7 +453,7 @@ get_winning_pcts <- function(type = "home"){
     mutate(potential_points = 3) %>%
     # group by league, the club and the season to compute the stats aggregated for each club
     # in each season
-    group_by(league_id, club_name, league_season) %>%
+    group_by(league_id, club_id, league_season) %>%
     # sum up the potential points and wins/draws/loses of each team at home
     mutate(potential_points = cumsum(potential_points),
            home_played = potential_points / 3,
@@ -347,7 +472,7 @@ get_winning_pcts <- function(type = "home"){
     # group by the league and season
     group_by(league_id, league_season) %>%
     # rename the variables according to the away team
-    select(league_round, club_name = club_name_away,
+    select(league_round, club_name = club_name_away, club_id = club_id_away,
            points = away_points, goals = fulltime_score_away, 
            goals_against = fulltime_score_home) %>%
     # add a variable for the potential points a team could have scored at this
@@ -355,7 +480,7 @@ get_winning_pcts <- function(type = "home"){
     mutate(potential_points = 3) %>%
     # group by league, the club and the season to compute the stats aggregated for each club
     # in each season
-    group_by(league_id, club_name, league_season) %>%
+    group_by(league_id, club_id, league_season) %>%
     # sum up the potential points and wins/draws/loses of each team away
     mutate(potential_points = cumsum(potential_points),
            away_played = potential_points / 3,
@@ -385,7 +510,7 @@ get_winning_pcts <- function(type = "home"){
     # sum up the potential points that could have been achieved at each point
     mutate(potential_points = cumsum(potential_points)) %>%
     # group by the clubs to compute the stats aggregated for each club
-    group_by(club_name, league_season) %>%
+    group_by(club_id, league_season) %>%
     # calculate the cumulative wins etc and then calculate the overall
     # percentage of winning etc
     mutate(wins = cumsum(points == 3),

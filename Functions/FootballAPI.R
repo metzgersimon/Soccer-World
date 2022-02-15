@@ -67,6 +67,7 @@ get_team_information_in_league <- function(league_id, season){
     # pre-allocate the data frame
     team_info_frame <- data.frame(team_id = integer(number_of_teams),
                                   team_name = character(number_of_teams),
+                                  federal_state = character(number_of_teams),
                                   country = character(number_of_teams),
                                   founded = integer(number_of_teams),
                                   national = logical(number_of_teams),
@@ -91,7 +92,13 @@ get_team_information_in_league <- function(league_id, season){
     # and the season
     team_info_frame <- team_info_frame %>%
       mutate(league_id = league_id,
-             season = season)
+             season = season) %>%
+      # reorder the data frame
+      select(league_id, season, everything())
+    
+    # map the club names
+    team_info_frame$team_name <- sapply(team_info_frame$team_name,
+                                        club_name_mapping)
     
     # if the request was not successful print an error 
   } else {

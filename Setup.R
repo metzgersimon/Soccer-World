@@ -46,7 +46,7 @@ if (!require("viridis")) install.packages("viridis")
 if (!require("xfun")) install.packages("xfun")
 if (!require("XML")) install.packages("XML")
 if (!require("xml2")) install.packages("xml2")
-
+if (!require("zoo")) install.packages("zoo")
 
 library(binman)
 library(caret)
@@ -92,6 +92,7 @@ library(TTR)
 library(viridis)
 library(XML)
 library(xml2)
+library(zoo)
 
 # Source script containing all API keys needed
 source("API_keys.R")
