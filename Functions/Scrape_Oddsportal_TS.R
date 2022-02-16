@@ -36,9 +36,10 @@ get_past_odds_ts <-
   
   # we initialize a driver for the chrome browser with dynamic version
   rD <-
-    rsDriver(browser = "chrome",
-             port = port,
-             chromever = get_stable_chrome_version())
+    rsDriver(browser = "firefox",  extraCapabilities = list(
+      "moz:firefoxOptions" = list(
+        args = list('--headless'))),
+      port = port)
   
   remDr <- rD$client
   
@@ -247,7 +248,7 @@ get_past_odds_ts <-
   rm(rD)
   gc()
 
-  write.csv(ress, paste("Data/oddsdata/premier_league_", season, ".csv"))
+  write.csv(ress, paste("Data/oddsdata/bundesliga2", season, ".csv"))
   
   Sys.sleep(30)
   
