@@ -7,18 +7,18 @@ get_next_fixture_by_team <- function(team_name, league_id, season){
   curr_date <- Sys.Date()
   
   # get information for the next match
-  next_fixture <- all_leagues_fixture_stats %>%
+  next_fixture <- all_leagues_matches %>%
     # convert the date into ymd
-    mutate(fixture_date = ymd(fixture_date.x)) %>%
+    mutate(fixture_date = ymd(fixture_date)) %>%
     # filter for the team name and the league_id
     # and the season
     filter(club_name_home == team_name |
              club_name_away == team_name,
-           league_season == season,
-           league_id.x == league_id) %>%
+           league_season  == season,
+           league_id == league_id) %>%
     # compute the difference in dates from the current date
     # to all matches
-    mutate(diff_time = as.numeric(difftime(fixture_date.x, curr_date))) %>%
+    mutate(diff_time = as.numeric(difftime(fixture_date, curr_date))) %>%
     # take only those where the diff_time is > 0, i.e., it is a match
     # in the future
     filter(diff_time > 0) %>%
