@@ -173,13 +173,17 @@ get_past_odds_ts <-
     elements <- remDr$findElements(using = "class", "right")
     nele <- list()
     
-    for (element in elements) {
+    for (i in 1:length(elements)) {
       
+      element <- elements[i]
       # hover over each element
-      remDr$mouseMoveToLocation(webElement = element)
+      locati <- element[[1]]
+      remDr$mouseMoveToLocation(webElement = locati)
       
+      
+      # //*[@id="tooltipdiv"] location of the odds were changed on the site
       # extract the additional tooltip information popping up
-      n_element <- remDr$findElement(using = "xpath", '//*[@id="tooltiptext"]')
+      n_element <- remDr$findElement(using = "xpath", '//*[@id="tooltipdiv"]')
       
       nele <- append(nele, n_element$getElementAttribute('innerHTML')[[1]])
       
@@ -188,16 +192,20 @@ get_past_odds_ts <-
 #===============================================================================
   # next: extract the odds from the nele list 
     
-    otc <- c("2", "1", "x" )
+    otc <- c("1", "x", "2" )
     
     print(length(nele))
     subs <- data.frame()
-    for (t in 1:length(nele)) {
+    
+    for (t in 1:(length(nele))) {
       
       oddslist <- strsplit(nele[[t]], split = "<.*?>")
+      od <- length(oddslist[[1]]) / 5
       
-      outcome <- otc[(1+t%%3)]
-      bookmaker <- bookies[1+t%/%3]
+      outcome <- otc[(1+(t-1)%%3)]
+      bookmaker <- bookies[1+(t-1)%/%3]
+      
+      if (is.na(bookmaker)) break
       
       if (length(oddslist[[1]]) == 4) {
         date <- c(oddslist[[1]][2], "gamestart")
@@ -206,12 +214,24 @@ get_past_odds_ts <-
         subs <- rbind(subs, data.frame(opponents, beginning, bookmaker,
                                        status, date, odds, outcome))
       }
+      
       else {
-        date <- c(oddslist[[1]][8], oddslist[[1]][1])
-        odds <- c(oddslist[[1]][9], oddslist[[1]][2])
-        status <- c(oddslist[[1]][7], "Closing odds")
+        
+        date <- c(oddslist[[1]][3 + ((od-1)*5)])
+        odds <- c(oddslist[[1]][4 + ((od-1)*5)])
+        status <- c(oddslist[[1]][2 + ((od-1)*5)])
+        
+        for ( ods in 1:(od-1)) {
+          
+          date <- append(date, oddslist[[1]][1 + (ods-1)*5])
+          odds <- append(odds, oddslist[[1]][2 + (ods-1)*5])
+          status <- append(status, "odds")
+          
+        }
+        
         subs <- rbind(subs, data.frame(opponents, beginning, bookmaker,
                                        status, date, odds, outcome))
+        
       }
       
     }
@@ -227,9 +247,10 @@ get_past_odds_ts <-
   rm(rD)
   gc()
 
-  return(ress)
+  write.csv(ress, paste("Data/oddsdata/premier_league_", season, ".csv"))
+  
+  Sys.sleep(30)
   
 }
-
 
 
