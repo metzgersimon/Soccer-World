@@ -23,6 +23,9 @@ ui <- dashboardPage(
     )
   ),
   dashboardBody(
+    tags$head(
+      tags$style("*{font-family: Century Gothic;}")
+    ),
     # set the theme for the ui
     shinyDashboardThemes(
       theme = "grey_dark"
