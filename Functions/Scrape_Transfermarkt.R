@@ -522,8 +522,11 @@ get_lineups_by_season_tm <- function(league, league_id, season, matchday = NULL)
   # get an random port 
   port <- randomPort()
   
-  # create a driver from Rselenium
-  rD <- rsDriver(browser = "firefox", port = port)
+  # create a driver from Rselenium without a browser windows
+  rD <- rsDriver(browser = "firefox", extraCapabilities = list(
+    "moz:firefoxOptions" = list(
+      args = list('--headless'))),
+    port = port)
   
   # get the client
   remDr <- rD$client
@@ -715,16 +718,12 @@ get_lineups_by_season_tm <- function(league, league_id, season, matchday = NULL)
             paste(., collapse = "") %>%
             str_remove(pattern = ".*, ") %>%
             str_split("\\s")
-          
-          # prints for debugging
-          print(paste0("Date before: ", date_information[[1]][1]))
+  
           
           # convert the date into an actual date of the format YYYY-MM-DD
           date <- date_information[[1]][1] %>%
             mdy()
           
-          # prints for debugging
-          print(paste0("Date after: ", date))
           
           # extract the attendance of this match
           attendance <- page_html %>%
@@ -756,11 +755,17 @@ get_lineups_by_season_tm <- function(league, league_id, season, matchday = NULL)
             html_text(trim = TRUE)
           
           
+          # it is possible that the referee did not get updated and therefore
+          # the ref_info element is empty, in that case we want it to be NA
+          if(length(ref_info) == 0 & length(date) != 0 & length(team_names) != 0){
+            ref_info <- as.character(NA)
+          }
+          
+          
           # check if all values are non-na (or not empty)
           # if so, we can break the repeat-loop
           # if not, we go again into the repeat-loop
-          if(length(date) != 0 & length(team_names) != 0 & length(attendance) != 0 &
-             length(ref_info) != 0){
+          if(length(date) != 0 & length(team_names) != 0 & length(ref_info) != 0){
             break
           }
         }
@@ -835,7 +840,7 @@ get_lineups_by_season_tm <- function(league, league_id, season, matchday = NULL)
         
         # get the position
         pos <- pos_and_market_value %>%
-          sapply(extract2, 1) %>%
+          sapply(magrittr::extract2, 1) %>%
           trimws()
         
         # get the market values 
@@ -873,7 +878,6 @@ get_lineups_by_season_tm <- function(league, league_id, season, matchday = NULL)
           returnee[k] <- ifelse(transfer_status[k] == "rueckkehrer",
                                 TRUE, FALSE)
         }
-        print("TEST")
         
         # putting together the data frame for the starting grid
         starting_lineups <- c(name, player_number, pos, age, nationality, market_value,
@@ -920,8 +924,6 @@ get_lineups_by_season_tm <- function(league, league_id, season, matchday = NULL)
                  player_is_new_winter_transfer,
                  player_is_returnee,
                  player_is_starting_grid)
-        
-        print("TEST OVER")
         
         
         # create an empty variable to store all information about the substitute

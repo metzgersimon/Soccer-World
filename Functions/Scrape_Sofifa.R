@@ -259,8 +259,12 @@ get_squads_fifa <- function(league_id, fifa_version, port = 4124L,
                             max_date_in_database = NULL,
                             single_fifa_version = TRUE){
   
+  
   # create a driver from Rselenium
-  rD <- rsDriver(browser = "firefox", port = port)
+  rD <- rsDriver(browser = "firefox", extraCapabilities = list(
+    "moz:firefoxOptions" = list(
+      args = list('--headless'))),
+    port = port)
   
   # get the client
   remDr <- rD$client
