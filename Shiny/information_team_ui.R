@@ -134,19 +134,79 @@ tab_information_team_ui <- function(){
                                 ))),
                        tabPanel("Statistics",
                                 fluidRow(
-                                  column(
-                                    width = 12,
-                                    align = "center",
-                                    div(style = "margin-top: 20px;",
-                                        reactableOutput("info_team_stats"))
+                                  # Frontpage - boxes - start 
+                                  valueBoxOutput(
+                                   "total_played",
+                                    width = 3),
+                                  valueBoxOutput(
+                                    "total_wins",
+                                    width = 3),
+                                  valueBoxOutput(
+                                    "total_draws",
+                                    width = 3),
+                                  valueBoxOutput(
+                                   "total_loses",
+                                    width = 3)
+                                ),
+                                fluidRow(
+                                  valueBoxOutput(
+                                     "total_for_goals",
+                                    width = 3),
+                                  valueBoxOutput(
+                                    "total_against_goals",
+                                    width = 3),
+                                  valueBoxOutput(
+                                    "total_failed_score",
+                                    width = 3),
+                                  valueBoxOutput(
+                                    "total_penalty",
+                                    width = 3)
+                                  # Frontpage - boxes - end
+                                ),
+                                fluidRow(
+                                  box(title = "Streak infos", 
+                                      status = "primary", width = 4,
+                                      solidHeader = TRUE,
+                                      collapsible = TRUE,
+                                      reactableOutput("info_team_stats") %>%
+                                        withSpinner(color = "black")    
+                                  ),
+                                  box(title = "As home team", 
+                                      status = "primary", width = 4,
+                                      solidHeader = TRUE,
+                                      collapsible = TRUE,
+                                      reactableOutput("info_team_home") %>%
+                                        withSpinner(color = "black")    
+                                  ),
+                                  box(title = "As away team", 
+                                      status = "primary", width = 4,
+                                      solidHeader = TRUE,
+                                      collapsible = TRUE,
+                                      reactableOutput("info_team_away") %>%
+                                        withSpinner(color = "black")    
                                   )
                                 ),
                                 fluidRow(
-                                  column(
+                                  # plots - start ----------------------------------
+                                  tabBox(
                                     width = 12,
-                                    div(#style = "margin-top: 20px;",
-                                        verbatimTextOutput("info_team_summary"))
+                                    tabPanel(
+                                      status = "primary",
+                                      title = "stats as home team",
+                                      withSpinner(plotlyOutput("ts_home_stats", height = "250px"))
+                                    ),
+                                    tabPanel(
+                                      status = "success",
+                                      title = "stats as away team",
+                                      withSpinner(plotlyOutput("ts_away_stats", height = "250px"))
+                                    ),
+                                    tabPanel(
+                                      status = "success",
+                                      title = "total stats",
+                                      withSpinner(plotlyOutput("ts_total_stats", height = "250px"))
+                                    )
                                   )
+                                  # plots - end ------------------------------------
                                 )
                                 )
                      )), 
