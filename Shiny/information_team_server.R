@@ -169,7 +169,7 @@ information_team_server <- function(input, output, session) {
         distinct(player_name, .keep_all = TRUE) %>%
         count() %>% pull(),
       "Players number",
-      icon = icon("0"),
+      icon = icon("fax"),
       color = "green",
       width = 3
     )
@@ -208,7 +208,7 @@ information_team_server <- function(input, output, session) {
         filter(player_nationality=="Germany") %>%
         count() %>% pull(),
       "German players",
-      icon = icon("g"),
+      icon = icon("eye"),
       color = "orange",
       width = 3
     )
@@ -768,7 +768,7 @@ information_team_server <- function(input, output, session) {
     valueBox(
       value = stats_select %>% select(goals_for_total_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
       "Total For Goals",
-      color = "purple",
+      color = "green",
       icon = icon("award"),
       width = 3)
   })
@@ -792,7 +792,7 @@ information_team_server <- function(input, output, session) {
     valueBox(
       value = stats_select() %>% select(goals_against_total_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
       "Total Against Goals",
-      color = "orange",
+      color = "yellow",
       icon = icon("futbol"),
       width = 3)
   })
@@ -813,7 +813,7 @@ information_team_server <- function(input, output, session) {
     valueBox(
       value = stats_select() %>% select(failed_to_score_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
       "Total Failed to Score",
-      color = "green",
+      color = "blue",
       icon = icon("ban"),
       width = 3)
   })
@@ -834,7 +834,7 @@ information_team_server <- function(input, output, session) {
     valueBox(
       value = stats_select() %>% select(penalty_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
       "Total Penalty",
-      color = "teal",
+      color = "orange",
       icon = icon("exclamation"),
       width = 3)
   })
