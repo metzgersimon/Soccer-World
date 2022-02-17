@@ -1,15 +1,29 @@
 # subserver for the team-tab in the information menu item
-information_team_server <- function(input, output, session){
+information_team_server <- function(input, output, session) {
+  # merge the infos of squad and matches to have the infos of teams
+  all_infos_club <-
+    inner_join(
+      all_leagues_tm_squads,
+      unique(all_leagues_matches[, c(2, 3, 19)]),
+      by = c("club" = "club_name_home", "league" = "league_name")
+    )
   
-  all_infos_club <- inner_join(all_leagues_tm_squads, unique(all_leagues_matches[,c(2,3,19)]), by=c("club"="club_name_home", "league"="league_name"))
-  
-  observeEvent(input$info_team_league_selection, {
+  # fit the league selection to the name of league column
+  league_select <- reactive({
+  if (input$info_team_league_selection == "Bundesliga 1") {
+    league <- "Bundesliga"
+  } else {
+    league <- input$info_team_league_selection
+  }
+  })
+  # update the select inputs
+  observeEvent(league_select(), {
     updateSelectInput(session,
                       inputId = "info_team_club_selection",
                       choices = c(
                         "",
                         unique(
-                          all_infos_club %>% filter(league == input$info_team_league_selection) %>% select(club) %>%
+                          all_infos_club %>% filter(league == league_select()) %>% select(club) %>%
                             unlist() %>%
                             unname()
                         )
@@ -20,39 +34,44 @@ information_team_server <- function(input, output, session){
   # only those seasons that are present for the selected club
   # paste("Hello", "world", sep=" ")
   observeEvent(input$info_team_club_selection, {
-    updateSelectInput(session,
-                      inputId = "info_team_season_selection",
-                      selected = NULL,
-                      choices = c(
-                        "",
-                        paste0(unique(
-                          all_infos_club %>% filter(
-                            league == input$info_team_league_selection &
-                              club == input$info_team_club_selection
-                          ) %>%
-                            select(season) %>%
-                            unlist() %>%
-                            unname()
-                        )
-                        ,"/",unique(
-                          all_infos_club %>% filter(
-                            league == input$info_team_league_selection &
-                              club == input$info_team_club_selection
-                          ) %>%
-                            select(season) %>%
-                            unlist() %>%
-                            unname()
-                        )+1)))
+    updateSelectInput(
+      session,
+      inputId = "info_team_season_selection",
+      selected = NULL,
+      choices = c("",
+                  paste0(
+                    unique(
+                      all_infos_club %>% filter(league == league_select() &
+                                                  club == input$info_team_club_selection) %>%
+                        select(season) %>%
+                        unlist() %>%
+                        unname()
+                    )
+                    ,
+                    "/",
+                    unique(
+                      all_infos_club %>% filter(league == league_select() &
+                                                  club == input$info_team_club_selection) %>%
+                        select(season) %>%
+                        unlist() %>%
+                        unname()
+                    ) + 1
+                  ))
+    )
   })
   
   # create the output for the table on the overview page
-  output$info_team_team_name <- function(){
-    
+  output$info_team_team_name <- function() {
     # to have all infos of clubs (to gather country infos)
-    all_infos_club <- inner_join(all_leagues_tm_squads, unique(all_leagues_matches[,c(2,3,19)]), by=c("club"="club_name_home", "league"="league_name"))
-   
-    # to gather venue infos 
-    # <- all_infos_club %>% left_join(all_leagues_venue_information[,c(4,8,10:15)], by=c("club"="team_name")) 
+    all_infos_club <-
+      inner_join(
+        all_leagues_tm_squads,
+        unique(all_leagues_matches[, c(2, 3, 19)]),
+        by = c("club" = "club_name_home", "league" = "league_name")
+      )
+    
+    # to gather venue infos
+    # <- all_infos_club %>% left_join(all_leagues_venue_information[,c(4,8,10:15)], by=c("club"="team_name"))
     
     # there has to be a club selected
     req(input$info_team_league_selection)
@@ -60,14 +79,23 @@ information_team_server <- function(input, output, session){
     req(input$info_team_season_selection)
     
     # convert the season in a format we can work with
-    season_year <- as.numeric(str_split(input$info_team_season_selection,
-                                        pattern = "/")[[1]][1])
+    season_year <-
+      as.numeric(str_split(input$info_team_season_selection,
+                           pattern = "/")[[1]][1])
+    
+    # fit the league selection to the name of league column
+    if (input$info_team_league_selection == "Bundesliga 1") {
+      league <- "Bundesliga"
+    } else {
+      league <- input$info_team_league_selection
+    }
     
     # filter the huge data frame on the club selected
     team_infos <- all_infos_club %>%
-      filter(league==  input$info_team_league_selection &club == input$info_team_club_selection &
+      filter(league ==  league,
+             club == input$info_team_club_selection,
              season == season_year)
-
+    
     # extract the club name
     name <- team_infos %>%
       select(club) %>%
@@ -115,54 +143,80 @@ information_team_server <- function(input, output, session){
     
     
     # extract the information for the stadium
-    venue_info <- all_leagues_venue_information %>% filter(league==  input$info_team_league_selection &team_name == input$info_team_club_selection &
-                                                           season == season_year)%>%
+    venue_info <-
+       all_leagues_venue_information %>% mutate(league = if_else(
+        all_leagues_venue_information$league_id == 78,
+        "Bundesliga",
+        if_else(
+          venues_with_coordinates$league_id == 79,
+          "Bundesliga 2",
+          if_else(
+            all_leagues_venue_information$league_id == 39,
+            "Premier League",
+            if_else(
+              all_leagues_venue_information$league_id == 61,
+              "Ligue 1",
+              "none"
+            )
+          )
+        )
+      )) %>% filter(
+        league ==  league,
+        team_name == input$info_team_club_selection,
+        season == season_year
+      ) %>%
       select(venue_name, venue_city,
              venue_capacity) %>%
       unique()
-        
-    # combine the selected data (only name, league and country of the club) 
+    
+    # combine the selected data (only name, league and country of the club)
     # to a data frame
-    club_info_frame <- data.frame(name, league, country) 
+    club_info_frame <- data.frame(name, league, country)
     # create additional rows to be able to merge the frames later
-    club_info_frame[, (ncol(club_info_frame)+1):(ncol(club_info_frame)+3)] <- NA
+    club_info_frame[, (ncol(club_info_frame) + 1):(ncol(club_info_frame) +
+                                                     3)] <- NA
     # transpose the frame such that the columns are now rows
-    club_info_frame <- club_info_frame %>% 
-      t() 
+    club_info_frame <- club_info_frame %>%
+      t()
     
     # create the texts for the table
     squad_size_text <- paste0("Squad size: ", squad_size)
-    avg_age_text <- paste0("Average squad age: ", avg_age, " years old")
-    avg_height_text <- paste0("Average squad height: ", avg_height, " m")
+    avg_age_text <-
+      paste0("Average squad age: ", avg_age, " years old")
+    avg_height_text <-
+      paste0("Average squad height: ", avg_height, " m")
     venue_name_text <- paste0("Venue: ", venue_info$venue_name)
     venue_city_text <- paste0("\t", venue_info$venue_city)
-    venue_capa_text <- paste0("\t", venue_info$venue_capacity, " seats")
+    venue_capa_text <-
+      paste0("\t", venue_info$venue_capacity, " seats")
     
     # put the texts together into a data frame
-    add_info_frame <- data.frame(squad_size_text,
-                                 avg_age_text,avg_height_text,
-                                 venue_name_text,
-                                 venue_city_text,
-                                 venue_capa_text) %>%
+    add_info_frame <- data.frame(
+      squad_size_text,
+      avg_age_text,
+      avg_height_text,
+      venue_name_text,
+      venue_city_text,
+      venue_capa_text
+    ) %>%
       # and transpose it (columns to rows)
       t()
     
     
     # combine these two frames by binding them together by column
     suppressMessages(club_frame <- club_info_frame %>%
-      bind_cols(add_info_frame))
+                       bind_cols(add_info_frame))
     
     # set the NA format in a kable table to an empty string
     options(knitr.kable.NA = "")
     
     # create a kable table with the data
     club_frame %>%
-      kableExtra::kable("html", row.names = FALSE, col.names = NULL
-                        ) %>%
+      kableExtra::kable("html", row.names = FALSE, col.names = NULL) %>%
       #kable_minimal()
       kable_styling(full_width = F)
     
-  
+    
   }
   
   # output for the club logo
@@ -191,7 +245,7 @@ information_team_server <- function(input, output, session){
     )) %>%
       
       filter(
-        league == input$info_team_league_selection &
+        league == league_select() &
           team_name == input$info_team_club_selection
       ) %>%
       select(logo) %>%
@@ -229,7 +283,7 @@ information_team_server <- function(input, output, session){
       )
     )) %>%
       filter(
-        league ==  input$info_team_league_selection &
+        league ==  league_select() &
           team_name == input$info_team_club_selection
       ) %>%
       select(venue_image) %>%
@@ -259,7 +313,7 @@ information_team_server <- function(input, output, session){
     # selected_club <- "FC Bayern Munich"
     # selected_season <- 2021
     
-    if (input$info_team_league_selection == "Bundesliga") {
+    if (input$info_team_league_selection == "Bundesliga 1") {
       league_id <- 78
     } else if (input$info_team_league_selection == "Bundesliga 2") {
       league_id <- 79
@@ -274,7 +328,7 @@ information_team_server <- function(input, output, session){
                               team_name = selected_club,
                               season = selected_season) %>%
     # only select important columns
-      select(c(fixture_date.x, fixture_time.x,
+      select(c(fixture_date, fixture_time,
                league_round, venue_city,
                club_name_home, club_name_away)) %>%
       reactable(defaultColDef = colDef(
@@ -366,7 +420,7 @@ information_team_server <- function(input, output, session){
       filter(club_name_home == selected_club |
                club_name_away == selected_club,
              league_season == selected_season, 
-             league_name == input$info_team_league_selection) %>%
+             league_name == league_select()) %>%
       mutate(game_score = paste0(fulltime_score_home, ":", 
                                  fulltime_score_away)) %>%
       select(fixture_date, fixture_time, club_name_home,
@@ -470,21 +524,15 @@ information_team_server <- function(input, output, session){
     #                         "Goals for", "Avg Goals for", "Goals agaist",
     #                         "Avg Goals against", "Goal Difference",
     #                         "Failed to score", "Clean sheets")
-    league <- if_else(
-        input$info_team_league_selection =="Bundesliga 1",
-        league_id == 78,
-        if_else(
-          input$info_team_league_selection =="Bundesliga 2",
-          league_id == 79,
-          if_else(
-            input$info_team_league_selection =="Premier League",
-            league_id == 39,
-            if_else(
-              input$info_team_league_selection =="Ligue 1",
-              league_id == 61,
-          )
-        )
-      ))
+    if (input$info_team_league_selection == "Bundesliga 1") {
+      league_id <- 78
+    } else if (input$info_team_league_selection == "Bundesliga 2") {
+      league_id <- 79
+    } else if (input$info_team_league_selection == "Premier League") {
+      league_id <- 39
+    } else if (input$info_team_league_selection == "Ligue 1") {
+      league_id <- 61
+    }
     
     all_club_stats <-
       left_join(

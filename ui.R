@@ -15,8 +15,6 @@ ui <- dashboardPage(
                         icon = icon("angle-double-right")),
                menuItem("Player", tabName = "information-player",
                         icon = icon("angle-double-right"))),
-      # menuItem("Comparison", tabName = "comparison", icon = icon("balance-scale")),
-      # menuItem("Analysis", tabName = "analysis", icon = icon("accusoft")),
       menuItem("Prediction", tabName = "prediction", icon = icon("battle-net"),
                startExpanded = TRUE,
                menuSubItem("Model", tabName = "prediction-model")),

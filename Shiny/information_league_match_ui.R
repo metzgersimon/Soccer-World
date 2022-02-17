@@ -28,8 +28,8 @@ tab_information_league_match_ui <- function(){
                    align = "center",
                    div(style = "margin-top: 20px;",
                        selectInput("info_match_team1",
-                                   "Home Team",
-                                   choices = c("", "Borussia Dortmund"),
+                                   "Team 1",
+                                   choices = c(""),
                                    selected = NULL
                        )
                    )
@@ -38,8 +38,8 @@ tab_information_league_match_ui <- function(){
                    align = "center",
                    div(style = "margin-top: 20px;",
                        selectInput("info_match_team2",
-                                   "Away Team",
-                                   choices = c("", "FC Bayern Munich"),
+                                   "Team 2",
+                                   choices = c(""),
                                    selected = NULL
                        )
                    )
