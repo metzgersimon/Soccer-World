@@ -1,12 +1,12 @@
 ########## get newest match information ############
 get_new_match_information_API <- function(con){
   all_leagues_matches <- tbl(con, "all_leagues_matches") %>% data.frame()
-  # extract the max available match days for each league
-  max_matchdays <- all_leagues_matches %>%
+  # extract the matchday of the games that happen today
+  curr_matchday <- all_leagues_matches %>%
     # filter in the current season and the past matches
     filter(league_season == max(league_season),#
-           ############### nur matches, die heute stattfidnen
-           fixture_date == Sys.Date()) %>% #%>%
+           # get only matches that happen today
+           fixture_date == Sys.Date()) %>% 
     group_by(league_id) %>%
     select(league_id, league_round) %>%
     distinct()
@@ -17,9 +17,6 @@ get_new_match_information_API <- function(con){
     summarize(max_season = max(league_season)) %>%
     pull()
   
-  # compute the new matchday we want to get data for
-  # newest_matchdays <- max_matchdays %>%
-  #   mutate(new_matchday = max_matchday + 1)
   
   # create a variable to store the new match information
   all_leagues_new_matches <- NULL
