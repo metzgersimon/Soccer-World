@@ -3,20 +3,22 @@
 tab_home_ui <- function() {
   tabItem(
     tabName = "home",
+    # create a title
    titlePanel("Welcome to the Soccer World!"),
-    
+    # sidebarpanel design for select input
     sidebarLayout(sidebarPanel(
       pickerInput(
         "leagues",
         "Select a league:",
-        choices = c("Bundesliga 1",
+        choices = c("Bundesliga",
                     "Bundesliga 2",
                     "Premier League",
                     "Ligue 1"),
-        selected = "Bundesliga 1"
+        selected = "Bundesliga"
       ),
       tableOutput("home_league_flag")
     ),
+    # create main panel of leaflet map
     mainPanel(tabsetPanel(
       tabPanel(
         "Map",
