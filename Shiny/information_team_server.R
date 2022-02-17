@@ -1291,7 +1291,7 @@ information_team_server <- function(input, output, session) {
       all_leagues_market_values_over_time %>%
       filter(
         club == input$info_team_club_selection &
-          league == league
+          league == input$info_team_league_selection
       )
     
   })
@@ -1372,12 +1372,12 @@ information_team_server <- function(input, output, session) {
     #   filter(from_team_name == "VfB Stuttgart" |
     #            to_team_name == "VfB Stuttgart")
      
-    major_five_league_transfers %>%
+    all_leagues_team_transfers %>%
       filter(from_team_name == input$info_team_club_selection |
                to_team_name == input$info_team_club_selection) %>%
-      select(date, player_name, type, from_team_name,
+      select(transfer_date, player_name, transfer_type, transfer_sum_mil_euro,from_team_name,
              to_team_name) %>%
-      arrange(desc(date)) %>%
+      arrange(desc(transfer_date)) %>%
       reactable(
         sortable = TRUE,
         filterable = TRUE,
@@ -1397,15 +1397,17 @@ information_team_server <- function(input, output, session) {
         ), 
         # modify the layout and names of the columns
         columns = list(
-          date = colDef(name = "Date",
+          transfer_date = colDef(name = "Date",
                         align = "left"),
           player_name = colDef(name = "Player",
                                align = "center"),
-          type = colDef(name = "Type",
+          transfer_type = colDef(name = "Type",
                         align = "center"),
           from_team_name = colDef(name = "From Team",
                                   align = "center"),
           to_team_name = colDef(name = "To Team",
+                                align = "center"),
+          transfer_sum_mil_euro = colDef(name = "Money",
                                 align = "center")
         )
       )
