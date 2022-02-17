@@ -1,6 +1,7 @@
 # subserver for the team-tab in the information menu item
 information_team_server <- function(input, output, session) {
   # merge the infos of squad and matches to have the infos of teams
+  
   all_infos_club <-
     inner_join(
       all_leagues_tm_squads,
@@ -8,23 +9,15 @@ information_team_server <- function(input, output, session) {
       by = c("club" = "club_name_home", "league" = "league_name")
     )
   
-  # fit the league selection to the name of league column
-  league_select <- reactive({
-  if (input$info_team_league_selection == "Bundesliga 1") {
-    league <- "Bundesliga"
-  } else {
-    league <- input$info_team_league_selection
-  }
-  })
   
   # update the select inputs
-  observeEvent(league_select(), {
+  observeEvent(input$info_team_league_selection, {
     updateSelectInput(session,
                       inputId = "info_team_club_selection",
                       choices = c(
                         "",
                         unique(
-                          all_infos_club %>% filter(league == league_select()) %>% select(club) %>%
+                          all_infos_club %>% filter(league == input$info_team_league_selection) %>% select(club) %>%
                             unlist() %>%
                             unname()
                         )
@@ -42,7 +35,7 @@ information_team_server <- function(input, output, session) {
       choices = c("",
                   paste0(
                     unique(
-                      all_infos_club %>% filter(league == league_select(),
+                      all_infos_club %>% filter(league == input$info_team_league_selection,
                                                   club == input$info_team_club_selection) %>%
                         select(season) %>%
                         unlist() %>%
@@ -51,7 +44,7 @@ information_team_server <- function(input, output, session) {
                     ,
                     "/",
                     unique(
-                      all_infos_club %>% filter(league == league_select(),
+                      all_infos_club %>% filter(league == input$info_team_league_selection,
                                                   club == input$info_team_club_selection) %>%
                         select(season) %>%
                         unlist() %>%
@@ -61,164 +54,348 @@ information_team_server <- function(input, output, session) {
     )
   })
   
-  # create the output for the table on the overview page
-  output$info_team_team_name <- function() {
-    # to have all infos of clubs (to gather country infos)
-    all_infos_club <-
-      inner_join(
-        all_leagues_tm_squads,
-        unique(all_leagues_matches[, c(2, 3, 19)]),
-        by = c("club" = "club_name_home", "league" = "league_name")
-      )
-    
-    # to gather venue infos
-    # <- all_infos_club %>% left_join(all_leagues_venue_information[,c(4,8,10:15)], by=c("club"="team_name"))
-    
-    # there has to be a club selected
-    req(input$info_team_league_selection)
-    req(input$info_team_club_selection)
-    req(input$info_team_season_selection)
-    
-    # convert the season in a format we can work with
-    season_year <-
-      as.numeric(str_split(input$info_team_season_selection,
-                           pattern = "/")[[1]][1])
-    
-    # fit the league selection to the name of league column
-    if (input$info_team_league_selection == "Bundesliga 1") {
-      league <- "Bundesliga"
-    } else {
-      league <- input$info_team_league_selection
-    }
-    
-    # filter the huge data frame on the club selected
-    team_infos <- all_infos_club %>%
-      filter(league ==  league,
-             club == input$info_team_club_selection,
-             season == season_year)
-    
-    # extract the club name
-    name <- team_infos %>%
-      select(club) %>%
-      unlist() %>%
-      unname() %>%
-      unique()
-    
-    # extract the league of the club
-    league <- unique(team_infos$league)
-    
-    # extract the country of the club
-    country <- team_infos %>%
-      select(league_country) %>%
-      unlist() %>%
-      unname() %>%
-      unique()
-    
-    # extract the squad size of the club
-    squad_size <- team_infos %>%
-      select(player_name) %>%
-      unique() %>%
-      nrow()
-    
-    # compute the average age of the players in the club
-    avg_age <- team_infos %>%
-      # only unique player_names
-      distinct(player_name, .keep_all = TRUE) %>%
-      select(player_age) %>%
-      summarize(avg_age = mean(player_age, na.rm = TRUE)) %>%
-      # extract the value (it is a data frame)
-      pull() %>%
-      # round the value
-      round(digits = 2)
-    
-    # compute the average height of the players in the club
-    avg_height <- team_infos %>%
-      # only unique player_names
-      distinct(player_name, .keep_all = TRUE) %>%
-      select(player_height) %>%
-      summarize(avg_age = mean(player_height, na.rm = TRUE)) %>%
-      # extract the value (it is a data frame)
-      pull() %>%
-      # round the value
-      round(digits = 2)
-    
-    
-    # extract the information for the stadium
-    venue_info <-
-       all_leagues_venue_information %>% mutate(league = if_else(
-        all_leagues_venue_information$league_id == 78,
+  filter_team_data <- reactive({
+  # to gather venue infos
+  # <- all_infos_club %>% left_join(all_leagues_venue_information[,c(4,8,10:15)], by=c("club"="team_name"))
+  
+  # there has to be a club selected
+  req(input$info_team_league_selection)
+  req(input$info_team_club_selection)
+  req(input$info_team_season_selection)
+  
+  # convert the season in a format we can work with
+  season_year <-
+    as.numeric(str_split(input$info_team_season_selection,
+                         pattern = "/")[[1]][1])
+  
+  # filter the huge data frame on the club selected
+ all_infos_club %>%
+    filter(league ==  input$info_team_league_selection,
+           club == input$info_team_club_selection,
+           season == season_year)
+  
+  
+  })
+  
+  output$info_team_team_age <- renderValueBox({
+    valueBox(
+      filter_team_data() %>%
+        # only unique player_names
+        distinct(player_name, .keep_all = TRUE) %>%
+        select(player_age) %>%
+        summarize(avg_age = mean(player_age, na.rm = TRUE)) %>%
+        # extract the value (it is a data frame)
+        pull() %>%
+        # round the value
+        round(digits = 0),
+      "Average age",
+      icon = icon("user"),
+      color = "purple",
+      width = 3
+    )
+  })
+  
+  output$info_team_team_height <- renderValueBox({
+    valueBox(
+      filter_team_data() %>%
+        # only unique player_names
+        distinct(player_name, .keep_all = TRUE) %>%
+        select(player_height) %>%
+        summarize(avg_age = mean(player_height, na.rm = TRUE)) %>%
+        # extract the value (it is a data frame)
+        pull() %>%
+        # round the value
+        round(digits = 2),
+      "Average height",
+      icon = icon("arrow-up"),
+      color = "orange",
+      width = 3
+    )
+  })
+  
+  
+  
+  output$info_team_team_size <- renderValueBox({
+    valueBox(
+      filter_team_data() %>%
+        select(player_name) %>%
+        unique() %>%
+        nrow(),
+      "Squad size",
+      icon = icon("flag"),
+      color = "green",
+      width = 3
+    )
+  })
+  
+
+  output$info_team_team_venue <- renderValueBox({
+    valueBox(
+      all_leagues_venue_information %>% mutate(league = if_else(
+        league_id == 78,
         "Bundesliga",
         if_else(
-          venues_with_coordinates$league_id == 79,
+          league_id == 79,
           "Bundesliga 2",
           if_else(
-            all_leagues_venue_information$league_id == 39,
+            league_id == 39,
             "Premier League",
-            if_else(
-              all_leagues_venue_information$league_id == 61,
-              "Ligue 1",
-              "none"
-            )
+            if_else(league_id == 61,
+                    "Ligue 1",
+                    "none")
           )
         )
       )) %>% filter(
-        league ==  league,
+        league ==  input$info_team_league_selection,
         team_name == input$info_team_club_selection,
-        season == season_year
+        season ==  as.numeric(
+          str_split(input$info_team_season_selection,
+                    pattern = "/")[[1]][1]
+        )
       ) %>%
-      select(venue_name, venue_city,
-             venue_capacity) %>%
-      unique()
-    
-    # combine the selected data (only name, league and country of the club)
-    # to a data frame
-    club_info_frame <- data.frame(name, league, country)
-    # create additional rows to be able to merge the frames later
-    club_info_frame[, (ncol(club_info_frame) + 1):(ncol(club_info_frame) +
-                                                     3)] <- NA
-    # transpose the frame such that the columns are now rows
-    club_info_frame <- club_info_frame %>%
-      t()
-    
-    # create the texts for the table
-    squad_size_text <- paste0("Squad size: ", squad_size)
-    avg_age_text <-
-      paste0("Average squad age: ", avg_age, " years old")
-    avg_height_text <-
-      paste0("Average squad height: ", avg_height, " m")
-    venue_name_text <- paste0("Venue: ", venue_info$venue_name)
-    venue_city_text <- paste0("\t", venue_info$venue_city)
-    venue_capa_text <-
-      paste0("\t", venue_info$venue_capacity, " seats")
-    
-    # put the texts together into a data frame
-    add_info_frame <- data.frame(
-      squad_size_text,
-      avg_age_text,
-      avg_height_text,
-      venue_name_text,
-      venue_city_text,
-      venue_capa_text
-    ) %>%
-      # and transpose it (columns to rows)
-      t()
-    
-    
-    # combine these two frames by binding them together by column
-    suppressMessages(club_frame <- club_info_frame %>%
-                       bind_cols(add_info_frame))
-    
-    # set the NA format in a kable table to an empty string
-    options(knitr.kable.NA = "")
-    
-    # create a kable table with the data
-    club_frame %>%
-      kableExtra::kable("html", row.names = FALSE, col.names = NULL) %>%
-      #kable_minimal()
-      kable_styling(full_width = F)
-    
-    
-  }
+        select(venue_capacity) %>%
+        unique() %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric()  ,
+      "Venue capacity",
+      icon = icon("sistrix"),
+      color = "teal",
+      width = 3
+    )
+  })
+  
+  output$info_team_team_players <- renderValueBox({
+    valueBox(
+      filter_team_data() %>%
+        # only unique player_names
+        distinct(player_name, .keep_all = TRUE) %>%
+        count() %>% pull(),
+      "Players number",
+      icon = icon("0"),
+      color = "green",
+      width = 3
+    )
+  })
+  
+  output$info_team_team_rightfoot <- renderValueBox({
+    valueBox(
+      filter_team_data() %>%
+        # only unique player_names
+        filter(player_foot=="right") %>%
+        count() %>% pull(),
+      "Right foot players ",
+      icon = icon("arrow-right"),
+      color = "yellow",
+      width = 3
+    )
+  })
+  
+  output$info_team_team_leftfoot <- renderValueBox({
+    valueBox(
+      filter_team_data() %>%
+        # only unique player_names
+        filter(player_foot=="left") %>%
+        count() %>% pull(),
+      "Left foot players",
+      icon = icon("arrow-left"),
+      color = "blue",
+      width = 3
+    )
+  })
+  
+  output$info_team_team_german <- renderValueBox({
+    valueBox(
+      filter_team_data() %>%
+        # only unique player_names
+        filter(player_nationality=="Germany") %>%
+        count() %>% pull(),
+      "German players",
+      icon = icon("g"),
+      color = "orange",
+      width = 3
+    )
+  })
+  # # create the output for the table on the overview page
+  # output$info_team_overview <- renderReactable({
+  #   # to gather venue infos
+  #   # <- all_infos_club %>% left_join(all_leagues_venue_information[,c(4,8,10:15)], by=c("club"="team_name"))
+  #   
+  #   # there has to be a club selected
+  #   req(input$info_team_league_selection)
+  #   req(input$info_team_club_selection)
+  #   req(input$info_team_season_selection)
+  #   
+  #   all_infos_club <-
+  #     inner_join(
+  #       all_leagues_tm_squads,
+  #       unique(all_leagues_matches[, c(2, 3, 19)]),
+  #       by = c("club" = "club_name_home", "league" = "league_name")
+  #     )
+  #   
+  #   # convert the season in a format we can work with
+  #   season_year <-
+  #     as.numeric(str_split(input$info_team_season_selection,
+  #                          pattern = "/")[[1]][1])
+  #   
+  #   # filter the huge data frame on the club selected
+  #   team_infos <- all_infos_club %>%
+  #     filter(
+  #       league ==  input$info_team_league_selection,
+  #       club == input$info_team_club_selection,
+  #       season == season_year
+  #     )
+  #   
+  #   # extract the club name
+  #   #name <- team_infos %>%
+  #   #  select(club) %>%
+  #   #  unlist() %>%
+  #   #  unname() %>%
+  #   #  unique()
+  #   
+  #   # extract the league of the club
+  #   #league <- unique(team_infos$league)
+  #   
+  #   # extract the country of the club
+  #   #country <- team_infos %>%
+  #   #  select(league_country) %>%
+  #   #  unlist() %>%
+  #   #  unname() %>%
+  #   #  unique()
+  #   
+  #   # extract the squad size of the club
+  #   #squad_size <- team_infos %>%
+  #   #  select(player_name) %>%
+  #   #  unique() %>%
+  #   #  nrow()
+  #   
+  #   # compute the average age of the players in the club
+  #   #avg_age <- team_infos %>%
+  #   # only unique player_names
+  #   #  distinct(player_name, .keep_all = TRUE) %>%
+  #   #  select(player_age) %>%
+  #   #  summarize(avg_age = mean(player_age, na.rm = TRUE)) %>%
+  #   # extract the value (it is a data frame)
+  #   #  pull() %>%
+  #   # round the value
+  #   #  round(digits = 2)
+  #   
+  #   # compute the average height of the players in the club
+  #   #avg_height <- team_infos %>%
+  #   # only unique player_names
+  #   #  distinct(player_name, .keep_all = TRUE) %>%
+  #   #  select(player_height) %>%
+  #   #  summarize(avg_age = mean(player_height, na.rm = TRUE)) %>%
+  #   # extract the value (it is a data frame)
+  #   #  pull() %>%
+  #   # round the value
+  #   # round(digits = 2)
+  #   
+  #   
+  #   # extract the information for the stadium
+  #   #venue_info <-
+  #   #   all_leagues_venue_information %>% mutate(league = if_else(
+  #   #    league_id == 78,
+  #   #    "Bundesliga",
+  #   #    if_else(
+  #   #      league_id == 79,
+  #   #      "Bundesliga 2",
+  #   #      if_else(
+  #   #        league_id == 39,
+  #   #        "Premier League",
+  #   #        if_else(
+  #   #          league_id == 61,
+  #   #          "Ligue 1",
+  #   #          "none"
+  #   #        )
+  #   #      )
+  #   #    )
+  #   #  )) %>% filter(
+  #   #    league ==  input$info_team_league_selection,
+  #   #    team_name == input$info_team_club_selection,
+  #   #    season == season_year
+  #   #  ) %>%
+  #   #  select(venue_name, venue_city,
+  #   #         venue_capacity) %>%
+  #   #  unique()
+  #   team_infos %>% select(player_name, player_position, player_foot) %>%
+  #     reactable(
+  #       defaultColDef = colDef(
+  #         align = "center",
+  #         minWidth = 150,
+  #         headerStyle = list(background = "darkblue")
+  #       ),
+  #       borderless = TRUE,
+  #       #searchable = TRUE,
+  #       striped = TRUE,
+  #       highlight = TRUE,
+  #       # set the theme for the table
+  #       theme = reactableTheme(
+  #         borderColor = "#000000",
+  #         color = "#000000",
+  #         backgroundColor = "#004157",
+  #         highlightColor = "#2f829e",
+  #         cellPadding = "8px 12px",
+  #         style = list(color = "white"),
+  #         # searchInputStyle = list(width = "100%")
+  #       ),
+  #       # modify the layout and names of the columns
+  #       columns = list(
+  #         player_name = colDef(name = "Player name",
+  #                              align = "left"),
+  #         player_position = colDef(name = "Player position",
+  #                                  align = "center"),
+  #         player_foot = colDef(name = "Player foot",
+  #                              align = "center")
+  #       )
+  #     )
+  #   
+  #   # combine the selected data (only name, league and country of the club)
+  #   # to a data frame
+  #   #club_info_frame <- data.frame(name, league, country)
+  #   # create additional rows to be able to merge the frames later
+  #   #club_info_frame[, (ncol(club_info_frame) + 1):(ncol(club_info_frame) +
+  #   #                                                 2)] <- NA
+  #   # transpose the frame such that the columns are now rows
+  #   #club_info_frame <- club_info_frame %>%
+  #   #  t()
+  #   
+  #   # create the texts for the table
+  #   #squad_size_text <- paste0("Squad size: ", squad_size)
+  #   #avg_age_text <-
+  #   #  paste0("Average squad age: ", avg_age, " years old")
+  #   #avg_height_text <-
+  #   #  paste0("Average squad height: ", avg_height, " m")
+  #   #venue_name_text <- paste0("Venue: ", venue_info$venue_name)
+  #   #venue_city_text <- paste0("City: ", venue_info$venue_city)
+  #   #venue_capa_text <-
+  #   #  paste0("\t", venue_info$venue_capacity, " seats")
+  #   
+  #   # put the texts together into a data frame
+  #   #add_info_frame <- data.frame(
+  #   #  squad_size_text,
+  #   #  avg_age_text,
+  #   #  avg_height_text,
+  #   #  venue_name_text,
+  #   #  venue_city_text
+  #   #  venue_capa_text
+  #   #) %>%
+  #   # and transpose it (columns to rows)
+  #   #  t()
+  #   
+  #   
+  #   # combine these two frames by binding them together by column
+  #   #suppressMessages(club_frame <- club_info_frame %>%
+  #   #                   rbind(add_info_frame))
+  #   
+  #   # set the NA format in a kable table to an empty string
+  #   #options(knitr.kable.NA = "")
+  #   
+  #   # create a kable table with the data
+  #   # club_frame %>%
+  #   #  kableExtra::kable("html", row.names = FALSE, col.names = NULL) %>%
+  #   #kable_minimal()
+  #   #  kable_styling(full_width = F)
+  #   
+  #   
+  # })
   
   # output for the club logo
   output$info_team_team_logo <- renderUI({
@@ -228,25 +405,24 @@ information_team_server <- function(input, output, session) {
     print(input$info_team_club_selection)
     # extract the logo from the frame
     team_image <- all_leagues_venue_information %>% mutate(league = if_else(
-      all_leagues_venue_information$league_id == 78,
+      league_id == 78,
       "Bundesliga",
       if_else(
-        venues_with_coordinates$league_id == 79,
+        league_id == 79,
         "Bundesliga 2",
         if_else(
-          all_leagues_venue_information$league_id == 39,
+          league_id == 39,
           "Premier League",
           if_else(
-            all_leagues_venue_information$league_id == 61,
+            league_id == 61,
             "Ligue 1",
             "none"
           )
         )
       )
     )) %>%
-      
       filter(
-        league == league_select() &
+        league == input$info_team_league_selection &
           team_name == input$info_team_club_selection
       ) %>%
       select(logo) %>%
@@ -267,16 +443,16 @@ information_team_server <- function(input, output, session) {
     print(input$info_team_club_selection)
     # extract the logo from the frame
     venue_image <- all_leagues_venue_information %>% mutate(league = if_else(
-      all_leagues_venue_information$league_id == 78,
+      league_id == 78,
       "Bundesliga",
       if_else(
-        venues_with_coordinates$league_id == 79,
+        league_id == 79,
         "Bundesliga 2",
         if_else(
-          all_leagues_venue_information$league_id == 39,
+          league_id == 39,
           "Premier League",
           if_else(
-            all_leagues_venue_information$league_id == 61,
+            league_id == 61,
             "Ligue 1",
             "none"
           )
@@ -284,7 +460,7 @@ information_team_server <- function(input, output, session) {
       )
     )) %>%
       filter(
-        league ==  league_select() &
+        league ==  input$info_team_league_selection &
           team_name == input$info_team_club_selection
       ) %>%
       select(venue_image) %>%
@@ -314,7 +490,7 @@ information_team_server <- function(input, output, session) {
     # selected_club <- "FC Bayern Munich"
     # selected_season <- 2021
     
-    if (input$info_team_league_selection == "Bundesliga 1") {
+    if (input$info_team_league_selection == "Bundesliga") {
       league_id <- 78
     } else if (input$info_team_league_selection == "Bundesliga 2") {
       league_id <- 79
@@ -352,9 +528,9 @@ information_team_server <- function(input, output, session) {
                 ), 
                 # modify the layout and names of the columns
                 columns = list(
-                  fixture_date.x = colDef(name = "Date",
+                  fixture_date = colDef(name = "Date",
                                        align = "left"),
-                  fixture_time.x = colDef(name = "Time",
+                  fixture_time = colDef(name = "Time",
                                            align = "center"),
                   venue_city = colDef(name = "City",
                                         align = "center"),
@@ -421,7 +597,7 @@ information_team_server <- function(input, output, session) {
       filter(club_name_home == selected_club |
                club_name_away == selected_club,
              league_season == selected_season, 
-             league_name == league_select()) %>%
+             league_name == input$info_team_league_selection) %>%
       mutate(game_score = paste0(fulltime_score_home, ":", 
                                  fulltime_score_away)) %>%
       select(fixture_date, fixture_time, club_name_home,
@@ -474,6 +650,10 @@ information_team_server <- function(input, output, session) {
  
   output$total_played <- renderValueBox({
      stats_select <- reactive ({
+       req(input$info_team_league_selection)
+       req(input$info_team_club_selection)
+       req(input$info_team_season_selection)
+       
     all_leagues_club_stats %>%
       filter(
         league_name == input$info_team_league_selection,
@@ -492,11 +672,16 @@ information_team_server <- function(input, output, session) {
       icon = icon("hourglass-half"),
       width = 3
     )
-
+    
+    
   })
   
   output$total_wins <- renderValueBox({
     stats_select <- reactive ({
+      req(input$info_team_league_selection)
+      req(input$info_team_club_selection)
+      req(input$info_team_season_selection)
+      
       all_leagues_club_stats %>%
         filter(
           league_name == input$info_team_league_selection,
@@ -518,6 +703,10 @@ information_team_server <- function(input, output, session) {
   })
   
   output$total_draws <- renderValueBox({
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     stats_select <- reactive ({
       all_leagues_club_stats %>%
         filter(
@@ -539,6 +728,10 @@ information_team_server <- function(input, output, session) {
   })
   
   output$total_loses <- renderValueBox({
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection) 
+    
     stats_select <- reactive ({
       all_leagues_club_stats %>%
         filter(
@@ -555,12 +748,13 @@ information_team_server <- function(input, output, session) {
       value = stats_select() %>% select(fixtures_loses_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
       "Total Loses",
       color = "teal",
-      icon = icon("heart-crack"),
+      icon = icon("bomb"),
       width = 3)
   })
   
   output$total_for_goals <- renderValueBox({
-    stats_select <- reactive ({
+
+    stats_select <- 
       all_leagues_club_stats %>%
         filter(
           league_name == input$info_team_league_selection,
@@ -570,20 +764,20 @@ information_team_server <- function(input, output, session) {
                       pattern = "/")[[1]][1]
           )
         ) %>% filter(matchday == max(matchday, na.rm = TRUE))
-    })
     
     valueBox(
-      value = stats_select() %>% select(goals_for_total_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      value = stats_select %>% select(goals_for_total_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
       "Total For Goals",
       color = "purple",
-      icon = icon("goal-net"),
+      icon = icon("award"),
       width = 3)
   })
-  
-  
-  
+
   output$total_against_goals <- renderValueBox({
-    stats_select <- reactive ({
+    stats_select <- reactive ({   
+      req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
       all_leagues_club_stats %>%
         filter(
           league_name == input$info_team_league_selection,
@@ -620,7 +814,7 @@ information_team_server <- function(input, output, session) {
       value = stats_select() %>% select(failed_to_score_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
       "Total Failed to Score",
       color = "green",
-      icon = icon("wave-pulse"),
+      icon = icon("ban"),
       width = 3)
   })
   
@@ -641,7 +835,7 @@ information_team_server <- function(input, output, session) {
       value = stats_select() %>% select(penalty_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
       "Total Penalty",
       color = "teal",
-      icon = icon("triangle-exclamation"),
+      icon = icon("exclamation"),
       width = 3)
   })
   
@@ -669,10 +863,8 @@ information_team_server <- function(input, output, session) {
       reactable(
         defaultColDef = colDef(
           align = "center",
-          minWidth = 150,
           headerStyle = list(background = "darkblue")
         ),
-        searchable = TRUE,
         striped = TRUE,
         highlight = TRUE,
         borderless = TRUE,
@@ -687,15 +879,13 @@ information_team_server <- function(input, output, session) {
           backgroundColor = "#004157",
           highlightColor = "#2f829e",
           cellPadding = "8px 12px",
-          style = list(color = "white"),
-          searchInputStyle = list(width = "100%",
-                                  color = "black")
+          style = list(color = "white")
         ) ,       columns = list(
-          biggest_streak_wins = colDef(name = "biggest streak wins",
+          biggest_streak_wins = colDef(name = "wins",
                                   align = "left"),
-          biggest_streak_draws = colDef(name = "biggest streak draws",
+          biggest_streak_draws = colDef(name = "draws",
                                   align = "center"),
-          biggest_streak_loses = colDef(name = "biggest streak loses",
+          biggest_streak_loses = colDef(name = "loses",
                                    align = "center")
                   
       ))
@@ -725,10 +915,8 @@ information_team_server <- function(input, output, session) {
       reactable(
         defaultColDef = colDef(
           align = "center",
-          minWidth = 150,
           headerStyle = list(background = "darkblue")
         ),
-        searchable = TRUE,
         striped = TRUE,
         highlight = TRUE,
         borderless = TRUE,
@@ -743,13 +931,11 @@ information_team_server <- function(input, output, session) {
           backgroundColor = "#004157",
           highlightColor = "#2f829e",
           cellPadding = "8px 12px",
-          style = list(color = "white"),
-          searchInputStyle = list(width = "100%",
-                                  color = "black")
+          style = list(color = "white")
         ) ,       columns = list(
-          biggest_wins_home_diff  = colDef(name = "biggest wins difference",
+          biggest_wins_home_diff  = colDef(name = "wins",
                                        align = "left"),
-          biggest_loses_home_diff  = colDef(name = "biggest loses difference",
+          biggest_loses_home_diff  = colDef(name = "loses",
                                         align = "center"),
           clean_sheet_home = colDef(name = "clean sheet",
                                         align = "center")
@@ -781,10 +967,8 @@ information_team_server <- function(input, output, session) {
       reactable(
         defaultColDef = colDef(
           align = "center",
-          minWidth = 150,
           headerStyle = list(background = "darkblue")
         ),
-        searchable = TRUE,
         striped = TRUE,
         highlight = TRUE,
         borderless = TRUE,
@@ -800,12 +984,10 @@ information_team_server <- function(input, output, session) {
           highlightColor = "#2f829e",
           cellPadding = "8px 12px",
           style = list(color = "white"),
-          searchInputStyle = list(width = "100%",
-                                  color = "black")
         ) ,       columns = list(
-          biggest_wins_away_diff   = colDef(name = "biggest wins difference",
+          biggest_wins_away_diff   = colDef(name = "wins",
                                            align = "left"),
-          biggest_loses_away_diff   = colDef(name = "biggest loses difference",
+          biggest_loses_away_diff   = colDef(name = "loses",
                                             align = "center"),
           clean_sheet_away = colDef(name = "clean sheet",
                                     align = "center")
@@ -814,6 +996,102 @@ information_team_server <- function(input, output, session) {
     
     
   })
+  
+  output$ts_home_stats <- renderPlotly({
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
+    data <- reactive({
+      all_leagues_club_stats %>%
+        filter(
+          league_name == input$info_team_league_selection,
+          team_name == input$info_team_club_selection,
+          league_season == as.numeric(
+            str_split(input$info_team_season_selection,
+                      pattern = "/")[[1]][1]
+          )
+        )
+
+    })
+    
+    plot_data <- data() %>%
+      pivot_longer(
+        contains("home"),
+        names_to = "variable",
+        values_to = "value"
+      )
+    
+    ts_home <- plot_data %>% 
+      # create actual plot for the market value over time by club
+      plot_ly(
+        x = ~ matchday,
+        y = ~ value,
+        color =  ~ variable,
+        type = "scatter",
+        visible = "legendonly"
+      ) %>%
+      layout(
+        title = "stats as home team over matchday",
+        yaxis = list(title = "Value"),
+        xaxis = list(title = "Matchday"),
+        font = list(color = "white"),
+        plot_bgcolor = "rgba(0, 65, 87, 10)",
+        paper_bgcolor = "rgba(0, 65, 87, 10)",
+        fig_bg_color = "rgba(0, 65, 87, 10)"
+      )
+    
+    ts_home
+  })
+  
+  output$ts_away_stats <- renderPlotly({
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
+    data <- reactive({
+      all_leagues_club_stats %>%
+        filter(
+          league_name == input$info_team_league_selection,
+          team_name == input$info_team_club_selection,
+          league_season == as.numeric(
+            str_split(input$info_team_season_selection,
+                      pattern = "/")[[1]][1]
+          )
+        )
+      
+    })
+    
+    plot_data <- data() %>%
+      pivot_longer(
+        contains("away"),
+        names_to = "variable",
+        values_to = "value"
+      )
+    
+    ts_away <- plot_data %>% 
+      # create actual plot for the market value over time by club
+      plot_ly(
+        x = ~ matchday,
+        y = ~ value,
+        color =  ~ variable,
+        type = "scatter",
+        visible = "legendonly"
+      ) %>%
+      layout(
+        title = "stats as away team over matchday",
+        yaxis = list(title = "Value"),
+        xaxis = list(title = "Matchday"),
+        font = list(color = "white"),
+        plot_bgcolor = "rgba(0, 65, 87, 10)",
+        paper_bgcolor = "rgba(0, 65, 87, 10)",
+        fig_bg_color = "rgba(0, 65, 87, 10)"
+      )
+    
+    ts_away
+  })
+  
+  
 ############## squads infos #########################
   
   squad_reactive <- reactive({
@@ -1008,10 +1286,6 @@ information_team_server <- function(input, output, session) {
   market_value_reactive <- reactive({
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
-
-    if(input$info_team_league_selection=="Bundesliga 1"){
-      league <- "Bundesliga"
-    } else {league <- input$info_team_league_selection}
     
     market_value_filtered <-
       all_leagues_market_values_over_time %>%
@@ -1045,10 +1319,6 @@ information_team_server <- function(input, output, session) {
   fifa_team_reactive <- reactive({
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
-    
-    if(input$info_team_league_selection=="Bundesliga 1"){
-      league <- "Bundesliga"
-    } else {league <- input$info_team_league_selection}
     
     fifa_team_filtered <-
       all_leagues_fifa_team_stats %>%

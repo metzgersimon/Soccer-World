@@ -6,7 +6,7 @@ tab_information_team_ui <- function(){
             column(width = 3, align = "center",
                    selectizeInput("info_team_league_selection",
                                label = "League",
-                               choices = c("Bundesliga 1",
+                               choices = c("Bundesliga",
                                            "Bundesliga 2",
                                            "Premier League",
                                            "Ligue 1")
@@ -51,42 +51,48 @@ tab_information_team_ui <- function(){
           ), 
           # creat different tabs to divide the data into appropriate pages
           tabsetPanel(
-            # create the overview tab which contains 
-            # general information about the team such as 
+            # create the overview tab which contains
+            # general information about the team such as
             # squad size and the average age of the squad
-            tabPanel("Overview",
-                     fluidRow(
-                       # table output for the team information
-                       column(width = 4, 
-                              #offset = 3,
-                              align = "center",
-                              div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
-                                  tableOutput("info_team_team_name")
-                              )
-                       ),
-                       column(width = 4, 
-                              #offset = 3,
-                              align = "center",
-                              div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
-                                  tableOutput("info_team_venue_image")
-                              )
-                       ),
-                       # ui output to display the logo of the club
-                       column(width = 3,
-                              offset = 1,
-                              align = "right",
-                              div(style = "margin-top: 20px;",
-                                  uiOutput("info_team_team_logo",
-                                           width = "2px")
-                              )
-                       )
-                     )
-            ),
+            tabPanel(
+              "Overview",
+              fluidRow(
+                # ui output to display the logo of the club
+                
+                valueBoxOutput("info_team_team_age", width = 3),
+                valueBoxOutput("info_team_team_height", width = 3),
+                valueBoxOutput("info_team_team_size", width = 3),
+                valueBoxOutput("info_team_team_venue", width = 3)
+              ),
+              fluidRow(
+                # ui output to display the logo of the club
+                
+                valueBoxOutput("info_team_team_players", width = 3),
+                valueBoxOutput("info_team_team_rightfoot", width = 3),
+                valueBoxOutput("info_team_team_leftfoot", width = 3),
+                valueBoxOutput("info_team_team_german", width = 3)
+              ),
+              fluidRow(
+                # table output for the team logo
+                column(
+                  width = 4,
+                  #offset = 3,
+                  align = "center",
+                  div(style = "margin-top: 20px;", #"border: solid 2px #FFFFFF; margin-top: 20px;",
+                      tableOutput("info_team_team_logo"))
+                ),
+                column(
+                  width = 8,
+                  #offset = 2,
+                  align = "left",
+                  div(style = "margin-top: 20px;", #"border: solid 2px #FFFFFF; margin-top: 20px;",
+                      tableOutput("info_team_venue_image"))
+                )
+            )),
             # season tab which should contain information about the current season
             # such as form, previous matches, future matches, etc.
             tabPanel("Match & Stats",
-                     tabsetPanel(
-                       type = "pills",
+                     tabsetPanel(type = "pills",
                        tabPanel("Matches",
                                 fluidRow(column(
                                   width = 12,
@@ -164,21 +170,21 @@ tab_information_team_ui <- function(){
                                   # Frontpage - boxes - end
                                 ),
                                 fluidRow(
-                                  box(title = "Streak infos", 
+                                  box(title = "Biggest streak infos", 
                                       status = "primary", width = 4,
                                       solidHeader = TRUE,
                                       collapsible = TRUE,
                                       reactableOutput("info_team_stats") %>%
                                         withSpinner(color = "black")    
                                   ),
-                                  box(title = "As home team", 
+                                  box(title = "As home team - biggest difference", 
                                       status = "primary", width = 4,
                                       solidHeader = TRUE,
                                       collapsible = TRUE,
                                       reactableOutput("info_team_home") %>%
                                         withSpinner(color = "black")    
                                   ),
-                                  box(title = "As away team", 
+                                  box(title = "As away team - biggest difference", 
                                       status = "primary", width = 4,
                                       solidHeader = TRUE,
                                       collapsible = TRUE,
@@ -199,11 +205,6 @@ tab_information_team_ui <- function(){
                                       status = "success",
                                       title = "stats as away team",
                                       withSpinner(plotlyOutput("ts_away_stats", height = "250px"))
-                                    ),
-                                    tabPanel(
-                                      status = "success",
-                                      title = "total stats",
-                                      withSpinner(plotlyOutput("ts_total_stats", height = "250px"))
                                     )
                                   )
                                   # plots - end ------------------------------------
