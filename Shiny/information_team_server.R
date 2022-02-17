@@ -16,6 +16,7 @@ information_team_server <- function(input, output, session) {
     league <- input$info_team_league_selection
   }
   })
+  
   # update the select inputs
   observeEvent(league_select(), {
     updateSelectInput(session,
@@ -41,7 +42,7 @@ information_team_server <- function(input, output, session) {
       choices = c("",
                   paste0(
                     unique(
-                      all_infos_club %>% filter(league == league_select() &
+                      all_infos_club %>% filter(league == league_select(),
                                                   club == input$info_team_club_selection) %>%
                         select(season) %>%
                         unlist() %>%
@@ -50,7 +51,7 @@ information_team_server <- function(input, output, session) {
                     ,
                     "/",
                     unique(
-                      all_infos_club %>% filter(league == league_select() &
+                      all_infos_club %>% filter(league == league_select(),
                                                   club == input$info_team_club_selection) %>%
                         select(season) %>%
                         unlist() %>%
@@ -467,92 +468,204 @@ information_team_server <- function(input, output, session) {
         ))
   })
 
-  output$info_team_stats <- renderReactable({
-    
-    # general_shots <- buli_fixture_stats %>% select(contains("shots"), contains("score"))
-    #desired_order <- c("fulltime_score_home ", "fulltime_score_away", "shots_on_goal",
-    #                   "shots_off_goal", "shots_total ", "shots_blocked",
-    #                   "shots_inside_box", "shots_outside_box")
-    
-    #fixtures <- get_team_stats_cleaned(general_shots$shots, total = TRUE,
-    #                                   desired_order)
+  
+  
+  ###################### stats begins
+ 
+  output$total_played <- renderValueBox({
+     stats_select <- reactive ({
+    all_leagues_club_stats %>%
+      filter(
+        league_name == input$info_team_league_selection,
+        team_name == input$info_team_club_selection,
+        league_season == as.numeric(
+          str_split(input$info_team_season_selection,
+                    pattern = "/")[[1]][1]
+        )
+      ) %>% filter(matchday == max(matchday, na.rm = TRUE))
+  })
+  
+    valueBox(
+      value =  stats_select() %>% select(fixtures_played_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      "Total Plays",
+      color = "purple",
+      icon = icon("hourglass-half"),
+      width = 3
+    )
 
+  })
+  
+  output$total_wins <- renderValueBox({
+    stats_select <- reactive ({
+      all_leagues_club_stats %>%
+        filter(
+          league_name == input$info_team_league_selection,
+          team_name == input$info_team_club_selection,
+          league_season == as.numeric(
+            str_split(input$info_team_season_selection,
+                      pattern = "/")[[1]][1]
+          )
+        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
+    })
     
-    #desired_order <- c("goals_for", "goals_for_average", "goals_against",
-    #                   "goals_against_average")
+    valueBox(
+      value = stats_select() %>% select(fixtures_wins_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      "Total Wins",
+      color = "orange",
+      icon = icon("flag"),
+      width = 3
+    )
+  })
+  
+  output$total_draws <- renderValueBox({
+    stats_select <- reactive ({
+      all_leagues_club_stats %>%
+        filter(
+          league_name == input$info_team_league_selection,
+          team_name == input$info_team_club_selection,
+          league_season == as.numeric(
+            str_split(input$info_team_season_selection,
+                      pattern = "/")[[1]][1]
+          )
+        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
+    })
     
-    #goals <- get_team_stats_cleaned(test$goals, total = TRUE,
-   #                                 desired_order) 
+    valueBox(
+      value = stats_select() %>% select(fixtures_draws_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      "Total Draws",
+      color = "green",
+      icon = icon("equals"),
+      width = 3)
+  })
+  
+  output$total_loses <- renderValueBox({
+    stats_select <- reactive ({
+      all_leagues_club_stats %>%
+        filter(
+          league_name == input$info_team_league_selection,
+          team_name == input$info_team_club_selection,
+          league_season == as.numeric(
+            str_split(input$info_team_season_selection,
+                      pattern = "/")[[1]][1]
+          )
+        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
+    })
     
-    # goals_diff <- rownames_to_column(goals) %>%
-    #  filter(rowname %in% c("goals_for", "goals_against")) %>%
-    #  mutate(diff_away = lag(away) - away,
-    #         diff_home = lag(home) - home,
-    #         diff_total = lag(total) - total) %>%
-    #  select(away = diff_away,
-    #         home = diff_home,
-    #        total = diff_total) %>%
-    #  remove_empty("rows")
+    valueBox(
+      value = stats_select() %>% select(fixtures_loses_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      "Total Loses",
+      color = "teal",
+      icon = icon("heart-crack"),
+      width = 3)
+  })
+  
+  output$total_for_goals <- renderValueBox({
+    stats_select <- reactive ({
+      all_leagues_club_stats %>%
+        filter(
+          league_name == input$info_team_league_selection,
+          team_name == input$info_team_club_selection,
+          league_season == as.numeric(
+            str_split(input$info_team_season_selection,
+                      pattern = "/")[[1]][1]
+          )
+        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
+    })
     
-    #rownames(goals_diff) <- "goals_diff"
+    valueBox(
+      value = stats_select() %>% select(goals_for_total_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      "Total For Goals",
+      color = "purple",
+      icon = icon("goal-net"),
+      width = 3)
+  })
+  
+  
+  
+  output$total_against_goals <- renderValueBox({
+    stats_select <- reactive ({
+      all_leagues_club_stats %>%
+        filter(
+          league_name == input$info_team_league_selection,
+          team_name == input$info_team_club_selection,
+          league_season == as.numeric(
+            str_split(input$info_team_season_selection,
+                      pattern = "/")[[1]][1]
+          )
+        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
+    })
     
-    #goals <- rbind(goals,
-    #               goals_diff)
-      
+    valueBox(
+      value = stats_select() %>% select(goals_against_total_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      "Total Against Goals",
+      color = "orange",
+      icon = icon("futbol"),
+      width = 3)
+  })
+  
+  output$total_failed_score <- renderValueBox({
+    stats_select <- reactive ({
+      all_leagues_club_stats %>%
+        filter(
+          league_name == input$info_team_league_selection,
+          team_name == input$info_team_club_selection,
+          league_season == as.numeric(
+            str_split(input$info_team_season_selection,
+                      pattern = "/")[[1]][1]
+          )
+        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
+    })
     
-    #biggest <- get_team_stats_cleaned(test$biggest, total = FALSE)
+    valueBox(
+      value = stats_select() %>% select(failed_to_score_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      "Total Failed to Score",
+      color = "green",
+      icon = icon("wave-pulse"),
+      width = 3)
+  })
+  
+  output$total_penalty <- renderValueBox({
+    stats_select <- reactive ({
+      all_leagues_club_stats %>%
+        filter(
+          league_name == input$info_team_league_selection,
+          team_name == input$info_team_club_selection,
+          league_season == as.numeric(
+            str_split(input$info_team_season_selection,
+                      pattern = "/")[[1]][1]
+          )
+        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
+    })
     
-    #desired_order <- "failed_to_score"
-    #failed_to_score <- get_team_stats_cleaned(test$failed_to_score, total = TRUE,
-    #                                          desired_order)
+    valueBox(
+      value = stats_select() %>% select(penalty_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      "Total Penalty",
+      color = "teal",
+      icon = icon("triangle-exclamation"),
+      width = 3)
+  })
+  
+  
+  # more details stats
+  output$info_team_stats <- renderReactable({
+ 
+    stats_select <- reactive ({
+      all_leagues_club_stats %>%
+        filter(
+          league_name == input$info_team_league_selection,
+          team_name == input$info_team_club_selection,
+          league_season == as.numeric(
+            str_split(input$info_team_season_selection,
+                      pattern = "/")[[1]][1]
+          )
+        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
+    })
     
-    #desired_order <- "clean_sheet"
-    #clean_sheet <- get_team_stats_cleaned(test$clean_sheet, total = TRUE,
-    #                                      desired_order)
+   data <-
+     stats_select()  %>% select(biggest_streak_wins:biggest_streak_loses)
     
-    # penalty <- test$penalty
-    # cards <- test$cards
-    
-    #stats_all <- rbind(fixtures,
-    #                   goals,
-    #                   #biggest,
-    #                   failed_to_score,
-    #                   clean_sheet) %>%
-    #  select(home, away, total)
-    
-    #rownames(stats_all) <- c("Games played", "Wins", "Draws", "Loses",
-    #                         "Goals for", "Avg Goals for", "Goals agaist",
-    #                         "Avg Goals against", "Goal Difference",
-    #                         "Failed to score", "Clean sheets")
-    if (input$info_team_league_selection == "Bundesliga 1") {
-      league_id <- 78
-    } else if (input$info_team_league_selection == "Bundesliga 2") {
-      league_id <- 79
-    } else if (input$info_team_league_selection == "Premier League") {
-      league_id <- 39
-    } else if (input$info_team_league_selection == "Ligue 1") {
-      league_id <- 61
-    }
-    
-    all_club_stats <-
-      left_join(
-        all_leagues_club_stats,
-        all_leagues_matches,
-       by = c("team_name" = "club_name_home", "league_season" = "league_season", "league_id" = "league_id" ,"league_country" = "league_country")
-     )
-    
-    
-    all_club_stats %>%
-      filter(league_id == league_id &
-        team_name == input$info_team_club_selection &
-               league_season == as.numeric(
-                 str_split(input$info_team_season_selection,
-                           pattern = "/")[[1]][1]))  %>%    
-      mutate(game_score = paste0(fulltime_score_home, ":", fulltime_score_away)) %>%
- #     select(fixture_date, game_score, contains("home"), passing_accuracy,
- #            ball_possession, fouls, corners, offsides, 
- #            contains("passes"), contains("cards"), goalkeeper_saves) %>% 
- #     select(fixture_date, game_score,goals_for_total_home)
+
+    data %>%  
       reactable(
         defaultColDef = colDef(
           align = "center",
@@ -577,75 +690,130 @@ information_team_server <- function(input, output, session) {
           style = list(color = "white"),
           searchInputStyle = list(width = "100%",
                                   color = "black")
-        ) #       columns = list(
-          #fixture_date = colDef(name = "date",
-          #                        align = "left"),
-         #game_score = colDef(name = "results",
-          #                        align = "center"),
-          #passing_accuracy = colDef(name = "passing accuracy",
-          #                         align = "center"),
-          #ball_possession = colDef(name = "ball possession",
-          #                      align = "left"),
-          #goalkeeper_saves = colDef(name = "galkeeper saves",
-          #                    align = "center"),
-          #passing_accuracy = colDef(name = "passing accuracy",
-          #                          align = "center")
+        ) ,       columns = list(
+          biggest_streak_wins = colDef(name = "biggest streak wins",
+                                  align = "left"),
+          biggest_streak_draws = colDef(name = "biggest streak draws",
+                                  align = "center"),
+          biggest_streak_loses = colDef(name = "biggest streak loses",
+                                   align = "center")
                   
-      )
-    
-    #reactable(stats_all,
-    #          highlight = TRUE,
-    #          borderless = TRUE,
-    #          pagination = FALSE,
-    #          defaultPageSize = 15,
-    #          showPageInfo = FALSE,
-    #          showPagination = FALSE,
-              # set the theme for the table
-    #          theme = reactableTheme(
-    #            borderColor = "#000000",
-    #            color = "#000000",
-    #            backgroundColor = "#004157",
-    #            highlightColor = "#2f829e",
-    #            cellPadding = "8px 12px",
-    #            style = list(color = "white")
-    #          ),
-    #          columns = list(
-    #            home = colDef(name = "HOME",
-    #                          align = "center"),
-    #            away = colDef(name = "AWAY",
-    #                          align = "center"),
-    #            total = colDef(name = "TOTAL",
-    #                           align = "center")
-    #          )
-              
-    #)
+      ))
+  
     
   })
   
-  output$info_team_summary <- renderPrint({
-   # data <-  buli_fixture_stats %>% filter(team_name == "FC Bayern Munich" & season == 2017)
-   data <- buli_fixture_stats %>%
-     filter(team_name == input$info_team_club_selection &
-              season == as.numeric(str_split(
-                input$info_team_season_selection,pattern = "/")[[1]][1]))
-   
-   summary(data[, c(10:25)])
-   #mean_shots_total <-  buli_fixture_stats %>%
-   #   filter(team_name == input$info_team_club_selection &
-   #            season == as.numeric(str_split(
-   #              input$info_team_season_selection,pattern = "/")[[1]][1]))%>% 
-   #  summarise(mean(shots_total, na.rm = TRUE)) %>% unname() %>% unlist()
-   
-   #total_yellow <-  buli_fixture_stats %>%
-   #  filter(team_name == input$info_team_club_selection &
-   #           season == as.numeric(str_split(
-   #             input$info_team_season_selection,
-   #             pattern = "/"
-   #           )[[1]][1]))  %>% summarise(sum(cards_yellow, na.rm = TRUE))%>%
-   #  unname() %>% unlist()
-   
+  output$info_team_home <- renderReactable({
+    
+    stats_select <- reactive ({
+      all_leagues_club_stats %>%
+        filter(
+          league_name == input$info_team_league_selection,
+          team_name == input$info_team_club_selection,
+          league_season == as.numeric(
+            str_split(input$info_team_season_selection,
+                      pattern = "/")[[1]][1]
+          )
+        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
+    })
+    
+    data <-
+      stats_select()  %>% select(contains("home_diff"), clean_sheet_home)
+    
+    
+    data %>%  
+      reactable(
+        defaultColDef = colDef(
+          align = "center",
+          minWidth = 150,
+          headerStyle = list(background = "darkblue")
+        ),
+        searchable = TRUE,
+        striped = TRUE,
+        highlight = TRUE,
+        borderless = TRUE,
+        pagination = FALSE,
+        defaultPageSize = 15,
+        showPageInfo = FALSE,
+        showPagination = FALSE,
+        # set the theme for the table
+        theme = reactableTheme(
+          borderColor = "#000000",
+          color = "#000000",
+          backgroundColor = "#004157",
+          highlightColor = "#2f829e",
+          cellPadding = "8px 12px",
+          style = list(color = "white"),
+          searchInputStyle = list(width = "100%",
+                                  color = "black")
+        ) ,       columns = list(
+          biggest_wins_home_diff  = colDef(name = "biggest wins difference",
+                                       align = "left"),
+          biggest_loses_home_diff  = colDef(name = "biggest loses difference",
+                                        align = "center"),
+          clean_sheet_home = colDef(name = "clean sheet",
+                                        align = "center")
+          
+        ))
+    
+    
   })
   
+  output$info_team_away <- renderReactable({
+    
+    stats_select <- reactive ({
+      all_leagues_club_stats %>%
+        filter(
+          league_name == input$info_team_league_selection,
+          team_name == input$info_team_club_selection,
+          league_season == as.numeric(
+            str_split(input$info_team_season_selection,
+                      pattern = "/")[[1]][1]
+          )
+        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
+    })
+    
+    data <-
+      stats_select()  %>% select(contains("away_diff"), clean_sheet_away)
+    
+    
+    data %>%  
+      reactable(
+        defaultColDef = colDef(
+          align = "center",
+          minWidth = 150,
+          headerStyle = list(background = "darkblue")
+        ),
+        searchable = TRUE,
+        striped = TRUE,
+        highlight = TRUE,
+        borderless = TRUE,
+        pagination = FALSE,
+        defaultPageSize = 15,
+        showPageInfo = FALSE,
+        showPagination = FALSE,
+        # set the theme for the table
+        theme = reactableTheme(
+          borderColor = "#000000",
+          color = "#000000",
+          backgroundColor = "#004157",
+          highlightColor = "#2f829e",
+          cellPadding = "8px 12px",
+          style = list(color = "white"),
+          searchInputStyle = list(width = "100%",
+                                  color = "black")
+        ) ,       columns = list(
+          biggest_wins_away_diff   = colDef(name = "biggest wins difference",
+                                           align = "left"),
+          biggest_loses_away_diff   = colDef(name = "biggest loses difference",
+                                            align = "center"),
+          clean_sheet_away = colDef(name = "clean sheet",
+                                    align = "center")
+          
+        ))
+    
+    
+  })
 ############## squads infos #########################
   
   squad_reactive <- reactive({
