@@ -62,28 +62,37 @@ get_times_for_lineup_scraping <- function(all_leagues_matches_today){
 # api_calls_left <- get_api_calls_left()
 
 # 3.1 fixture information call (for scores and points)
-# matches_happened_today <- get_new_match_information_API()
+# check how many calls we would need
+# number_calls_needed <- compute_necessary_calls(number_leagues = 4,
+#                                                endpoint = "match_information")
+# if(api_calls_left >= number_calls_needed){
+#   matches_happened_today <- get_new_match_information_API()
+# }
+
 
 # 3.2 recall the fixture information from the data base
-all_leagues_matches_today <- tbl(con, "all_leagues_matches") %>%
-  filter(status_long == "Match Finished",
-         fixture_date == Sys.Date())
+# all_leagues_matches_today <- tbl(con, "all_leagues_matches") %>%
+#   filter(status_long == "Match Finished",
+#          fixture_date == Sys.Date())
 
 # 3.2 fixture stats
 # all_leagues_matches_today
-# get_new_match_stats_API -> rewrite function such that it takes fixture ids
-# (from all_leagues_matches_today$fixture_id as input)
+# # api_calls_left <- get_api_calls_left()
+# number_calls_needed <- compute_necessary_calls(number_matches_today = nrow(all_leagues_matches_today),
+                                               # endpoint = "fixture_stats")
+# if(api_calls_left >= number_calls_needed){
+#   fixture_stats_today <- get_new_match_stats_API()
+# }
 
-# table in data base which contains all matches that we did not had the calls
-# to get the data for
-# check mit get_api_calls_left()
 
 # 3.3 player stats
 # all_leagues_matches_today
-# get_new_match_stats_API -> rewrite function such that it takes fixture ids
-# (from all_leagues_matches_today$fixture_id as input)
-
-# check mit get_api_calls_left()
+# # api_calls_left <- get_api_calls_left()
+# number_calls_needed <- compute_necessary_calls(number_matches_today = nrow(all_leagues_matches_today),
+# endpoint = "player_stats")
+# if(api_calls_left >= number_calls_needed){
+#   fixture_stats_today <- get_new_match_stats_API()
+# }
 
 
 

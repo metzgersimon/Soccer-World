@@ -123,7 +123,7 @@ get_team_stats_in_league_by_season <- function(league_id, team_id, season, match
   # take only those match_dates that are in the past because otherwise there is no
   # data available
   match_dates <- ymd(match_dates)
-  match_dates <- match_dates[match_dates < Sys.Date()]
+  match_dates <- match_dates[match_dates <= Sys.Date()]
   
   # set the endpoint of the API
   endpoint <- "https://v3.football.api-sports.io/teams/statistics"
@@ -159,7 +159,11 @@ get_team_stats_in_league_by_season <- function(league_id, team_id, season, match
                league_name = as.character(league_name),
                league_country = as.character(league_country),
                league_logo = as.character(league_logo),
-               league_flag = as.character(league_flag))
+               league_flag = as.character(league_flag)) %>%
+        # for the bundesliga we have to remap the name
+        mutate(league_name = ifelse(league_name == "Bundesliga 1",
+                                    "Bundesliga",
+                                    league_name))
         
       
       # extract the team information by using the helper function
@@ -237,15 +241,20 @@ get_team_stats_in_league_by_season <- function(league_id, team_id, season, match
         mutate(across(contains("percentage"), ~ str_remove(.x, "%"))) %>%
         mutate(across(.cols = everything(), as.numeric))
         
-      
+      # add a variable for the matchday
       matchday_frame <- data.frame("matchday" = fixtures_info$fixtures_played_total)
       
+      # bind together all the columns into one big data frame
       team_stats_complete <- bind_cols(league_info, matchday_frame, team_info, 
                                       fixtures_info, form_info, goal_info,
                                       penalty_info, biggest_info, clean_sheet_info, 
                                       failed_to_score_info, cards_info)
       
+      # lastly map the club names
+      team_stats_complete$team_name <- sapply(team_stats_complete$team_name,
+                                              club_name_mapping)
 
+      # bind the data of the current date to the overall team stats
       all_season_team_stats <- bind_rows(all_season_team_stats,
                                          team_stats_complete)
       
@@ -301,7 +310,10 @@ get_team_stats_in_league_by_season <- function(league_id, team_id, season, match
     select(contains("league"), matchday, contains("team"),
            contains("fixtures"), current_form, contains("goals"),
            contains("penalty"), contains("biggest"), contains("clean"),
-           contains("failed"), contains("cards"))
+           contains("failed"), contains("cards")) %>%
+    # if available we want to drop the cards total columns
+    select(-any_of(c("cards_yellow_total", "cards_yellow_percentage", 
+                     "cards_red_total", "cards_red_percentage")))
 
   # return the list containing statistics about the given team
   # in the league for the given season
@@ -726,6 +738,20 @@ get_fixture_stats <- function(fixture_id){
     fixture_stats <- fixture_stats %>%
       select(fixture_id, team_id, team_name, team_logo,
              everything())
+    
+    # map the fixture information to the data
+    matches_information <- all_leagues_matches %>%
+      select(league_id, season = league_season, matchday = league_round,
+             fixture_date, fixture_time, fixture_id, fulltime_score_home,
+             fulltime_score_away)
+    
+    # join the both data sets to also get the season and league information
+    fixture_stats <- matches_information %>%
+      inner_join(fixture_stats,
+                 by = c("fixture_id")) %>%
+      # reorder the data frame
+      select(league_id, season, matchday, fixture_date, fixture_time, fixture_id,
+             team_id:passing_accuracy, fulltime_score_home, fulltime_score_away)
     
     # if the request was not successful print an error 
   } else {
@@ -1161,7 +1187,24 @@ get_player_stats_fixture <- function(fixture_id){
                                                          pattern = "%"))) %>%
           data.frame() %>%
           # add the player data as new columns at the beginning of the data frame
-          cbind(player_info, .) %>%
+          cbind(player_info, .)
+        
+        # check if there is a variable offsides_1
+        if("offsides_1" %in% colnames(current_player_compl)){
+          current_player_compl <- current_player_compl %>%
+            mutate(offsides = offsides_1) %>%
+            select(-offsides_1)
+        }
+        
+        if("tackles_interceptions" %in% colnames(current_player_compl)){
+          current_player_compl <- current_player_compl %>%
+            mutate(tackles_interception = tackles_interceptions,
+                   tackles_interception = replace_na(tackles_interception,
+                                                     0)) %>%
+            select(-tackles_interceptions)
+        }
+        
+        current_player_compl <- current_player_compl %>%
           # reorder the whole data frame
           select(contains("team"), contains("player"), contains("games"), 
                  contains("goals"), contains("shots"), contains("offsides"),
@@ -1190,12 +1233,16 @@ get_player_stats_fixture <- function(fixture_id){
       
     }
     
+    # add the fixture id to the player stats
+    players_all$fixture_id <- fixture_id
     
-    # do some final transformations such as reordering variables
-    # players_all <- players_all %>%
-    #   select(contains("league"), fixture_date, fixture_time, 
-    #          fixture_id, venue_name, venue_city, venue_id, referee, everything()) %>%
-    #   arrange(league_id, league_season, league_round, fixture_date, fixture_time)
+    # join the both data sets to also get the season and league information
+    players_all <- all_leagues_matches %>%
+      inner_join(players_all,
+                 by = c("fixture_id")) %>%
+      # drop the points
+      select(-c(home_points, away_points))
+    
     
     # if the request was not successful print an error 
   } else {
