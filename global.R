@@ -36,6 +36,10 @@ all_leagues_tm_squads <- tbl(con, "all_leagues_tm_squads") %>% data.frame()
 all_leagues_market_values_over_time<- tbl(con, "all_leagues_market_values_over_time") %>%
   data.frame()
 all_infos_club <- inner_join(all_leagues_tm_squads, unique(all_leagues_matches[,c(2,3,19)]), by=c("club"="club_name_home", "league"="league_name"))
+all_leagues_club_stats<- tbl(con, "all_leagues_club_stats") %>%
+  data.frame()
+all_leagues_team_transfers<- tbl(con, "all_leagues_team_transfers") %>%
+  data.frame()
 
 ### load player tab data
 # all_fixture_stats <- tbl(con, "all_fixture_stats") %>% data.frame()
