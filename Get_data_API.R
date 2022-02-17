@@ -1,5 +1,6 @@
 ########## get newest match information ############
-get_new_match_information_API <- function(){
+get_new_match_information_API <- function(con){
+  all_leagues_matches <- tbl(con, "all_leagues_matches") %>% data.frame()
   # extract the max available match days for each league
   max_matchdays <- all_leagues_matches %>%
     # filter in the current season and the past matches
@@ -65,26 +66,107 @@ get_new_match_information_API <- function(){
 
 
 
+###### daily morning call to get the todays matches ######
+#### get_new_match_information_daily ####
+get_new_match_information_daily <- function(league_ids = c(78, 79, 39, 61), season){
+  all_leagues_matches_today <- NULL
+  # iterate over all leagues
+  for(i in 1:length(league_ids)){
+    # get the matches of the current league in the current season
+    curr_league_matches <- get_fixtures_in_league_by_season(league_ids[i],
+                                                            season) %>%
+      # filter for only those matches that happen today
+      filter(fixture_date == Sys.Date(),
+             # and only those matches that do not have status "Match Cancelled"
+             # or "Match Postponed")
+             !(status_long %in% c("Match Cancelled", "Match Postponed")))
+    
+    
+    all_leagues_matches_today <- bind_rows(all_leagues_matches_today,
+                                           curr_league_matches)
+    
+    
+    
+  }
+  return(all_leagues_matches_today)
+}
+
+
+
+
+# function should determine the timestamps we need to get the lineups
+# for the matches today
+get_times_for_lineup_scraping <- function(all_leagues_matches_today){
+  # we need the time and the match id
+  matches_with_times <- all_leagues_matches_today %>%
+    # create a posixct date
+    mutate(fixture_POSIXct = as.POSIXct(paste0(fixture_date, " ", fixture_time))) %>%
+    select(fixture_POSIXct, fixture_id) %>%
+    # group by the fixture time
+    group_by(fixture_POSIXct) %>%
+    # add another variable which indicates when we need to get the lineups
+    # 30 minutes before the match
+    mutate(lineup_time_1 = fixture_POSIXct - minutes(30)) %>%
+    # transform the lineup into a format we can work with for the cronjob,
+    # e.g. "minute hour day month *" ("45 20 06 02 *")
+    mutate(lineup_time1_cronjob = paste0(minute(lineup_time_1),
+                                         " ",
+                                         hour(lineup_time_1),
+                                         " ",
+                                         day(lineup_time_1),
+                                         " ",
+                                         month(lineup_time_1),
+                                         " *"))
+  
+  return(matches_with_times)
+}
+
+
+
 ########## get newest fixture stats ############
-get_new_match_stats_API <- function(){
+get_new_match_stats_API <- function(con, date = NULL){
   # extract all past stats from the all_leagues_fixture_stats frame
-  past_matches_stats <- all_leagues_fixture_stats %>%
-    filter(season == max(season),
-           fixture_date <= Sys.Date()) %>%
-    # extract all fixture ids
-    select(fixture_id) %>% 
-    pull() %>%
-    unique()
+  past_matches_stats <- tbl(con, "all_leagues_fixture_stats") %>%
+    data.frame()
   
-  # now get all matches that are already finished but not yet
-  # in the data set
-  all_not_contained_matches <- all_leagues_matches %>%
-    filter(league_season == max(league_season),
-           fixture_date <= Sys.Date(),
-           status_long == "Match Finished",
-           !fixture_id %in% past_matches_stats)
-  
-  
+  # if there is no date given we just want to get all past stats
+  if(is.null(date)){
+    past_matches_stats <- past_matches_stats %>%
+      filter(season == max(season),
+             fixture_date <= Sys.Date()) %>%
+      # extract all fixture ids
+      select(fixture_id) %>% 
+      pull() %>%
+      unique()
+    
+    # now get all matches that are already finished but not yet
+    # in the data set
+    all_not_contained_matches <- tbl(con, "all_leagues_matches") %>%
+      data.frame() %>%
+      filter(league_season == max(league_season),
+             fixture_date <= Sys.Date(),
+             status_long == "Match Finished",
+             !fixture_id %in% past_matches_stats)
+  } else {
+    # otherwise we just want to get the data for the given date
+    past_matches_stats <- past_matches_stats %>%
+      filter(season == max(season),
+             fixture_date == ymd(date)) %>%
+      # extract all fixture ids
+      select(fixture_id) %>% 
+      pull() %>%
+      unique()
+    
+    # now get all matches that are already finished but not yet
+    # in the data set
+    all_not_contained_matches <- tbl(con, "all_leagues_matches") %>%
+      data.frame() %>%
+      filter(league_season == max(league_season),
+             fixture_date == ymd(date),
+             status_long == "Match Finished",
+             !fixture_id %in% past_matches_stats)
+  }
+    
   # create a variable to store the newly extracted fixture stats
   all_leagues_fixture_stats_new <- NULL
   
@@ -110,23 +192,50 @@ get_new_match_stats_API <- function(){
 
 
 ########## get newest player stats ############
-get_new_player_stats_API <- function(){
+get_new_player_stats_API <- function(con, date = NULL){
+  
   # extract all past stats from the all_leagues_player_stats frame
-  past_matches_player_stats <- all_leagues_player_stats %>%
-    filter(league_season == max(league_season),
+  past_matches_player_stats <- tbl(con, "all_leagues_player_stats") %>%
+    data.frame()
+  
+  # if there is no date given we just want to get all past stats
+  if(is.null(date)){
+    past_matches_player_stats <- past_matches_player_stats %>%
+      filter(league_season == max(league_season),
            fixture_date <= Sys.Date()) %>%
+    data.frame() %>%
     # extract all fixture ids
     select(fixture_id) %>% 
     pull() %>%
     unique()
   
-  # now get all matches that are already finished but not yet
-  # in the data set
-  all_not_contained_matches <- all_leagues_matches %>%
-    filter(league_season == max(league_season),
-           fixture_date <= Sys.Date(),
-           status_long == "Match Finished",
-           !fixture_id %in% past_matches_player_stats)
+    # now get all matches that are already finished but not yet
+    # in the data set
+    all_not_contained_matches <- tbl(con, "all_leagues_matches") %>%
+      filter(league_season == max(league_season),
+             fixture_date <= Sys.Date(),
+             status_long == "Match Finished",
+             !fixture_id %in% past_matches_player_stats)
+  
+  } else {
+    # otherwise we just want to get the data for the given date
+    past_matches_player_stats <- past_matches_player_stats %>%
+      filter(league_season == max(league_season),
+             fixture_date == ymd(date)) %>%
+      data.frame() %>%
+      # extract all fixture ids
+      select(fixture_id) %>% 
+      pull() %>%
+      unique()
+    
+    # now get all matches that are already finished but not yet
+    # in the data set
+    all_not_contained_matches <- tbl(con, "all_leagues_matches") %>%
+      filter(league_season == max(league_season),
+             fixture_date == ymd(date),
+             status_long == "Match Finished",
+             !fixture_id %in% past_matches_player_stats)
+  }
   
   # create a variable to store the newly extracted fixture stats
   all_leagues_player_stats_new <- NULL
@@ -153,7 +262,9 @@ get_new_player_stats_API <- function(){
 
 
 ########## get newest team stats ############
-get_new_club_stats_API <- function(){
+get_new_club_stats_API <- function(con){
+  all_leagues_club_stats <- tbl(con, "all_leagues_club_stats") %>% data.frame()
+  all_leagues_matches <- tbl(con, "all_leagues_matches") %>% data.frame()
   # extract the max available match days for each league and team
   max_matchdays <- all_leagues_club_stats %>%
     filter(league_season == max(league_season)) %>%
@@ -204,7 +315,9 @@ get_new_club_stats_API <- function(){
 
 
 ########## get newest fixture events ############
-get_new_fixture_events_API <- function(){
+get_new_fixture_events_API <- function(con){
+  all_leagues_fixture_events <- tbl(con, "all_leagues_fixture_events") %>% data.frame()
+  all_leagues_matches <- tbl(con, "all_leagues_matches") %>% data.frame()
   
   # extract all past stats from the all_leagues_fixture_events frame
   past_matches_events <- all_leagues_fixture_events %>%
