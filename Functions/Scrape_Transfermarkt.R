@@ -447,7 +447,7 @@ get_squads_by_season <- function(league, league_id, season){
              league_name = str_to_title(league),
              season_year = season) %>%
       # map the league names
-      mutate(league_name = ifelse(league_name == ""))
+      mutate(league_name = league) %>%
       # reorder (and rename) the variables
       select(league = league_name, season = season_year,
              club, player_name, player_number, player_position,
