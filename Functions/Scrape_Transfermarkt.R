@@ -523,9 +523,9 @@ get_lineups_by_season_tm <- function(league, league_id, season, matchday = NULL)
   port <- randomPort()
   
   # create a driver from Rselenium without a browser windows
-  rD <- rsDriver(browser = "firefox", extraCapabilities = list(
-    "moz:firefoxOptions" = list(
-      args = list('--headless'))),
+  rD <- rsDriver(browser = "firefox",# extraCapabilities = list(
+   # "moz:firefoxOptions" = list(
+    #  args = list('--headless'))),
     port = port)
   
   # get the client
@@ -817,19 +817,35 @@ get_lineups_by_season_tm <- function(league, league_id, season, matchday = NULL)
                                   //table[@class='items']/tbody/tr/td[3]/img[1]")) %>%
           html_attr("alt")
         
-        # extract the rating (only available for the Bundesliga)
-        rating <- page_html %>%
+        # extract the rating home (only available for the Bundesliga)
+        rating_home <- page_html %>%
           html_nodes(xpath = paste0("//div[@class='row sb-formation'][1]",
-                                    "//div[@class='large-6 columns']",
+                                    "//div[@class='large-6 columns'][1]",
                                     "//table[@class='items']/tbody/tr/td[4]/span")) %>%
           html_text(trim = TRUE)
         
-        # because this rating is only available for the bundesliga
-        # otherwise we have to set this to NA
-        if(length(rating) == 0){
-          rating <- rep(NA, length(nationality)) %>%
-            as.numeric()
+        # and the rating away
+        rating_away <- page_html %>%
+          html_nodes(xpath = paste0("//div[@class='row sb-formation'][1]",
+                                    "//div[@class='large-6 columns'][2]",
+                                    "//table[@class='items']/tbody/tr/td[4]/span")) %>%
+          html_text(trim = TRUE)
+        
+        # for other leagues then the bundesliga there is often no rating available
+        # also, if there is a rating for the leagues it happens that only one team
+        # gets rated so we have to deal with that case and fill all missing values
+        # with NAs
+        while(length(rating_home) < 11){
+          rating_home <- c(rating_home, NA)
         }
+        
+        # iterate over the rating away
+        while(length(rating_away) < 11){
+          rating_away <- c(rating_away, NA)
+        }
+        
+        # bind the rating together
+        rating <- c(rating_home, rating_away)
         
         # extract the nodes for the position and market value
         pos_and_market_value <- page_html %>%
@@ -848,9 +864,15 @@ get_lineups_by_season_tm <- function(league, league_id, season, matchday = NULL)
           unlist() %>%
           # and again take only the numbers with the
           # m (millions) or k (thousand)
-          str_extract(., pattern = "[0-9]+.*") %>%
+          str_extract(., pattern = "[0-9]+.*| -") %>%
           # drop NAs
           .[!is.na(.)]
+        
+        # iterate over the market values and transform the "-" to NAs
+        for(value in 1:length(market_value)){
+          market_value <- ifelse(market_value == " -",
+                                 NA, market_value)
+        }
         
         # extract the transfer status of the players
         transfer_status <- page_html %>%
@@ -1003,9 +1025,16 @@ get_lineups_by_season_tm <- function(league, league_id, season, matchday = NULL)
           market_value <- pos_and_market_value %>%
             unlist() %>%
             # get only the number and the ending (bn, m, Th.)
-            str_extract(., pattern = "[0-9]+.*") %>%
+            str_extract(., pattern = "[0-9]+.*| -") %>%
             # drop NAs
             .[!is.na(.)]
+          
+          # iterate over the market values and transform the "-" to NAs
+          for(value in 1:length(market_value)){
+            market_value <- ifelse(market_value == " -",
+                                   NA, market_value)
+          }
+          
           
           # get the transfer status
           transfer_status <- page_html %>%
