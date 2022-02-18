@@ -17,7 +17,7 @@ current <- timeslots %>%
               filter(fixture_POSIXct == min(timeslots$fixture_POSIXct))
 
 # remove selected timeslots from table and save it 
-timeslots <- anti_join(timeslots, current)
+timeslots <- anti_join(timeslots, current, by =  "fixture_id")
 dbRemoveTable(con, "timeslots")
 dbWriteTable(con, "timeslots", timeslots, overwrite = TRUE)
 
