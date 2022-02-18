@@ -141,31 +141,26 @@ get_past_odds_ts <-
     
     # this snippet finds the relevant bookies on the matchpage
     b <- remDr$findElements(using = 'class', 'name')
-    bookies = list()
+    bookmaker <- NULL
+    
     r <- 1
     while(TRUE) {
       
       check <- b[[r]]$getElementText()[[1]]
       
-      if (check == more)
-      {
-        break()
-      }
-      
-      else if (check == "Bookmakers") 
-      {
-        r = r +1
-        next()
-      }
-      else 
-      {
-        bookies <- append(bookies, check)
-        r = r + 1 
+      if(check == "Pinnacle"){
+        bookmaker <- check
+        break
+      } else {
+        r <- r + 1
+        next
       }
     }
     
+  }
+    
     # this is the final vector containing the bookmakers
-    bookies <- unlist(bookies, use.names = FALSE)
+    # bookies <- unlist(bookies, use.names = FALSE)
     
 #===============================================================================
     # the next part concerns the context menus with timestamps and odds
@@ -178,7 +173,10 @@ get_past_odds_ts <-
                                           "//td[contains(@class, 'right odds')]"))
     nele <- list()
     
-    for (i in 1:length(elements)) {
+    # get the row with the pinnacle bookmaker
+    pinnacle_row <- c((((r - 1) * 3) + 1):(((r - 1) * 3) + 3))
+    
+    for (i in pinnacle_row[1]:pinnacle_row[3]) {
       
       element <- elements[i]
       # hover over each element
@@ -197,51 +195,97 @@ get_past_odds_ts <-
 #===============================================================================
   # next: extract the odds from the nele list 
     
-    otc <- c("1", "x", "2" )
+    otc <- c("1", "x", "2")
     
     print(length(nele))
     subs <- data.frame()
     
+    # create a data frame with the info that is currently available
+    match_odds_frame <- data.frame(opponents, beginning, bookmaker)
+    
+    # iterate over all odds for the pinnacle bookmaker
     for (t in 1:(length(nele))) {
       
       oddslist <- strsplit(nele[[t]], split = "<.*?>")
-      od <- length(oddslist[[1]]) / 6
+      # extract the odds of the hoverinfo and unlist them
+      oddslist_elements <- oddslist[[1]] %>%
+        .[. != ""] %>%
+        trimws() %>%
+        .[. != ""]
       
+      # take only the first (last odds before the match) and the opening odds
+      important_odds <- oddslist_elements %>%
+        .[c(1:2, (length(.) - 1): length(.))] %>%
+        unique()
+
+      
+      # assign the type of odds (1 means home team, 2 means draw,..)
       outcome <- otc[(1+(t-1)%%3)]
-      bookmaker <- bookies[1+(t-1)%/%3]
+      bookmaker <- bookies
       
       if (is.na(bookmaker)) break
       
-      if (length(oddslist[[1]]) == 4) {
-        date <- c(oddslist[[1]][2], "gamestart")
-        odds <- c(oddslist[[1]][3], oddslist[[1]][3])
-        status <- c(oddslist[[1]][1], "Closing odds")
-        subs <- rbind(subs, data.frame(opponents, beginning, bookmaker,
-                                       status, date, odds, outcome))
+      # check if there is not only one odd for closing and opening available
+      if (length(important_odds) %% 2 == 0) {
+        date_end <- important_odds[1]
+        odd_end <- important_odds[2]
+        date_start <- important_odds[3]
+        odd_start <- important_odds[4]
+        
+        if(t == 1){
+          colnames_curr <- c("home_win_date_start", "home_win_odd_start",
+                             "home_win_date_end", "home_win_odd_end")
+        } else if(t == 2){
+          colnames_curr <- c("draw_date_start", "draw_odd_start",
+                             "draw_date_end", "draw_odd_end")
+        } else {
+          colnames_curr <- c("away_win_date_start", "away_win_odd_start",
+                             "away_win_date_end", "away_win_odd_end")
+        }
+        
+        
+        # create a data frame for the current info (for the current outcome)
+        curr_frame <- data.frame(date_start, odd_start, date_end, odd_end)
+        
+        # set the colnames
+        colnames(curr_frame) <- colnames_curr
+        
+        # combine the data
+        match_odds_frame <- cbind(match_odds_frame, curr_frame)
       }
       
       else {
+        # extract the elements
+        date <- important_odds[2]
+        odd <- important_odds[3]
         
-        date <- c(oddslist[[1]][3 + ((od-1)*6)])
-        odds <- c(oddslist[[1]][4 + ((od-1)*6)])
-        status <- c(oddslist[[1]][2 + ((od-1)*6)])
-        
-        for ( ods in 1:(od-1)) {
-          
-          date <- append(date, oddslist[[1]][1 + (ods-1)*5])
-          odds <- append(odds, oddslist[[1]][2 + (ods-1)*5])
-          status <- append(status, "odds")
-          
+        if(t == 1){
+          colnames_curr <- c("home_win_date_start", "home_win_odd_start",
+                             "home_win_date_end", "home_win_odd_end")
+        } else if(t == 2){
+          colnames_curr <- c("draw_date_start", "draw_odd_start",
+                             "draw_date_end", "draw_odd_end")
+        } else {
+          colnames_curr <- c("away_win_date_start", "away_win_odd_start",
+                             "away_win_date_end", "away_win_odd_end")
         }
         
-        subs <- rbind(subs, data.frame(opponents, beginning, bookmaker,
-                                       status, date, odds, outcome))
+        
+        # create a data frame for the current info (for the current outcome)
+        curr_frame <- data.frame(date, odd, date, odd)
+
+        # set the colnames
+        colnames(curr_frame) <- colnames_curr
+        
+        # combine the data
+        match_odds_frame <- cbind(match_odds_frame, curr_frame)
         
       }
       
     }
     
-    ress <- rbind(ress, subs)
+    # bind the info from the current match to the overall results frame
+    ress <- rbind(ress, match_odds_frame)
     
   }
   
