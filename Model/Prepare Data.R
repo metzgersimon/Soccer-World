@@ -495,24 +495,34 @@ prepare_lineup_data <- function(match_id){
   
   # check if the current matchday is the first matchday of the season
   # If it is the first matchday, we want to impute the data somehow
-  
   if(unique(current_game_lineup$league_round) == 1){
     curr_lineups_tm <- all_leagues_lineups_tm %>%
       filter(season == unique(current_game_lineup$league_season) - 1)
+    
+    # search in the previous season lineup data from transfermarkt for the
+    # current teams (historical data)
+    curr_lineups_tm2 <- curr_lineups_tm %>%
+      filter(team %in% c(unique(current_game_lineup$club_name_home),
+                         unique(current_game_lineup$club_name_away)),
+             matchday >= unique(current_game_lineup$league_round)) %>%
+      # split the name by spaces
+      mutate(player_lastname2 = str_split(player_name, " "))
     # if it is not the first matchday, we get the current season
   } else {
     curr_lineups_tm <- all_leagues_lineups_tm %>%
       filter(season == unique(current_game_lineup$league_season))
+    
+    # search in the current season lineup data from transfermarkt for the
+    # current teams (historical data)
+    curr_lineups_tm2 <- curr_lineups_tm %>%
+      filter(team %in% c(unique(current_game_lineup$club_name_home),
+                         unique(current_game_lineup$club_name_away)),
+             matchday < unique(current_game_lineup$league_round)) %>%
+      # split the name by spaces
+      mutate(player_lastname2 = str_split(player_name, " "))
   }
   
-  # search in the current season lineup data from transfermarkt for the
-  # current teams (historical data)
-  curr_lineups_tm2 <- curr_lineups_tm %>%
-    filter(team %in% c(unique(current_game_lineup$club_name_home),
-                       unique(current_game_lineup$club_name_away)),
-           matchday < unique(current_game_lineup$league_round)) %>%
-    # split the name by spaces
-    mutate(player_lastname2 = str_split(player_name, " "))
+  
   
   # now get from the string split only the last element
   curr_lineups_tm2$player_lastname2 <- sapply(curr_lineups_tm2$player_lastname2,
@@ -570,19 +580,40 @@ prepare_lineup_data <- function(match_id){
     mutate(fixture_id = match_id)
   
   
-  # find the player match stats that are relevant for the current match
-  player_stats <- all_leagues_player_stats %>%
-    mutate(player_lastname = gsub("^.* ", "", player_name),
-           # map all special characters to plain ones
-           player_lastname_map = stri_trans_general(player_lastname, id = "Latin-ASCII")) %>%
-    filter(league_season == unique(current_game_lineup$league_season),
-           league_round < unique(current_game_lineup$league_round),
-           team_name %in% c(unique(current_game_lineup$club_name_home),
-                            unique(current_game_lineup$club_name_away))) %>%
-    # drop columns we do not need
-    select(-c(contains("league"), contains("fixture"), contains("venue"),
-              contains("status"), referee, contains("logo"),
-              contains("score"), contains("club")))
+  
+  # check if the current matchday is the first matchday of the season
+  # If it is the first matchday, we want to impute the data somehow
+  if(unique(current_game_lineup$league_round) == 1){
+    # find the player match stats that are relevant for the current match
+    player_stats <- all_leagues_player_stats %>%
+      mutate(player_lastname = gsub("^.* ", "", player_name),
+             # map all special characters to plain ones
+             player_lastname_map = stri_trans_general(player_lastname, id = "Latin-ASCII")) %>%
+      filter(league_season == unique(current_game_lineup$league_season) - 1,
+             league_round >= unique(current_game_lineup$league_round),
+             team_name %in% c(unique(current_game_lineup$club_name_home),
+                              unique(current_game_lineup$club_name_away))) %>%
+      # drop columns we do not need
+      select(-c(contains("league"), contains("fixture"), contains("venue"),
+                contains("status"), referee, contains("logo"),
+                contains("score"), contains("club")))
+  } else {
+    # find the player match stats that are relevant for the current match
+    player_stats <- all_leagues_player_stats %>%
+      mutate(player_lastname = gsub("^.* ", "", player_name),
+             # map all special characters to plain ones
+             player_lastname_map = stri_trans_general(player_lastname, id = "Latin-ASCII")) %>%
+      filter(league_season == unique(current_game_lineup$league_season),
+             league_round < unique(current_game_lineup$league_round),
+             team_name %in% c(unique(current_game_lineup$club_name_home),
+                              unique(current_game_lineup$club_name_away))) %>%
+      # drop columns we do not need
+      select(-c(contains("league"), contains("fixture"), contains("venue"),
+                contains("status"), referee, contains("logo"),
+                contains("score"), contains("club")))
+  }
+  
+  
   
   
   if(nrow(not_matched_players) == 0){
@@ -618,6 +649,8 @@ prepare_lineup_data <- function(match_id){
       inner_join(matched_lineups_transfers,
                  by = c("team_id", "games_position"))
     
+    # if a player is missing then we want to impute the values for this player
+    # based on the averages for this particular position and team
   } else {
     # filter in the player stats for only those players that are in the
     # matched players
@@ -705,7 +738,8 @@ prepare_lineup_data <- function(match_id){
     
   }
   
-  
+
+  # map the positions of the lineups
   matched_lineups_complete <- matched_lineups_complete %>%
     # rename the positions to get nice column names
     mutate(games_position = ifelse(games_position == "G",
@@ -718,7 +752,7 @@ prepare_lineup_data <- function(match_id){
                                                         "Att",
                                                         games_position)))))
   
-  
+  # map the positions of the lineups
   current_game_lineup <- current_game_lineup %>%
   # rename the positions to get nice column names
   mutate(player_pos = ifelse(player_pos == "G",
