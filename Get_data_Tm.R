@@ -57,7 +57,7 @@ all_leagues_squads_new <- all_leagues_tm_squads %>%
   # filter for only those that are in the past
   filter(date < Sys.Date())
 
-# if the all_leagues_market_values_new element is not null, i.e.,
+# if the all_leagues_squads_new element is not null, i.e.,
 # there was new data available, we write the new data (by appending it)
 # into the data base
 if(!is.null(all_leagues_squads_new)){
@@ -93,6 +93,94 @@ if(!is.null(all_leagues_squads_new)){
 #                overwrite = FALSE, append = TRUE)
 # }
 
+
+
+########## get the historical lineups ############
+max_season <- 2021
+
+# create the vectors for the function parameters
+leagues <- c("bundesliga", "2-bundesliga", "premier-league", "ligue-1")
+league_ids <- c("L1", "L2", "GB1", "FR1")
+
+# get the max matchday that is available for each league
+max_matchday <- all_leagues_lineups_tm %>%
+  filter(season == max_season) %>%
+  group_by(league) %>%
+  summarize(max_matchday = max(matchday))
+
+# count the number of teams that should play on each matchday for each league
+number_teams <- all_leagues_lineups_tm %>%
+  filter(season == max_season) %>%
+  group_by(league) %>%
+  summarize(number_matches = n_distinct(team))
+
+
+# create a variable to store leagues we need to scrape
+missing_leagues <- NULL
+
+# iterate over all matchdays in each league
+for(i in 1:nrow(max_matchday)){
+  # get the current league and matchday
+  curr_league <- max_matchday$league[i]
+  curr_matchday <- max_matchday$max_matchday[i]
+  
+  # compute the number of teams for the given matchday
+  teams_played <- all_leagues_lineups_tm %>%
+    filter(season == max_season,
+           league == curr_league,
+           matchday == curr_matchday) %>%
+    summarize(number_teams = n_distinct(team)) %>%
+    select(number_teams) %>%
+    pull()
+  
+  # check if the the number of teams that played on the given matchday
+  # matches with the number of matches
+  if(number_teams$number_matches[i] > teams_played){
+    # if there are teams not in the lineups table we store the league
+    # and the matchday in the missing_leagues frame
+    curr_info <- data.frame("league" = curr_league, "matchday" = curr_matchday)
+    missing_leagues <- bind_rows(missing_leagues, curr_info)
+  }
+}
+
+
+# create a variable to store the new lineups
+all_leagues_lineups_tm_new <- NULL
+
+# now iterate over those leagues and matchdays where there are not extracted
+# games
+for(i in 1:nrow(missing_leagues)){
+  # get the current league and matchday
+  curr_league <- max_matchday$league[i]
+  curr_matchday <- max_matchday$max_matchday[i]
+  
+  # map the league name to the league ids
+  league_id <- ifelse(curr_league == "Bundesliga",
+                      "L1", ifelse(curr_league == "Bundesliga 2",
+                                   "L2", ifelse(curr_league == "Premier League",
+                                                "GB1", ifelse(curr_league == "Ligue 1",
+                                                              "FR1", NA))))
+  
+  # extract the lineups for the current league and matchday
+  curr_lineups <- get_lineups_by_season_tm(curr_league, league_id,
+                                           season = max_season, matchday = curr_matchday)
+  
+  all_leagues_lineups_tm_new <- bind_rows(all_leagues_lineups_tm_new,
+                                          curr_lineups)
+}
+
+# if the all_leagues_lineups_tm_new element is not null, i.e.,
+# there was new data available, we write the new data (by appending it)
+# into the data base
+if(!is.null(all_leagues_lineups_tm_new)){
+  
+  dbWriteTable(con, "all_leagues_lineups_tm", 
+               all_leagues_lineups_tm_new,
+               overwrite = FALSE, append = TRUE)
+}
+
+
+  
 
 
 
