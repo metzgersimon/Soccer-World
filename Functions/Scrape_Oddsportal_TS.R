@@ -36,10 +36,10 @@ get_past_odds_ts <-
   
   # we initialize a driver for the chrome browser with dynamic version
   rD <-
-    rsDriver(browser = "firefox",  extraCapabilities = list(
-      "moz:firefoxOptions" = list(
-        args = list('--headless'))),
-      port = port)
+    rsDriver(browser = "firefox",  port)#extraCapabilities = list(
+      # "moz:firefoxOptions" = list(
+        # args = list('--headless'))),
+      # port = port)
   
   remDr <- rD$client
   
@@ -124,12 +124,12 @@ get_past_odds_ts <-
   
   ex <-  unlist(final, use.names = FALSE)
   
-  for (ll in ex) {
+  for(j in 1:length(ex)){ #(ll in ex) {
     
     # navigate to matchup page
-    print(paste("https://www.oddsportal.com", ll, sep = ''))
+    print(paste("https://www.oddsportal.com", ex[j], sep = ''))
     Sys.sleep(1)
-    remDr$navigate(paste("https://www.oddsportal.com", ll, sep = ''))
+    remDr$navigate(paste("https://www.oddsportal.com", ex[j], sep = ''))
     
     # extract opponents and datetime of beginning
     beginning <- unlist(remDr$findElement(using='xpath','//*[@id="col-content"]/p[1]')$getElementText(), use.names = FALSE)
@@ -171,7 +171,11 @@ get_past_odds_ts <-
     # the next part concerns the context menus with timestamps and odds
     
     # find all the odds elements
-    elements <- remDr$findElements(using = "class", "right")
+    # elements <- remDr$findElements(using = "class", "right odds")
+    elements <- remDr$findElements(using = "xpath", 
+                                   paste0("//div[@id='odds-data-table']//",
+                                   "div[@class='table-container']//table[@class='table-main detail-odds sortable'][1]",
+                                          "//td[contains(@class, 'right odds')]"))
     nele <- list()
     
     for (i in 1:length(elements)) {
@@ -201,7 +205,7 @@ get_past_odds_ts <-
     for (t in 1:(length(nele))) {
       
       oddslist <- strsplit(nele[[t]], split = "<.*?>")
-      od <- length(oddslist[[1]]) / 5
+      od <- length(oddslist[[1]]) / 6
       
       outcome <- otc[(1+(t-1)%%3)]
       bookmaker <- bookies[1+(t-1)%/%3]
@@ -218,9 +222,9 @@ get_past_odds_ts <-
       
       else {
         
-        date <- c(oddslist[[1]][3 + ((od-1)*5)])
-        odds <- c(oddslist[[1]][4 + ((od-1)*5)])
-        status <- c(oddslist[[1]][2 + ((od-1)*5)])
+        date <- c(oddslist[[1]][3 + ((od-1)*6)])
+        odds <- c(oddslist[[1]][4 + ((od-1)*6)])
+        status <- c(oddslist[[1]][2 + ((od-1)*6)])
         
         for ( ods in 1:(od-1)) {
           
