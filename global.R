@@ -30,7 +30,7 @@ all_leagues_spi_538_available_matches <- tbl(con, "all_leagues_spi_538") %>%
 
 
 ### load team tab data
-all_leagues_tm_squads <- tbl(con, "all_leagues_tm_squads") %>% data.frame()
+# all_leagues_squads_tm <- tbl(con, "all_leagues_squads_tm") %>% data.frame()
 all_leagues_market_values_over_time <- tbl(con, "all_leagues_market_values_over_time") %>%
   data.frame()
 all_infos_club <- inner_join(all_leagues_tm_squads, unique(all_leagues_matches[,c(2,3,19)]), 
@@ -45,9 +45,13 @@ all_leagues_team_transfers <- tbl(con, "all_leagues_team_transfers") %>%
 # all_fixture_stats <- tbl(con, "all_fixture_stats") %>% data.frame()
 all_leagues_player_stats <- tbl(con, "all_leagues_player_stats") %>% data.frame()
 
-# all_leagues_fixture_stats <- all_fixture_stats %>% left_join(all_leagues_matches, by = c("fixture_id"="fixture_id","league_id"="league_id"))
+all_leagues_fixture_lineups <- tbl(con, "all_leagues_lineups") %>% data.frame()
+all_leagues_lineups_tm <- tbl(con, "all_leagues_lineups_tm") %>% data.frame()
 all_leagues_lineups <- tbl(con, "all_leagues_lineups") %>% data.frame()
 all_leagues_fixture_stats <- tbl(con, "all_leagues_fixture_stats") %>% data.frame()
+
+all_leagues_fifa_team_stats <- tbl(con, "all_leagues_fifa_team_stats") %>% data.frame()
+all_leagues_fifa_squads <- tbl(con, "all_leagues_fifa_squads") %>% data.frame()
 
 ### load home tab data
 all_leagues_venue_information <- tbl(con, "all_leagues_venue_information") %>% data.frame()
