@@ -19,7 +19,8 @@ current <- timeslots %>%
 
 # remove selected timeslots from table and save it 
 timeslots <- anti_join(timeslots, current)
-save(timeslots, file = "./Scheduled/timeslots.RData")
+dbRemoveTable(con, "timeslots")
+dbWriteTable(con, "timeslots", timeslots, overwrite = TRUE)
 
 # receive data for selected ids
 new_lineups <- data.frame()
