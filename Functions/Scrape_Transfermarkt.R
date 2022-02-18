@@ -470,9 +470,11 @@ get_squads_by_season <- function(league, league_id, season){
     # bind all together into the earlier created variable
     # by bind_rows (more flexible than rbind)
     all_squads_in_season <- bind_rows(all_squads_in_season,
-                                      curr_squad_information)
+                                      curr_squad_information) 
     
- 
+    # add date of extraction
+    all_squads_in_season <- all_squads_in_season %>%
+      mutate(extraction_date = Sys.Date())
     
     Sys.sleep(5)
   }
