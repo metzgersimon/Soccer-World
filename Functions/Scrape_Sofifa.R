@@ -243,7 +243,7 @@ get_squads_fifa_all_leagues <- function(leagues, fifa_version, date){
     
     # append the curr league squads to the overall data frame
     all_leagues_squads <- bind_rows(all_leagues_squads,
-                                        curr_league_stats)
+                                    curr_league_squads)
     
     Sys.sleep(30)
   }

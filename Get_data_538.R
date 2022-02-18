@@ -4,25 +4,20 @@ all_leagues_spi_538_matches <-
   read.csv("https://projects.fivethirtyeight.com/soccer-api/club/spi_matches.csv",
            encoding = "UTF-8") %>%
   # filter for only those leagues that are important to us
-  filter(league %in% c("Barclays Premier League", "Italy Serie A",
-                       "Spanish Primera Division", "French Ligue 1",
+  filter(league %in% c("Barclays Premier League", "French Ligue 1",
                        "German Bundesliga", "German 2. Bundesliga")) %>%
   # drop the league id because we do not need it
   select(-league_id) %>%
   # rename the leagues to names we can work with
   mutate(league = ifelse(league == "Barclays Premier League",
                          "Premier League",
-                         ifelse(league == "Italy Serie A",
-                                "Serie A",
-                                ifelse(league == "Spanish Primera Division",
-                                       "La Liga",
-                                       ifelse(league == "French Ligue 1",
-                                              "Ligue 1",
-                                              ifelse(league == "German Bundesliga",
-                                                     "Bundesliga",
-                                                     ifelse(league == "German 2. Bundesliga",
-                                                            "Bundesliga 2",
-                                                            league)))))),
+                               ifelse(league == "French Ligue 1",
+                                      "Ligue 1",
+                                      ifelse(league == "German Bundesliga",
+                                             "Bundesliga",
+                                             ifelse(league == "German 2. Bundesliga",
+                                                    "Bundesliga 2",
+                                                    league)))),
          # convert the date variable into an actual date
          date = ymd(date)) %>%
   # filter for only those matches that are in the past
