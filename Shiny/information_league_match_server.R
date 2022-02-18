@@ -4,10 +4,12 @@ information_league_match_server <- function(input, output, session){
   #all_leagues_fixture_stats <- all_fixture_stats %>% left_join(all_leagues_matches, by = c("fixture_id"="fixture_id","league_id"="league_id"))
   
   observeEvent(input$info_match_league, {
+    # map the selected league name to the league id
+    league_ID <- API_map_league_to_id(input$info_match_league)
     updateSelectInput(session, 
                       inputId = "info_match_season",
                       choices = c(unique(all_leagues_fixture_stats %>%
-                                           filter(league_name== input$info_match_league
+                                           filter(league_id == league_ID
                                            ) %>%
                                            select(season) %>%
                                            unlist() %>%
@@ -19,16 +21,18 @@ information_league_match_server <- function(input, output, session){
   # create an observer to display for the season selection (home team) to display
   # only those clubs that are present for the selected leagues
   observeEvent(input$info_match_season, {
+    # map the selected league name to the league id
+    league_ID <- API_map_league_to_id(input$info_match_league)
     updateSelectInput(session, 
                       inputId = "info_match_team1",
                       choices = c(unique(all_leagues_fixture_stats %>%
-                                           filter(league_name== input$info_match_league &
+                                           filter(league_id == league_ID &
                                                     season == 
                                                     as.numeric(
                                                       str_split(input$info_match_season,
                                                                 pattern = "/")[[1]][1])
                                            ) %>%
-                                           select(club_name_home) %>%
+                                           select(team_name) %>%
                                            unlist() %>%
                                            unname()
                                   )
@@ -36,16 +40,18 @@ information_league_match_server <- function(input, output, session){
     )
   })
   observeEvent(input$info_match_season, {
+    # map the selected league name to the league id
+    league_ID <- API_map_league_to_id(input$info_match_league)
     updateSelectInput(session, 
                       inputId = "info_match_team2",
                       choices = c(unique(all_leagues_fixture_stats %>%
-                                           filter(league_name== input$info_match_league &
+                                           filter(league_id == league_ID &
                                                     season == 
                                                     as.numeric(
                                                       str_split(input$info_match_season,
                                                                 pattern = "/")[[1]][1])
                                            ) %>%
-                                           select(club_name_home) %>%
+                                           select(team_name) %>%
                                            unlist() %>%
                                            unname()
                                   )
@@ -63,7 +69,7 @@ information_league_match_server <- function(input, output, session){
     req(input$info_match_team1)
     req(input$info_match_team2)
     
-    # season <- 2021
+    # season_n <- 2021
     # team1 <- "Borussia Monchengladbach"
     # team2 <- "FC Bayern Munich"
     # season_half_selection <- "First half"
@@ -71,46 +77,63 @@ information_league_match_server <- function(input, output, session){
     # get the inputs in a proper format
     season_half_selection <- input$info_match_season_half
     
+    # map the league name to the league id
+    league_ID <- #API_map_league_to_id("Bundesliga")#input$info_match_league)
+      API_map_league_to_id(input$info_match_league)
+      
+    # # get the fixture id of the selected match
+    # fixture_ID <- all_leagues_matches %>%
+    #   filter(league_id == league_ID,
+    #          league_season == 2021,
+    #          # take only those rows where the clubs match
+    #          club_name_home %in% c(team1,
+    #                                team2),
+    #          club_name_away %in% c(team1,
+    #                                team2)) 
+    
+    # extract the information for the possible fixture ids
+    fixture_ID <- all_leagues_matches %>%
+      filter(league_id == league_ID,
+             league_season == as.numeric(str_split(input$info_match_season,
+                                                   pattern = "/")[[1]][1]),
+             # take only those rows where the clubs match
+             club_name_home %in% c(input$info_match_team1,
+                                   input$info_match_team2),
+             club_name_away %in% c(input$info_match_team1,
+                                   input$info_match_team2)) 
+    
+    
     # extract the number of matchdays
-    number_of_rounds <- max(all_leagues_fixture_stats$matchday,
-                            na.rm = TRUE)
+    number_of_rounds <- all_leagues_matches %>%
+      filter(league_id == league_ID,
+             league_season == as.numeric(str_split(input$info_match_season,
+                                                   pattern = "/")[[1]][1])) %>%
+      summarize(number_rounds = max(league_round),
+                na.rm = TRUE) %>%
+      select(number_rounds) %>% 
+      pull()
+    
     
     # half the number of matchdays to see how many days are in the
     # first half and how many in the second half of the season
     rounds_segment <- number_of_rounds / 2
     
     
-    # extract the data which matches the selected inputs
-    fixture_stats <- #buli_matches_2010_2021 
-      all_leagues_fixture_stats  %>%
-      filter(league_name == input$info_match_league, season == as.numeric(
-                 str_split(input$info_match_season,
-                           pattern = "/")[[1]][1]),
-             # take only those rows where the clubs match
-             club_name_home %in% c(input$info_match_team1,
-                                   input$info_match_team2),
-             club_name_away %in% c(input$info_match_team1,
-                                   input$info_match_team2)) %>%
-      data.frame()
-    
-    # fixture_stats <- fixtures_with_stats_2021 %>%
-    #   filter(league_season == season,
-    #          season == 2021,
-    #          # take only those rows where the clubs match
-    #          club_name_home %in% c(team1,
-    #                                team2),
-    #          club_name_away %in% c(team1,
-    #                                team2))
-    
     # filter the data based on the first half/second half of the season
     if(season_half_selection == "First half"){
-      fixture_stats <- fixture_stats %>%
+      fixture_ID <- fixture_ID %>%
         filter(league_round <= rounds_segment)
     } else {
-      fixture_stats <- fixture_stats %>%
+      fixture_ID <- fixture_ID %>%
         filter(league_round > rounds_segment)
     }
+      
     
+    # extract the match that is actually wanted by the user
+    fixture_stats <- all_leagues_fixture_stats %>%
+      filter(league_id == league_ID,
+             season == as.numeric(2021),
+             fixture_id == fixture_ID$fixture_id)
     
     # if there is no data available (no rows)
     # show a error message to inform the user that something went wrong
@@ -123,47 +146,66 @@ information_league_match_server <- function(input, output, session){
       return(fixture_stats)
     }
     
-    # if everything is fine, work with the data
-    fixture_stats <- fixture_stats %>%
-      # select only the important variables
-      select(fixture_date.y , fixture_time.y, 
-             venue_name, venue_city, matchday,
-             referee, club_name_home, club_name_away, halftime_score_home,
-             halftime_score_away, fulltime_score_home.y, 
-             fulltime_score_away.y, team_name,
-             shots_total, shots_on_goal, shots_off_goal,
-             shots_blocked, shots_inside_box, shots_outside_box,
-             goalkeeper_saves, fouls, corners,
-             offsides, ball_possession, cards_yellow, cards_red,
-             passes_total, passes_accurate, passing_accuracy) %>%
-      # mutate possession and accuracy in an appropriate display format
-      mutate(ball_possession = str_remove(ball_possession, pattern = "%"),
-             passing_accuracy = str_remove(passing_accuracy, pattern = "%")) %>%
-      # convert all the others into numeric
-      mutate(across(c("shots_on_goal", "shots_off_goal", "shots_total",
-                      "shots_blocked", "shots_inside_box", "shots_outside_box",
-                      "fouls", "corners", "offsides", "ball_possession",
-                      "cards_yellow", "cards_red", "goalkeeper_saves",
-                      "passes_total", "passes_accurate", "passing_accuracy"),
-                    as.numeric)) %>%
-      # replace all NAs with 0 
-      replace(is.na(.), 0)
+    # # if everything is fine, work with the data
+    # fixture_stats <- fixture_stats %>%
+    #   # select only the important variables
+    #   select(fixture_date.y , fixture_time.y, 
+    #          venue_name, venue_city, matchday,
+    #          referee, team_name, halftime_score_home,
+    #          halftime_score_away, fulltime_score_home.y, 
+    #          fulltime_score_away.y, team_name,
+    #          shots_total, shots_on_goal, shots_off_goal,
+    #          shots_blocked, shots_inside_box, shots_outside_box,
+    #          goalkeeper_saves, fouls, corners,
+    #          offsides, ball_possession, cards_yellow, cards_red,
+    #          passes_total, passes_accurate, passing_accuracy) %>%
+    #   # mutate possession and accuracy in an appropriate display format
+    #   mutate(ball_possession = str_remove(ball_possession, pattern = "%"),
+    #          passing_accuracy = str_remove(passing_accuracy, pattern = "%")) %>%
+    #   # convert all the others into numeric
+    #   mutate(across(c("shots_on_goal", "shots_off_goal", "shots_total",
+    #                   "shots_blocked", "shots_inside_box", "shots_outside_box",
+    #                   "fouls", "corners", "offsides", "ball_possession",
+    #                   "cards_yellow", "cards_red", "goalkeeper_saves",
+    #                   "passes_total", "passes_accurate", "passing_accuracy"),
+    #                 as.numeric)) %>%
+    #   # replace all NAs with 0 
+    #   replace(is.na(.), 0)
     
     # extract the club names
-    club_name_home <- fixture_stats$club_name_home[1]
-    club_name_away <- fixture_stats$club_name_away[1]
+    club_name_home <- fixture_stats$team_name[1]
+    club_name_away <- fixture_stats$team_name[2]
+    
+    # create a new variable for the score
+    # home team
+    fixture_stats_home <- fixture_stats[1,] %>%
+      mutate(score = fulltime_score_home)
+    
+    # away team
+    fixture_stats_away <- fixture_stats[2,] %>%
+      mutate(score = fulltime_score_away)
+    
+    # bind them back together
+    fixture_stats <- bind_rows(fixture_stats_home,
+                               fixture_stats_away)
+    
+    # drop columns we do not need
+    fixture_stats <- fixture_stats %>%
+      select(team_name, score, shots_on_goal:passing_accuracy)
     
     # transform the data into a wide format with appropriate
     # columns we can work with and plot the data later on
     # with pivot_longer we want to get all variables into just two columns
     # with names (variable "statistic") and values (variable "values")
+    print("TEST")
     fixture_plot_data <- pivot_longer(
       fixture_stats, 
-      cols = shots_total:passing_accuracy,
+      cols = c(shots_on_goal:passing_accuracy,
+               score),
       names_to = "statistic",
       values_to = c("values")) %>%
       # reoder the statistic variable for the plot later
-      mutate(statistic = factor(statistic, levels = c("shots_total", "shots_on_goal", "shots_off_goal",
+      mutate(statistic = factor(statistic, levels = c("score", "shots_total", "shots_on_goal", "shots_off_goal",
                                                       "shots_blocked", "shots_inside_box", "shots_outside_box",
                                                       "goalkeeper_saves", "fouls", "corners",
                                                       "offsides", "ball_possession", "cards_yellow", "cards_red",
@@ -178,14 +220,9 @@ information_league_match_server <- function(input, output, session){
       rename(team_1 := !!club_name_home,
              team_2 := !!club_name_away) 
     
-    
+    print("TEST2")
     # rename all columns
-    colnames(fixture_plot_data) <- c("fixture_date", "fixture_time", "venue_name",
-                                     "venue_city", "matchday", "referee",
-                                     "club_name_home", "club_name_away", 
-                                     "halftime_score_home", "halftime_score_away",
-                                     "fulltime_score_home", "fulltime_score_away",
-                                     "statistic","team_2", "team_1")
+    colnames(fixture_plot_data) <- c("statistic","team_2", "team_1")
     
     # compute the relative values of the statistics to show 
     # them later on in the bar chart
@@ -216,12 +253,11 @@ information_league_match_server <- function(input, output, session){
     
     
     # create names just for display in the plot
-    plot_labels <- c("Total shots", "Shots on target", "Shots off target", 
+    plot_labels <- c("Goals", "Total shots", "Shots on target", "Shots off target", 
                      "Shots blocked", "Shots inside box", "Shots outside box",
                      "Fouls", "Corners", "Offsides", "Possession", "Yellow cards",
                      "Red cards", "Goalkeeper saves", "Total passes", "Accurate passes",
-                     "Passing accuracy") #%>%
-    #rev()
+                     "Passing accuracy")
     
     # add them as new variable
     fixture_plot_data <- fixture_plot_data %>%
@@ -232,17 +268,6 @@ information_league_match_server <- function(input, output, session){
     y_ordering <- list(categoryorder = "array",
                        categoryarray = plot_labels)
     
-    
-    # store the team names 
-    home_team <- fixture_plot_data %>% 
-      select(club_name_home) %>%
-      pull() %>%
-      unique()
-    
-    away_team <- fixture_plot_data %>% 
-      select(club_name_away) %>%
-      pull() %>%
-      unique()
     
     # otherwise, construct the plot
     # for the first barplot (team 1),
@@ -280,7 +305,7 @@ information_league_match_server <- function(input, output, session){
             margin = 0) %>%
       # set them to grouped and remove the axis titles because we don't need them
       layout(barmode = 'grouped',
-             title = paste0(home_team, "  -     ", away_team),
+             title = paste0(club_name_home, "  -     ", club_name_away),
              xaxis = list(title = "",
                           showticklabels = FALSE),
              xaxis2 = list(title = "",

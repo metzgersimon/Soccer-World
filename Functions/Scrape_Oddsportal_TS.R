@@ -147,9 +147,11 @@ get_past_odds_ts <-
     while(TRUE) {
       
       check <- b[[r]]$getElementText()[[1]]
-      
       if(check == "Pinnacle"){
         bookmaker <- check
+        r <- r - 1
+        break
+      } else if(str_detect(check, pattern = "Click to show.*")){
         break
       } else {
         r <- r + 1
@@ -157,7 +159,23 @@ get_past_odds_ts <-
       }
     }
     
-  }
+    if(bookmaker != "Pinnacle"){
+      r <- 1
+      while(TRUE) {
+        
+        check <- b[[r]]$getElementText()[[1]]
+        if(check == "bet-at-home"){
+          bookmaker <- check
+          r <- r - 1
+          break
+        } else if(str_detect(check, pattern = "Click to show.*")){
+          break
+        } else {
+          r <- r + 1
+          next
+        }
+      }
+    }
     
     # this is the final vector containing the bookmakers
     # bookies <- unlist(bookies, use.names = FALSE)
@@ -167,27 +185,62 @@ get_past_odds_ts <-
     
     # find all the odds elements
     # elements <- remDr$findElements(using = "class", "right odds")
-    elements <- remDr$findElements(using = "xpath", 
-                                   paste0("//div[@id='odds-data-table']//",
-                                   "div[@class='table-container']//table[@class='table-main detail-odds sortable'][1]",
-                                          "//td[contains(@class, 'right odds')]"))
+    elements <- NULL
+    # wetest(0.5, 1)
+    # //*[@id="tooltipdiv"] location of the odds were changed on the site
+    repeat {
+      Sys.sleep(2)
+      elements <- remDr$findElement(using = 'xpath', value = paste0("//div[@id='odds-data-table']//",
+                                                                    "div[@class='table-container']//table[@class='table-main detail-odds sortable'][1]",
+                                                                    "//td[contains(@class, 'right odds')]"))
+      
+      if(!is.null(elements)){
+        break
+      }
+    }
+    
+    # repeat the find elements until there is actual content in it
+    # while(is.null(elements)){
+    #   elements <- tryCatch({remDr$findElement(using = 'xpath', value = paste0("//div[@id='odds-data-table']//",
+    #                                                                           "div[@class='table-container']//table[@class='table-main detail-odds sortable'][1]",
+    #                                                                           "//td[contains(@class, 'right odds')]"))},
+    #                        error = function(e){NULL})
+    # }
+    # 
+    # save(elements, file = "test_elem.RData")
+  
+    
     nele <- list()
     
     # get the row with the pinnacle bookmaker
     pinnacle_row <- c((((r - 1) * 3) + 1):(((r - 1) * 3) + 3))
     
     for (i in pinnacle_row[1]:pinnacle_row[3]) {
-      
+      print(i)
       element <- elements[i]
       # hover over each element
       locati <- element[[1]]
       remDr$mouseMoveToLocation(webElement = locati)
       
       
+      # wetest(0.5, 1)
       # //*[@id="tooltipdiv"] location of the odds were changed on the site
-      # extract the additional tooltip information popping up
-      n_element <- remDr$findElement(using = "xpath", '//*[@id="tooltipdiv"]')
+      n_element <- NULL
+      repeat {
+        Sys.sleep(1)
+        n_element <- remDr$findElement(using = "xpath", "//div[@id='tooltipdiv']")
+        
+        if(!is.null(n_element)){
+          break
+        }
+      }
       
+      # repeat the find elements until there is actual content in it
+      # while(is.null(n_element)){
+      #   n_element <- tryCatch({remDr$findElement(using = "xpath", "//div[@id='tooltipdiv']")},
+      #                        error = function(e){NULL})
+      # }
+      # 
       nele <- append(nele, n_element$getElementAttribute('innerHTML')[[1]])
       
     }
@@ -289,17 +342,114 @@ get_past_odds_ts <-
     
   }
   
+  
+  # map the league names
+  league <- ifelse(league == "bundesliga",
+                   "Bundesliga",
+                   ifelse(league == "2-bundesliga",
+                          "Bundesliga 2",
+                          ifelse(league == "premier-league",
+                                 "Premier League",
+                                 ifelse(league == "ligue-1",
+                                        "Ligue 1",
+                                        league))))
+  # do some final mutations 
+  final_odds <- ress %>%
+    # split the opponents into home and away team
+    separate(col = opponents, sep = " - ",
+             into = c("home_team", "away_team")) %>%
+    # extract the date of the match
+    mutate(fixture_date = trimws(str_split(beginning, ",")[[1]][2]),
+           fixture_date = dmy(fixture_date),
+           # extract the time of the match
+           fixture_time = trimws(str_split(beginning, ",")[[1]][3]),
+           across(c(contains("odd")), as.numeric),
+           # split the odd date columns to add the year and then convert
+           # them into a posixct object and convert it into the correct 
+           # time zone
+           # for the opening odds
+           odd_date_start = trimws(str_split(home_win_date_start, ",")[[1]][1]),
+           odd_date_start = paste0(odd_date_start, " ", year(fixture_date)),
+           odd_time_start = trimws(str_split(home_win_date_start, ",")[[1]][2]),
+           odd_datetime_start = dmy_hm(paste0(odd_date_start, " ", odd_time_start),
+                                       tz = "Europe/London"),
+           odd_datetime_start = with_tz(odd_datetime_start, tz = "Europe/Berlin"),
+           
+           # for the final home win odds
+           home_win_odd_date_end = trimws(str_split(home_win_date_end , ",")[[1]][1]),
+           home_win_odd_date_end = paste0(home_win_odd_date_end, " ", year(fixture_date)),
+           home_win_odd_time_end = trimws(str_split(home_win_date_end, ",")[[1]][2]),
+           home_win_odd_datetime_end = dmy_hm(paste0(home_win_odd_date_end, " ", 
+                                                     home_win_odd_time_end),
+                                              tz = "Europe/London"),
+           home_win_odd_datetime_end = with_tz(home_win_odd_datetime_end, tz = "Europe/Berlin"),
+           
+           # for the final draw ods
+           draw_odd_date_end = trimws(str_split(draw_date_end , ",")[[1]][1]),
+           draw_odd_date_end = paste0(draw_odd_date_end, " ", year(fixture_date)),
+           draw_odd_time_end = trimws(str_split(draw_date_end, ",")[[1]][2]),
+           draw_odd_datetime_end = dmy_hm(paste0(draw_odd_date_end, " ", 
+                                                 draw_odd_time_end),
+                                          tz = "Europe/London"),
+           draw_odd_datetime_end = with_tz(draw_odd_datetime_end, tz = "Europe/Berlin"),
+           
+           # for the final away win ods
+           away_win_odd_date_end = trimws(str_split(away_win_date_end , ",")[[1]][1]),
+           away_win_odd_date_end = paste0(away_win_odd_date_end, " ", year(fixture_date)),
+           away_win_odd_time_end = trimws(str_split(away_win_date_end, ",")[[1]][2]),
+           away_win_odd_datetime_end = dmy_hm(paste0(away_win_odd_date_end, " ", 
+                                                     away_win_odd_time_end),
+                                              tz = "Europe/London"),
+           away_win_odd_datetime_end = with_tz(away_win_odd_datetime_end, tz = "Europe/Berlin"),
+           
+           # also do the same thing for the match time (date)
+           fixture_datetime = ymd_hm(paste0(fixture_date, " ", 
+                                            fixture_time),
+                                     tz = "Europe/London"),
+           fixture_datetime = with_tz(fixture_datetime, tz = "Europe/Berlin"),
+           # split the datetime into date and time back
+           fixture_date = as.Date(fixture_datetime),
+           # extract only the time
+           fixture_time = trimws(str_extract(fixture_datetime, " [0-9]+:[0-9]+")),
+           # add columns for the league and season
+           "league" = league,
+           "season" = (season - 1)) %>%
+    # drop unwanted columns and reoder the data frame
+    select(league, season, fixture_date, fixture_time, home_team,
+           away_team, bookmaker, odd_datetime_start, home_win_odd_start,
+           draw_odd_start, away_win_odd_start, home_win_odd_datetime_end,
+           draw_odd_datetime_end, away_win_odd_datetime_end, home_win_odd_end,
+           draw_odd_end, away_win_odd_end)
+  
+  # map the club names
+  final_odds$home_team <- sapply(final_odds$home_team, club_name_mapping)
+  final_odds$away_team <- sapply(final_odds$away_team, club_name_mapping)
+
   #===============================================================================
   # close the driver (client) and the server
   remDr$close()
   rD$server$stop()
   rm(rD)
   gc()
-
-  write.csv(ress, paste("Data/oddsdata/bundesliga2", season, ".csv"))
   
   Sys.sleep(30)
   
+  return(final_odds)
+  
+  }
+
+
+
+wetest <- function(sleepmin,sleepmax){
+  remDr <- get("remDr",envir=globalenv())
+  webElemtest <-NULL
+  while(is.null(webElemtest)){
+    webElemtest <- tryCatch({remDr$findElement(using = 'css', "body")},
+                            error = function(e){NULL})
+    #loop until element with name <value> is found in <webpage url>
+  }
+  randsleep <- sample(seq(sleepmin, sleepmax, by = 0.001), 1)
+  Sys.sleep(randsleep)
 }
 
 

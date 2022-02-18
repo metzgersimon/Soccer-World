@@ -5,7 +5,7 @@
 # and rdata objects for the shiny app
 
 
-# source("Setup.R")
+source("Setup.R")
 # set a color scheme
 colors <- viridis_pal(option = "D")(30)
 # create the seasons
@@ -22,9 +22,7 @@ con <- dbConnect(RMariaDB::MariaDB(),
                  password='my-secret-pw')
 
 
-dbListTables(con)
-
-####### with datenbank
+####### with data base
 ### match tab data
 all_leagues_matches <- tbl(con, "all_leagues_matches") %>% data.frame()
 all_leagues_spi_538_available_matches <- tbl(con, "all_leagues_spi_538") %>%
@@ -33,23 +31,26 @@ all_leagues_spi_538_available_matches <- tbl(con, "all_leagues_spi_538") %>%
 
 ### load team tab data
 all_leagues_tm_squads <- tbl(con, "all_leagues_tm_squads") %>% data.frame()
-all_leagues_market_values_over_time<- tbl(con, "all_leagues_market_values_over_time") %>%
+all_leagues_market_values_over_time <- tbl(con, "all_leagues_market_values_over_time") %>%
   data.frame()
-all_infos_club <- inner_join(all_leagues_tm_squads, unique(all_leagues_matches[,c(2,3,19)]), by=c("club"="club_name_home", "league"="league_name"))
-all_leagues_club_stats<- tbl(con, "all_leagues_club_stats") %>%
+all_infos_club <- inner_join(all_leagues_tm_squads, unique(all_leagues_matches[,c(2,3,19)]), 
+                             by=c("club"="club_name_home", "league"="league_name"))
+
+all_leagues_club_stats <- tbl(con, "all_leagues_club_stats") %>%
   data.frame()
-all_leagues_team_transfers<- tbl(con, "all_leagues_team_transfers") %>%
+all_leagues_team_transfers <- tbl(con, "all_leagues_team_transfers") %>%
   data.frame()
 
 ### load player tab data
 # all_fixture_stats <- tbl(con, "all_fixture_stats") %>% data.frame()
-all_leagues_player_stats<- tbl(con, "all_leagues_player_stats") %>% data.frame()
+all_leagues_player_stats <- tbl(con, "all_leagues_player_stats") %>% data.frame()
 
 # all_leagues_fixture_stats <- all_fixture_stats %>% left_join(all_leagues_matches, by = c("fixture_id"="fixture_id","league_id"="league_id"))
-all_leagues_lineups<- tbl(con, "all_leagues_lineups") %>% data.frame()
-all_leagues_fixture_stats<- tbl(con, "all_leagues_fixture_stats") %>% data.frame()
+all_leagues_lineups <- tbl(con, "all_leagues_lineups") %>% data.frame()
+all_leagues_fixture_stats <- tbl(con, "all_leagues_fixture_stats") %>% data.frame()
 
 ### load home tab data
-all_leagues_venue_information<- tbl(con, "all_leagues_venue_information") %>% data.frame()
+all_leagues_venue_information <- tbl(con, "all_leagues_venue_information") %>% data.frame()
 
-# dbDisconnect(con)
+# disconnect from the data base
+dbDisconnect(con)
