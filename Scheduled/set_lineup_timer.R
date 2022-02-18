@@ -14,7 +14,7 @@ matches_today <- get_match_data_todays_games(leagues_today)
 timeslots <- get_times_for_lineup_scraping(matches_today)
 
 # save the list for today
-dbRemoveTable("timeslots")
+dbRemoveTable(con, "timeslots")
 dbWriteTable(con,"timeslots", timeslots,  overwrite = TRUE)
 dbDisconnect(con)
 
