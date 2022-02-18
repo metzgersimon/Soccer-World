@@ -78,6 +78,11 @@ information_team_server <- function(input, output, session) {
   })
   
   output$info_team_team_age <- renderValueBox({
+    # there has to be a club selected
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     valueBox(
       filter_team_data() %>%
         # only unique player_names
@@ -96,6 +101,11 @@ information_team_server <- function(input, output, session) {
   })
   
   output$info_team_team_height <- renderValueBox({
+    # there has to be a club selected
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     valueBox(
       filter_team_data() %>%
         # only unique player_names
@@ -116,6 +126,11 @@ information_team_server <- function(input, output, session) {
   
   
   output$info_team_team_size <- renderValueBox({
+    # there has to be a club selected
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     valueBox(
       filter_team_data() %>%
         select(player_name) %>%
@@ -130,6 +145,11 @@ information_team_server <- function(input, output, session) {
   
 
   output$info_team_team_venue <- renderValueBox({
+    # there has to be a club selected
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     valueBox(
       all_leagues_venue_information %>% mutate(league = if_else(
         league_id == 78,
@@ -163,6 +183,11 @@ information_team_server <- function(input, output, session) {
   })
   
   output$info_team_team_players <- renderValueBox({
+    # there has to be a club selected
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     valueBox(
       filter_team_data() %>%
         # only unique player_names
@@ -176,6 +201,11 @@ information_team_server <- function(input, output, session) {
   })
   
   output$info_team_team_rightfoot <- renderValueBox({
+    # there has to be a club selected
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     valueBox(
       filter_team_data() %>%
         # only unique player_names
@@ -189,6 +219,11 @@ information_team_server <- function(input, output, session) {
   })
   
   output$info_team_team_leftfoot <- renderValueBox({
+    # there has to be a club selected
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     valueBox(
       filter_team_data() %>%
         # only unique player_names
@@ -202,6 +237,12 @@ information_team_server <- function(input, output, session) {
   })
   
   output$info_team_team_german <- renderValueBox({
+    
+    # there has to be a club selected
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     valueBox(
       filter_team_data() %>%
         # only unique player_names
@@ -753,7 +794,10 @@ information_team_server <- function(input, output, session) {
   })
   
   output$total_for_goals <- renderValueBox({
-
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     stats_select <- 
       all_leagues_club_stats %>%
         filter(
@@ -774,6 +818,10 @@ information_team_server <- function(input, output, session) {
   })
 
   output$total_against_goals <- renderValueBox({
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     stats_select <- reactive ({   
       req(input$info_team_league_selection)
     req(input$info_team_club_selection)
@@ -798,6 +846,10 @@ information_team_server <- function(input, output, session) {
   })
   
   output$total_failed_score <- renderValueBox({
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     stats_select <- reactive ({
       all_leagues_club_stats %>%
         filter(
@@ -819,6 +871,10 @@ information_team_server <- function(input, output, session) {
   })
   
   output$total_penalty <- renderValueBox({
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     stats_select <- reactive ({
       all_leagues_club_stats %>%
         filter(
@@ -842,7 +898,10 @@ information_team_server <- function(input, output, session) {
   
   # more details stats
   output$info_team_stats <- renderReactable({
- 
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     stats_select <- reactive ({
       all_leagues_club_stats %>%
         filter(
@@ -894,6 +953,9 @@ information_team_server <- function(input, output, session) {
   })
   
   output$info_team_home <- renderReactable({
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
     
     stats_select <- reactive ({
       all_leagues_club_stats %>%
@@ -946,6 +1008,9 @@ information_team_server <- function(input, output, session) {
   })
   
   output$info_team_away <- renderReactable({
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
     
     stats_select <- reactive ({
       all_leagues_club_stats %>%

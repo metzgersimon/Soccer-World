@@ -3,6 +3,7 @@ tab_information_team_ui <- function(){
   # set the tabname to reference it from the main ui
   tabItem(tabName = "information-team",
           fluidRow(
+            # select input for league choices
             column(width = 3, align = "center",
                    selectizeInput("info_team_league_selection",
                                label = "League",
@@ -57,16 +58,14 @@ tab_information_team_ui <- function(){
             tabPanel(
               "Overview",
               fluidRow(
-                # ui output to display the logo of the club
-                
+                # insert four value boxes for the overview infos of team
                 valueBoxOutput("info_team_team_age", width = 3),
                 valueBoxOutput("info_team_team_height", width = 3),
                 valueBoxOutput("info_team_team_size", width = 3),
                 valueBoxOutput("info_team_team_venue", width = 3)
               ),
               fluidRow(
-                # ui output to display the logo of the club
-                
+                # insert four value boxes for the overview infos of team
                 valueBoxOutput("info_team_team_players", width = 3),
                 valueBoxOutput("info_team_team_rightfoot", width = 3),
                 valueBoxOutput("info_team_team_leftfoot", width = 3),
@@ -76,20 +75,19 @@ tab_information_team_ui <- function(){
                 # table output for the team logo
                 column(
                   width = 4,
-                  #offset = 3,
                   align = "center",
                   div(style = "margin-top: 20px;", #"border: solid 2px #FFFFFF; margin-top: 20px;",
                       tableOutput("info_team_team_logo"))
                 ),
+                # display image for the venue of team
                 column(
                   width = 8,
-                  #offset = 2,
                   align = "left",
                   div(style = "margin-top: 20px;", #"border: solid 2px #FFFFFF; margin-top: 20px;",
                       tableOutput("info_team_venue_image"))
                 )
             )),
-            # season tab which should contain information about the current season
+            # Match & Stats tab which should contain information about the current season
             # such as form, previous matches, future matches, etc.
             tabPanel("Match & Stats",
                      tabsetPanel(type = "pills",
@@ -104,7 +102,7 @@ tab_information_team_ui <- function(){
                                       "background-color: #004157;"
                                     ),
                                     p(
-                                      "Upcoming Match",
+                                      "Upcoming Match", # present the upcoming match
                                       style = paste0(
                                         "background-color: #004157;",
                                         "color: white;",
@@ -120,13 +118,13 @@ tab_information_team_ui <- function(){
                                   width = 12,
                                   align = "center",
                                   div(
-                                    style = paste0(
+                                    style = paste0( 
                                       "border: solid 1px #000000;",
                                       "margin-top: 20px;",
                                       "background-color: #004157;"
                                     ),
                                     p(
-                                      "Past Matches",
+                                      "Past Matches", # display the past matches
                                       style = paste0(
                                         "background-color: #004157;",
                                         "color: white;",
@@ -141,49 +139,50 @@ tab_information_team_ui <- function(){
                        tabPanel("Statistics",
                                 fluidRow(
                                   # Frontpage - boxes - start 
+                                  # insert four value boxes for the infos of team
                                   valueBoxOutput(
-                                   "total_played",
+                                   "total_played", # how many total plays of this team
                                     width = 3),
                                   valueBoxOutput(
-                                    "total_wins",
+                                    "total_wins", # how many total wins of this team
                                     width = 3),
                                   valueBoxOutput(
-                                    "total_draws",
+                                    "total_draws",# how many total draws of this team
                                     width = 3),
                                   valueBoxOutput(
-                                   "total_loses",
+                                   "total_loses", # how many total loses of this team
                                     width = 3)
                                 ),
                                 fluidRow(
                                   valueBoxOutput(
-                                     "total_for_goals",
+                                     "total_for_goals", # how many total fo goals of this team
                                     width = 3),
                                   valueBoxOutput(
-                                    "total_against_goals",
+                                    "total_against_goals", # how many total against goal of this team
                                     width = 3),
                                   valueBoxOutput(
-                                    "total_failed_score",
+                                    "total_failed_score", # how many total failed to score of this team
                                     width = 3),
                                   valueBoxOutput(
-                                    "total_penalty",
+                                    "total_penalty", # how many total penalty of this team
                                     width = 3)
                                   # Frontpage - boxes - end
                                 ),
-                                fluidRow(
+                                fluidRow(  # box for the biggest streak infos for the team
                                   box(title = "Biggest streak infos", 
                                       status = "primary", width = 4,
                                       solidHeader = TRUE,
                                       collapsible = TRUE,
                                       reactableOutput("info_team_stats") %>%
                                         withSpinner(color = "black")    
-                                  ),
+                                  ), # box for the biggest difference as home team
                                   box(title = "As home team - biggest difference", 
                                       status = "primary", width = 4,
                                       solidHeader = TRUE,
                                       collapsible = TRUE,
                                       reactableOutput("info_team_home") %>%
                                         withSpinner(color = "black")    
-                                  ),
+                                  ),  # box for the biggest difference as away team
                                   box(title = "As away team - biggest difference", 
                                       status = "primary", width = 4,
                                       solidHeader = TRUE,
@@ -193,28 +192,27 @@ tab_information_team_ui <- function(){
                                   )
                                 ),
                                 fluidRow(
-                                  # plots - start ----------------------------------
-                                  tabBox(
+                                  # plots - start
+                                  tabBox( # time series infos as home team
                                     width = 12,
                                     tabPanel(
                                       status = "primary",
                                       title = "stats as home team",
                                       withSpinner(plotlyOutput("ts_home_stats", height = "250px"))
                                     ),
-                                    tabPanel(
+                                    tabPanel( # time series infos as away team
                                       status = "success",
                                       title = "stats as away team",
                                       withSpinner(plotlyOutput("ts_away_stats", height = "250px"))
                                     )
                                   )
-                                  # plots - end ------------------------------------
+                                  # plots - end 
                                 )
                                 )
                      )), 
             # squad panel to see the current squad of the club
             tabPanel("Squad",
-                     #reactableOutput("info_team_squad")
-                     fluidRow(
+                     fluidRow( # attack table
                        column(width = 12,
                               align = "center",
                               div(style = paste0("border: solid 1px #000000;",
@@ -228,7 +226,7 @@ tab_information_team_ui <- function(){
                                   reactableOutput("info_team_squad_attack")
                                   )
                               )),
-                     fluidRow(
+                     fluidRow(# Midfield table
                        column(width = 12,
                               align = "center",
                               div(style = paste0("border: solid 1px #000000;",
@@ -244,7 +242,7 @@ tab_information_team_ui <- function(){
                                   )
                               )
                        ),
-                     fluidRow(
+                     fluidRow( # Defense table
                        column(width = 12,
                               align = "center",
                               div(style = paste0("border: solid 1px #000000;",
@@ -258,7 +256,7 @@ tab_information_team_ui <- function(){
                                   reactableOutput("info_team_squad_defense")
                               )
                        )),
-                    fluidRow(
+                    fluidRow( # Goal table
                        column(width = 12,
                               align = "center",
                               div(style = paste0("border: solid 1px #000000;",
@@ -275,11 +273,11 @@ tab_information_team_ui <- function(){
                        )
                      ),
             tabPanel(
-              "Over Time",
+              "Over Time", # time series data for the team
               tabsetPanel(
                 type = "pills",
                 tabPanel(
-                  "Market value",
+                  "Market value", # market value over time 
                   fluidRow(
                     column(width = 12,
                            align = "center",
@@ -292,7 +290,7 @@ tab_information_team_ui <- function(){
                     )
                   ),
                 tabPanel(
-                    "FIFA Rating",
+                    "FIFA Rating", # fifa rating over time
                     fluidRow(
                       column(width = 12,
                              align = "center",
@@ -305,7 +303,7 @@ tab_information_team_ui <- function(){
                     )
                   ),
                 tabPanel(
-                  "Transfers",
+                  "Transfers", # transfer over time
                   fluidRow(
                     column(width = 12,
                            align = "center",
