@@ -461,7 +461,7 @@ get_winning_pcts <- function(type = "home"){
 # function should map the (historical) transfermarkt lineups data with
 # the lineup information of a soon to begin match from the API
 # to create one line of stats for the current lineup
-prepare_lineup_data <- function(match_id, max_season = 2021){
+prepare_lineup_data <- function(match_id){
   # match_id <- fixture_ids_in_db[6]
   #match_id <- 719232
   # match_information <- all_leagues_matches %>%
@@ -473,7 +473,7 @@ prepare_lineup_data <- function(match_id, max_season = 2021){
   # 
   # match_id <- fixture_ids_in_db[121]
   # get the lineups from the data base
-  current_game_lineup <- all_leagues_lineups %>%
+  current_game_lineup <- all_leagues_fixture_lineups %>%
     filter(fixture_id == match_id) %>%
     # prepare the name of the players to map the API and the TM data
     mutate(player_lastname = str_remove(player_name, pattern = ".*\\. |.*\\s"),
@@ -495,9 +495,10 @@ prepare_lineup_data <- function(match_id, max_season = 2021){
   
   # check if the current matchday is the first matchday of the season
   # If it is the first matchday, we want to impute the data somehow
+  
   if(unique(current_game_lineup$league_round) == 1){
     curr_lineups_tm <- all_leagues_lineups_tm %>%
-      filter(season == current_game_lineup$league_season - 1)
+      filter(season == unique(current_game_lineup$league_season) - 1)
     # if it is not the first matchday, we get the current season
   } else {
     curr_lineups_tm <- all_leagues_lineups_tm %>%
@@ -754,7 +755,7 @@ prepare_lineup_data <- function(match_id, max_season = 2021){
                 values_from = c(player_age:player_is_returnee),
                 names_glue = "home_{games_position}_{.value}") %>%
     # bind the number of positions to it
-    bind_cols(home_formation_info)
+    bind_cols(., home_formation_info)
   
   
   
@@ -781,7 +782,7 @@ prepare_lineup_data <- function(match_id, max_season = 2021){
                 values_from = c(player_age:player_is_returnee),
                 names_glue = "away_{games_position}_{.value}") %>%
     # bind the number of positions to it
-    bind_cols(away_formation_info)
+    bind_cols(., away_formation_info)
   
   
   

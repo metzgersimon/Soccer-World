@@ -39,7 +39,6 @@ leagues <- c("bundesliga", "2-bundesliga", "premier-league", "ligue-1")
 league_ids <- c("L1", "L2", "GB1", "FR1")
 
 # do the actual scraping 
-# throws an error
 all_leagues_squads_new <- get_squads_by_season_all_leagues(leagues,
                                                            league_ids,
                                                            max_season)

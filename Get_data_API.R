@@ -397,8 +397,8 @@ api_call_is_possible <- function(){
 
 
 
-
-########## get newest team transfers ############
-get_new_team_transfers_API <- function(){
-  
-}
+# 
+# ########## get newest team transfers ############
+# get_new_team_transfers_API <- function(){
+#   
+# }
