@@ -1,8 +1,16 @@
 setwd("/home/ubuntu/project/Soccer-Prediction-App")
 source("Setup.R")
 
+# connect to database
+con <- dbConnect(RMariaDB::MariaDB(), 
+                 host='127.0.0.1',
+                 dbname='Soccer_Prediction_Data',
+                 username='root',
+                 password='my-secret-pw')
+
 # load the timetable
-load("./Scheduled/timeslots.RData")
+timeslots <- dbReadTable(con, "timeslots")
+
 
 # select closest uscraped timeslots
 current <- timeslots %>% 
@@ -19,14 +27,9 @@ for (id in current$fixture_id) {
   new_lineups <- rbind(new_lineups, get_fixture_lineups(id))
 }
 
-# connect to database
-con <- dbConnect(RMariaDB::MariaDB(), 
-                 host='127.0.0.1',
-                 dbname='Soccer_Prediction_Data',
-                 username='root',
-                 password='my-secret-pw')
 
-dbWriteTable(con, "all_leagues_lineups", new_lineups,
-             overwrite = FALSE, append = TRUE)
+
+dbWriteTable(con, "all_leagues_fifa_squads", all_leagues_fifa_squads,
+             overwrite = TRUE)
 
 dbDisconnect(con)
