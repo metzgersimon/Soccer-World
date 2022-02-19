@@ -160,8 +160,8 @@ all_leagues_lineups_tm_new <- NULL
 # games
 for(i in 1:nrow(missing_leagues)){
   # get the current league and matchday
-  curr_league <- max_matchday$league[i]
-  curr_matchday <- max_matchday$max_matchday[i]
+  curr_league <- missing_leagues$league[i]
+  curr_matchday <- missing_leagues$matchday[i]
   
   # map the league name to the league ids
   league_id <- ifelse(curr_league == "Bundesliga",
