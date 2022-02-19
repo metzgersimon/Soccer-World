@@ -32,7 +32,7 @@ if(!is.null(all_leagues_market_values_new)){
 
 ########## get squads ############
 # get the newest available season
-max_season <- max(all_leagues_tm_squads$season)
+max_season <- max(all_leagues_squads_tm$season)
 
 # create the vectors of the league names and ids
 leagues <- c("bundesliga", "2-bundesliga", "premier-league", "ligue-1")
@@ -45,16 +45,14 @@ all_leagues_squads_new <- get_squads_by_season_all_leagues(leagues,
 
 
 # filter for only those matches that are not already in the data base
-all_leagues_squads_new <- all_leagues_tm_squads %>%
+all_leagues_squads_new <- all_leagues_squads_tm %>%
   # filter only for the current season
   filter(season == max_season,
          # drop the serie a and la liga
          league %in% leagues) %>%
   # use an anti join to get all of those matches that are not in the data base
   anti_join(all_leagues_squads_new, 
-            by = c("league", "season", "club")) %>%
-  # filter for only those that are in the past
-  filter(date < Sys.Date())
+            by = c("league", "season", "club", "player_name" ))
 
 # if the all_leagues_squads_new element is not null, i.e.,
 # there was new data available, we write the new data (by appending it)

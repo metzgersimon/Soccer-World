@@ -163,17 +163,10 @@ get_market_values_over_time <- function(league, league_id, date = NULL) {
     market_value_then <- market_value_then %>%
       mutate(league = ifelse(league == "2-Bundesliga",
                              "Bundesliga 2",
-                             ifelse(league == "Premier-League",
-                                    "Premier League",
-                                    ifelse(league == "Premier-League",
-                                           "Premier League",
-                                           ifelse(league == "Ligue-1",
-                                                  "Ligue 1",
-                                                  ifelse(league == "Primera-Division",
-                                                         "La Liga",
-                                                         ifelse(league == "Serie-A",
-                                                                "Serie A",
-                                                                league)))))))
+                                  ifelse(league == "Premier-League",
+                                         "Premier League",
+                                         ifelse(league == "Ligue-1",
+                                                "Ligue 1",league))))
     
     
     
@@ -271,17 +264,12 @@ get_squads_by_season <- function(league, league_id, season){
   league <- str_to_title(league)
   
   # map the league names 
-  league <- ifelse(league == "Primera-Division",
-                   "La Liga",
-                   ifelse(league == "2-Bundesliga",
-                          "Bundesliga 2",
-                          ifelse(league == "Ligue-1",
-                                 "Ligue 1",
-                                 ifelse(league == "Premier-League",
-                                        "Premier League",
-                                        ifelse(league == "Serie-A",
-                                               "Serie A",
-                                               league)))))
+  league <- ifelse(league == "2-Bundesliga",
+                        "Bundesliga 2",
+                        ifelse(league == "Ligue-1",
+                               "Ligue 1",
+                               ifelse(league == "Premier-League",
+                                      "Premier League", league)))
   
   # iterate through all club urls
   for(i in 1:length(club_names_url)){
@@ -506,17 +494,12 @@ get_lineups_by_season_tm <- function(league, league_id, season, matchday = NULL)
   league <- str_to_title(league)
   
   # map the league names 
-  league <- ifelse(league == "Primera-Division",
-                   "La Liga",
-                   ifelse(league == "2-Bundesliga",
+  league <- ifelse(league == "2-Bundesliga",
                           "Bundesliga 2",
                           ifelse(league == "Ligue-1",
                                  "Ligue 1",
                                  ifelse(league == "Premier-League",
-                                        "Premier League",
-                                        ifelse(league == "Serie-A",
-                                               "Serie A",
-                                               league)))))
+                                        "Premier League", league)))
   
   # create a flag variable to check whether the match is in the future
   is_future_match <- FALSE
@@ -525,9 +508,9 @@ get_lineups_by_season_tm <- function(league, league_id, season, matchday = NULL)
   port <- randomPort()
   
   # create a driver from Rselenium without a browser windows
-  rD <- rsDriver(browser = "firefox",# extraCapabilities = list(
-   # "moz:firefoxOptions" = list(
-    #  args = list('--headless'))),
+  rD <- rsDriver(browser = "firefox", extraCapabilities = list(
+    "moz:firefoxOptions" = list(
+    args = list('--headless'))),
     port = port)
   
   # get the client
