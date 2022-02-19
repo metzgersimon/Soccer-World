@@ -17,9 +17,9 @@ seasons <- c(paste0(sort(c(2015:2021),
 # setup a connection to the database
 con <- dbConnect(RMariaDB::MariaDB(), 
                  host='127.0.0.1',
-                 dbname='Soccer_Prediction_Data',
-                 username='root',
-                 password='my-secret-pw')
+                 dbname='soccerworld',
+                 username='dev',
+                 password='worldpw')
 
 
 ####### with data base
@@ -30,7 +30,7 @@ all_leagues_spi_538_available_matches <- tbl(con, "all_leagues_spi_538") %>%
 
 
 ### load team tab data
-# all_leagues_squads_tm <- tbl(con, "all_leagues_squads_tm") %>% data.frame()
+all_leagues_squads_tm <- tbl(con, "all_leagues_squads_tm") %>% data.frame()
 all_leagues_market_values_over_time <- tbl(con, "all_leagues_market_values_over_time") %>%
   data.frame()
 all_infos_club <- inner_join(all_leagues_tm_squads, unique(all_leagues_matches[,c(2,3,19)]), 
@@ -45,9 +45,9 @@ all_leagues_team_transfers <- tbl(con, "all_leagues_team_transfers") %>%
 # all_fixture_stats <- tbl(con, "all_fixture_stats") %>% data.frame()
 all_leagues_player_stats <- tbl(con, "all_leagues_player_stats") %>% data.frame()
 
-all_leagues_fixture_lineups <- tbl(con, "all_leagues_lineups") %>% data.frame()
+#all_leagues_fixture_lineups <- tbl(con, "all_leagues_lineups") %>% data.frame()
 all_leagues_lineups_tm <- tbl(con, "all_leagues_lineups_tm") %>% data.frame()
-all_leagues_lineups <- tbl(con, "all_leagues_lineups") %>% data.frame()
+#all_leagues_lineups <- tbl(con, "all_leagues_lineups") %>% data.frame()
 all_leagues_fixture_stats <- tbl(con, "all_leagues_fixture_stats") %>% data.frame()
 
 all_leagues_fifa_team_stats <- tbl(con, "all_leagues_fifa_team_stats") %>% data.frame()
