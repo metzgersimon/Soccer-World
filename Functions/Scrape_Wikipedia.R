@@ -28,85 +28,40 @@ get_venue_coordinates <- function(){
         venue_names == "Etihad Stadium",
         "Etihad Stadium (Manchester)",
         ifelse(
-          venue_names == "Abanca-Balaídos",
-          "Estadio Balaídos",
+          venue_names == "Jahnstadion Regensburg",
+          "Jahnstadion Regensburg (2015)",
           ifelse(
-            venue_names == "Allianz Stadium",
-            "Juventus Stadium",
+            venue_names == "Red Bull Arena",
+            "Red Bull Arena (Leipzig)",
             ifelse(
-              venue_names == "Estadio Abanca-Riazor",
-              "Estadio Riazor",
+              venue_names == "Stade Auguste-Delaune II",
+              "Stade Auguste-Delaune",
               ifelse(
-                venue_names == "Estadio de Mendizorroza",
-                "Estadio Mendizorrotza",
+                venue_names == "Stade Crédit Agricole de la Licorne",
+                "Stade de la Licorne",
                 ifelse(
-                  venue_names == "Estadio de Mestalla",
-                  "Estadio Mestalla",
+                  venue_names == "Stade de la Beaujoire - Louis Fonteneau",
+                  "Stade Louis-Fonteneau",
                   ifelse(
-                    venue_names == "Estadio de Vallecas",
-                    "Campo de Fútbol de Vallecas",
+                    venue_names == "Stade Yves Allainmat - Le Moustoir",
+                    "Stade du Moustoir",
                     ifelse(
-                      venue_names == "Estadio Municipal José Zorrilla",
-                      "Nuevo Estadio Municipal José Zorrilla",
+                      venue_names == "Swansea.com Stadium",
+                      "Liberty Stadium",
                       ifelse(
-                        venue_names == "Estadio Wanda Metropolitano",
-                        "Wanda Metropolitano",
-                        ifelse(
-                          venue_names == "Estadio Nuevo Mirandilla",
-                          "Estadio Ramón de Carranza",
-                          ifelse(
-                            venue_names == "Jahnstadion Regensburg",
-                            "Jahnstadion Regensburg (2015)",
-                            ifelse(
-                              venue_names == "MAPEI Stadium - Città del Tricolore",
-                              "Mapei Stadium – Città del Tricolore",
-                              ifelse(
-                                venue_names == "Red Bull Arena",
-                                "Red Bull Arena (Leipzig)",
-                                ifelse(
-                                  venue_names == "Stade Auguste-Delaune II",
-                                  "Stade Auguste-Delaune",
-                                  ifelse(
-                                    venue_names == "Stade Crédit Agricole de la Licorne",
-                                    "Stade de la Licorne",
-                                    ifelse(
-                                      venue_names == "Stade de la Beaujoire - Louis Fonteneau",
-                                      "Stade Louis-Fonteneau",
-                                      ifelse(
-                                        venue_names == "Stade Yves Allainmat - Le Moustoir",
-                                        "Stade du Moustoir",
-                                        ifelse(
-                                          venue_names == "Stadio Adriatico-Giovanni Cornacchia",
-                                          "Stadio Adriatico – Giovanni Cornacchia",
-                                          ifelse(
-                                            venue_names == "Stadio Artemio Franchi",
-                                            "Stadio Artemio Franchi (Florenz)",
-                                            ifelse(
-                                              venue_names == "Stadio Comunale Luigi Ferraris",
-                                              "Stadio Luigi Ferraris",
-                                              ifelse(
-                                                venue_names == "Stadio Comunale Via del Mare",
-                                                "Stadio Via del Mare",
-                                                ifelse(
-                                                  venue_names == "Stadio Marc'Antonio Bentegodi",
-                                                  "Stadio Marcantonio Bentegodi",
-                                                  ifelse(
-                                                    venue_names == "Swansea.com Stadium",
-                                                    "Liberty Stadium",
-                                                    ifelse(
-                                                      venue_names == "The American Express Community Stadium",
-                                                      "Falmer Stadium",
-                                                      ifelse(
-                                                        venue_names == "The MKM Stadium",
-                                                        "MKM Stadium",
-                                                        ifelse(
-                                                          venue_names == "Visit Mallorca Estadi",
-                                                          "Estadi de Son Moix",
-                                                          venue_names))))))))))))))))))))))))))))
+                        venue_names == "The American Express Community Stadium",
+                        "Falmer Stadium",
+                        ifelse(venue_names == "The MKM Stadium",
+                               "MKM Stadium",
+                               venue_names))))))))))))
+                      
                                                         
   
-  # create a driver from Rselenium
-  rD <- rsDriver(browser = "firefox", port = port)
+  # create a driver from Rselenium without a browser windows
+  rD <- rsDriver(browser = "firefox", extraCapabilities = list(
+    "moz:firefoxOptions" = list(
+      args = list('--headless'))),
+    port = port)
   
   # get the client
   remDr <- rD$client
