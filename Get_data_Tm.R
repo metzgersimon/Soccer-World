@@ -2,6 +2,15 @@
 # the market values, the fifa top nations rating, daily ###
 
 ########## get market values from TM ############
+
+# setup a connection to the database
+con <- dbConnect(RMariaDB::MariaDB(), 
+                 host='127.0.0.1',
+                 dbname='soccerworld',
+                 username='dev',
+                 password='worldpw')
+
+
 # get the max available date for this data set in our data base
 max_date <- all_leagues_market_values_over_time %>%
   summarize(date = max(date)) %>%
@@ -176,7 +185,7 @@ if(!is.null(all_leagues_lineups_tm_new)){
                overwrite = FALSE, append = TRUE)
 }
 
-
+dbDisconnect(con)
   
 
 

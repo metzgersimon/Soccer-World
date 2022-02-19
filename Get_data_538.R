@@ -1,4 +1,12 @@
 ### script should update the spi data set daily ###
+
+# setup a connection to the database
+con <- dbConnect(RMariaDB::MariaDB(), 
+                 host='127.0.0.1',
+                 dbname='soccerworld',
+                 username='dev',
+                 password='worldpw')
+
 # get the current csv from the 538 web page 
 all_leagues_spi_538_matches <- 
   read.csv("https://projects.fivethirtyeight.com/soccer-api/club/spi_matches.csv",
@@ -59,3 +67,5 @@ if(nrow(all_leagues_spi_538_matches_new) != 0){
   dbWriteTable(con, "all_leagues_spi_538", all_leagues_spi_538_matches_new,
                overwrite = FALSE, append = TRUE)
 }
+
+dbDisconnect(con)

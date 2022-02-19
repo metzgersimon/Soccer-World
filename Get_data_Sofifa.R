@@ -2,6 +2,14 @@
 # the fifa squads or team stats daily ###
 
 ########## get newest fifa team stats ############
+
+# setup a connection to the database
+con <- dbConnect(RMariaDB::MariaDB(), 
+                 host='127.0.0.1',
+                 dbname='soccerworld',
+                 username='dev',
+                 password='worldpw')
+
 # check for the newest date we have in our data base
 max_date <- all_leagues_fifa_team_stats %>% 
   filter(date == max(date)) %>% 
@@ -63,4 +71,5 @@ if(!is.null(all_leagues_fifa_squads_new)){
   
 }
 
+dbDisconnect(con)
 

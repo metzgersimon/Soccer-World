@@ -1,4 +1,12 @@
 ########## get newest match information ############
+
+# setup a connection to the database
+con <- dbConnect(RMariaDB::MariaDB(), 
+                 host='127.0.0.1',
+                 dbname='soccerworld',
+                 username='dev',
+                 password='worldpw')
+
 get_new_match_information_API <- function(con){
   all_leagues_matches <- tbl(con, "all_leagues_matches") %>% data.frame()
   # extract the matchday of the games that happen today
@@ -395,7 +403,7 @@ api_call_is_possible <- function(){
   }
 }
 
-
+dbDisconnect(con)
 
 # 
 # ########## get newest team transfers ############
