@@ -1,12 +1,14 @@
 information_player_server <- function(input, output, session){
   
-  
+  sapply(player_tab_data, function(x)
+    sum(is.na(x)))
+
    observeEvent(input$information_player_league_selection, {
      updateSelectInput(session, 
                        inputId = "information_player_team_selection",
-                       choices = unique(all_leagues_tm_squads %>%
-                                          filter(league == input$information_player_league_selection) %>%
-                                          select(club) %>%
+                       choices = unique(player_tab_data %>%
+                                          filter(league_name == input$information_player_league_selection) %>%
+                                          select(team_name) %>%
                                           unlist() %>%
                                           unname())
                      )
@@ -20,18 +22,18 @@ information_player_server <- function(input, output, session){
                       inputId = "information_player_season_selection",
                       choices = c(
                         "",
-                        paste0(unique(all_leagues_tm_squads %>%
-                                        filter(club == input$information_player_team_selection &
-                                                 league == input$information_player_league_selection) %>%
-                                        select(season) %>%
+                        paste0(unique(player_tab_data %>%
+                                        filter(team_name == input$information_player_team_selection &
+                                                 league_name == input$information_player_league_selection) %>%
+                                        select(league_season) %>%
                                         unlist() %>%
                                         unname())
                         ,"/",unique(
-                          all_leagues_tm_squads %>% filter(
-                            club == input$information_player_team_selection &
-                              league == input$information_player_league_selection
+                          player_tab_data %>% filter(
+                            team_name == input$information_player_team_selection &
+                              league_name == input$information_player_league_selection
                           ) %>%
-                            select(season) %>%
+                            select(league_season) %>%
                             unlist() %>%
                             unname()
                         )+1)),
@@ -43,10 +45,10 @@ information_player_server <- function(input, output, session){
   observeEvent(input$information_player_season_selection, {
     updateSelectInput(session, 
                       inputId = "information_player_player_selection",
-                      choices = unique(all_leagues_tm_squads %>%
-                                         filter(club == input$information_player_team_selection &
-                                                  league == input$information_player_league_selection &
-                                                  season ==  as.numeric(
+                      choices = unique(player_tab_data %>%
+                                         filter(team_name == input$information_player_team_selection &
+                                                  league_name == input$information_player_league_selection &
+                                                  league_season ==  as.numeric(
                                                     str_split(input$information_player_season_selection,
                                                               pattern = "/")[[1]][1])) %>%
                                          select(player_name) %>%
@@ -57,83 +59,96 @@ information_player_server <- function(input, output, session){
     
   })
   
+  
+  # filter the data for the selected club and the selected player
+  player_infos <- reactive({
+    player_tab_data %>%
+    filter(league_name == input$information_player_league_selection,
+           team_name == input$information_player_team_selection,
+           player_name == input$information_player_player_selection,
+           league_season ==  as.numeric(
+             str_split(input$information_player_season_selection,
+                       pattern = "/")[[1]][1])) %>%
+    data.frame() %>%
+    unique()
+  })
   # create the output for the table on the overview page
-  output$info_player_player_name <- renderTable({
+  output$info_player_overview <- renderUI({
     # there has to be a player selected
     req(input$information_player_player_selection)
     req(input$information_player_team_selection)
     req(input$information_player_league_selection)
     req(input$information_player_season_selection)
     
-    # filter the data for the selected club and the selected player
-    player_infos <- all_leagues_tm_squads %>%
-      filter(league == input$information_player_league_selection,
-             club == input$information_player_team_selection,
-             player_name == input$information_player_player_selection,
-             season ==  as.numeric(
-               str_split(input$information_player_season_selection,
-                         pattern = "/")[[1]][1])) %>%
-      data.frame() %>%
-      unique()
+    HTML(paste(
+      paste0("<b>", "Name: ", "</b>", unique(player_infos()$player_name)),
+      paste0(
+        "<b>",
+        "Country: ",
+        "</b>",
+        unique(player_infos()$player_nationality)
+      ),
+      paste0("<b>", "Club: ", "</b>",  unique(player_infos()$team_name)),
+      paste0(
+        "<b>",
+        "Position: ",
+        "</b>",
+        unique(player_infos()$player_position)
+      ),
+      paste0("<b>", "Foot: ", "</b>" , unique(player_infos()$player_foot)),
+      paste0(
+        "<b>",
+        "Market value: ",
+        "</b>",
+        unique(player_infos()$player_market_value_in_million_euro), " Million Euro"
+      ),      
+      paste0("<b>", "Previous club: ", "</b>" , unique(player_infos()$player_previous_club)),
+      sep = "<br/>"
+    ))
     
-    club <- unique(player_infos$club)
-    # extract the name of the player
-    name <- unique(player_infos$player_name)
-    
-    # extract the league of the player
-    league <- unique(player_infos$league) 
-    
-    # extract the nationality of the player
-    nationality <- unique(player_infos$player_nationality)
-    
-    # extract the position the player plays on
-    position <- unique(player_infos$position)
-
-    # extract the age of the player
-    age <- unique(player_infos$player_age)
-    
-    # extract the birth date of the player
-    birth_date <- unique(player_infos$player_birth_date)
-    
-    # extract the height of the player
-    height <- unique(player_infos$player_height)
-    
-    # extract the date the player joined its current club
-    joining_date <- unique(player_infos$player_joining_date)
-    
-    # extract the market value of the player
-    market_value <- unique(player_infos$player_market_value_in_million_euro)
-    contract_date <- unique(player_infos$player_contract_date)
-    
-    # create the texts for the table
-    country_text <- paste0("Country: ", nationality)
-    position_text <- paste0("Position: ", position)
-    birthday_text <- paste0("Birthday: ", birth_date)
-    age_text <- paste0("Age: ", age)
-    height_text <- paste0("Height: ", height, " m")
-    joining_date_text <- paste0("Joined: ", joining_date)
-    market_value_text <- paste0("Market value: ", market_value, " million")
-    contract_text <- paste0("Contract to: ", contract_date)
-    
-    player_info_frame <-
-      data.frame(matrix(
-        c(
-          country_text,
-          position_text,
-          birthday_text,
-          age_text,
-          height_text,
-          market_value_text,
-          joining_date_text,
-          contract_text
-        ),
-        ncol = 2,
-        nrow = 4,
-        byrow = TRUE
-      )
-    ) 
-    
-    `colnames<-`(player_info_frame , NULL)
+    # 
+    # # extract the league of the player
+    # league <- unique(player_infos$league) 
+    # 
+    # # extract the nationality of the player
+    # nationality <- unique(player_infos$player_nationality)
+    # 
+    # # extract the position the player plays on
+    # position <- unique(player_infos$position)
+    # 
+    # # extract the market value of the player
+    # market_value <- unique(player_infos$player_market_value_in_million_euro)
+    # contract_date <- unique(player_infos$player_contract_date)
+    # 
+    # # create the texts for the table
+    # country_text <- paste0("Country: ", nationality)
+    # position_text <- paste0("Position: ", position)
+    # birthday_text <- paste0("Birthday: ", birth_date)
+    # age_text <- paste0("Age: ", age)
+    # height_text <- paste0("Height: ", height, " m")
+    # joining_date_text <- paste0("Joined: ", joining_date)
+    # market_value_text <- paste0("Market value: ", market_value, " million")
+    # contract_text <- paste0("Contract to: ", contract_date)
+    # # 
+    # player_info_frame <-
+    #   data.frame(matrix(
+    #     c(
+    #       country_text,
+    #       position_text,
+    #       birthday_text,
+    #       age_text,
+    #       height_text,
+    #       market_value_text,
+    #       joining_date_text,
+    #       contract_text
+    #     ),
+    #     ncol = 2,
+    #     nrow = 4,
+    #     byrow = TRUE
+    #   )
+    # ) 
+    # 
+    # `colnames<-`(player_info_frame , NULL)
     # set the NA format in a kable table to an empty string 
     # options(knitr.kable.NA = "")
     
@@ -191,6 +206,135 @@ information_player_server <- function(input, output, session){
     
     # set the img on the extracted image
     tags$img(src = club_image)
+  })
+  
+############ valuebox 
+  filter_player_data <- reactive({
+    # we need the user to select a player first
+    # there has to be a player selected
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    req(input$information_player_league_selection)
+    req(input$information_player_season_selection)  
+    
+    # filter the huge data frame on the club selected
+    player_tab_data %>%
+      filter(league_name ==  input$information_player_league_selection,
+             team_name == input$information_player_team_selection,
+             league_season ==  as.numeric(str_split(input$information_player_season_selection,
+                                                    pattern = "/")[[1]][1]),
+             player_name == input$information_player_player_selection)
+    
+    
+  })
+  
+  output$joining_date <- renderValueBox({
+    # we need the user to select a player first
+    # there has to be a player selected
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    req(input$information_player_league_selection)
+    req(input$information_player_season_selection)  
+    
+    valueBox(
+      filter_player_data()  %>%
+        select(player_joining_date) %>% pull(),
+      "Joining date",
+      icon = icon("arrow-left"),
+      color = "orange",
+      width = 3
+    )
+  })
+  
+  output$contract_date <- renderValueBox({
+    # we need the user to select a player first
+    # there has to be a player selected
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    req(input$information_player_league_selection)
+    req(input$information_player_season_selection)  
+    
+  
+  valueBox(
+    filter_player_data() %>%
+      select(player_contract_date) %>%
+      pull() ,
+    "Contract date",
+    icon = icon("arrow-right"),
+    color = "purple",
+    width = 3
+  )
+})
+  
+  output$age <- renderValueBox({
+    # we need the user to select a player first
+    # there has to be a player selected
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    req(input$information_player_league_selection)
+    req(input$information_player_season_selection)  
+
+    valueBox(
+      filter_player_data() %>%
+        select(player_age) %>%
+        pull(),
+      "Age",
+      icon = icon("user"),
+      color = "green",
+      width = 3
+    )
+  })
+  
+  output$height <- renderValueBox({
+    # we need the user to select a player first
+    # there has to be a player selected
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    req(input$information_player_league_selection)
+    req(input$information_player_season_selection)  
+    
+    valueBox(
+      filter_player_data() %>%
+        select(player_height) %>%
+        pull(),
+      "Height (m)",
+      icon = icon("flag"),
+      color = "green",
+      width = 3
+    )
+  })
+  
+########### player market value plot
+  output$info_player_market_value <- renderPlotly({
+    # we need the user to select a player first
+    # there has to be a player selected
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    req(input$information_player_league_selection)
+
+
+    player_tab_data %>% 
+      filter(
+        league_name == input$information_player_league_selection,
+        team_name == input$information_player_team_selection,
+        player_name == input$information_player_player_selection,
+        )  %>% 
+      # create actual plot for the market value over time by club
+      plot_ly(
+        x = ~ league_season,
+        y = ~ player_market_value_in_million_euro,
+        mode = 'lines+markers'
+      ) %>%
+      layout(
+        title = "stats for market value",
+        yaxis = list(title = "Value"),
+        xaxis = list(title = "season"),
+        font = list(color = "white"),
+        plot_bgcolor = "rgba(0, 65, 87, 10)",
+        paper_bgcolor = "rgba(0, 65, 87, 10)",
+        fig_bg_color = "rgba(0, 65, 87, 10)"
+      )
+    
   })
   
   
@@ -656,7 +800,6 @@ information_player_server <- function(input, output, session){
         minWidth = 150,
         headerStyle = list(background = "darkblue")
       ),
-      searchable = TRUE,
       striped = TRUE,
       highlight = TRUE,
       borderless = TRUE, 
@@ -667,9 +810,7 @@ information_player_server <- function(input, output, session){
                   backgroundColor = "#004157",
                   highlightColor = "#2f829e",
                   cellPadding = "8px 12px",
-                  style = list(color = "white"),
-                  searchInputStyle = list(width = "100%",
-                                          color = "black")
+                  style = list(color = "white")
                 ), 
                 # modify the layout and names of the columns
                 columns = list(
