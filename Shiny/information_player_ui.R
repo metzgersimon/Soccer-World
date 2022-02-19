@@ -58,27 +58,56 @@ tab_information_player_ui <- function(){
             # about the player
             tabPanel("Overview",
                      fluidRow(
-                       column(width = 4,
-                              align = "left",
-                              div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
-                                  tableOutput("info_player_player_name")
-                              )
-                       ),
+                         valueBoxOutput(
+                           "age", 
+                           width = 3),
+                         valueBoxOutput(
+                           "height", 
+                           width = 3),
+                         valueBoxOutput(
+                           "joining_date", 
+                           width = 3),
+                         valueBoxOutput(
+                           "contract_date", 
+                           width = 3)),
                        # ui output to display the logo of the club and player image
-                       column(width = 4,
-                              align = "center",
-                              div(style = "margin-top: 20px;",
-                                  uiOutput("info_player_player_img",
-                                           width = "2px")
-                              )
-                       ),
-                       column(width = 4,
-                              align = "center",
-                              div(style = "margin-top: 20px;",
-                                  uiOutput("info_player_club_img",
-                                           width = "2px")
-                              )
-                       )
+                     fluidRow(box(width = 4,
+                                  title = "Player Overview", 
+                                  solidHeader = TRUE, 
+                                  status = "primary",     
+                                  div(style = "margin-top: 20px;",
+                                      htmlOutput("info_player_overview")
+                                  )
+                     ),box(width = 4,
+                           title = "Player profile", 
+                           solidHeader = TRUE, 
+                           status = "primary",     
+                           div(style = "margin-top: 20px;",
+                               htmlOutput("info_player_player_img")
+                           )
+                     ),
+                     box(width = 4,
+                         title = "Player club logo", 
+                         solidHeader = TRUE, 
+                         status = "primary",     
+                         div(style = "margin-top: 20px;",
+                             htmlOutput("info_player_club_img")
+                         )
+                     )
+                     # column(width =4 ,
+                     #          align = "left",
+                     #          div(style = "margin-top: 20px;",
+                     #              uiOutput("info_player_player_img",
+                     #                       width = "2px")
+                     #          )
+                     #   ),
+                       # column(width = 4,
+                       #        align = "left",
+                       #        div(style = "margin-top: 20px;",
+                       #            uiOutput("info_player_club_img",
+                       #                     width = "2px")
+                       #        )
+                       # )
                      )
             ),
             tabPanel("Statistics",  

@@ -82,6 +82,7 @@ y <-
 player_stats <- inner_join(x,y, by=c("league_season", "player_name", "league_name", "team_name")) %>% select(-contains("x"))
 
 # filter the season larger than 2015 so that we don't have many missing values
+# as the player stats starts from 2015
 filter_all_leagues_squads_tm <- all_leagues_squads_tm %>% filter(season>=2015)
 
 # merge the stats with the basic infos of players
