@@ -3,6 +3,8 @@ information_league_match_server <- function(input, output, session){
   
   #all_leagues_fixture_stats <- all_fixture_stats %>% left_join(all_leagues_matches, by = c("fixture_id"="fixture_id","league_id"="league_id"))
   
+  # if the league is selected we want to update the season selection and the team 
+  # selection
   observeEvent(input$info_match_league, {
     # map the selected league name to the league id
     league_ID <- API_map_league_to_id(input$info_match_league)
@@ -13,11 +15,35 @@ information_league_match_server <- function(input, output, session){
                                            ) %>%
                                            select(season) %>%
                                            unlist() %>%
-                                           unname()
-                                  )
-                      )
-    )
+                                           unname())))
+    
+    updateSelectInput(session, 
+                      inputId = "info_match_team1",
+                      choices = c(unique(all_leagues_matches %>%
+                                           filter(league_name == input$info_match_league &
+                                                    league_season == 
+                                                    as.numeric(
+                                                      str_split(input$info_match_season,
+                                                                pattern = "/")[[1]][1])) %>%
+                                                  
+                                           select(club_name_home) %>%
+                                           unlist() %>%
+                                           unname())))
+    
+    updateSelectInput(session, 
+                      inputId = "info_match_team2",
+                      choices = c(unique(all_leagues_matches %>%
+                                           filter(league_name == input$info_match_league &
+                                                    league_season == 
+                                                    as.numeric(
+                                                      str_split(input$info_match_season,
+                                                                pattern = "/")[[1]][1])) %>%
+                                           
+                                           select(club_name_away) %>%
+                                           unlist() %>%
+                                           unname())))
   })
+  
   # create an observer to display for the season selection (home team) to display
   # only those clubs that are present for the selected leagues
   observeEvent(input$info_match_season, {
@@ -25,39 +51,36 @@ information_league_match_server <- function(input, output, session){
     league_ID <- API_map_league_to_id(input$info_match_league)
     updateSelectInput(session, 
                       inputId = "info_match_team1",
-                      choices = c(unique(all_leagues_fixture_stats %>%
-                                           filter(league_id == league_ID &
-                                                    season == 
+                      choices = c(unique(all_leagues_matches %>%
+                                           filter(league_name == input$info_match_league &
+                                                    league_season == 
                                                     as.numeric(
                                                       str_split(input$info_match_season,
                                                                 pattern = "/")[[1]][1])
                                            ) %>%
-                                           select(team_name) %>%
+                                           select(club_name_home) %>%
                                            unlist() %>%
-                                           unname()
-                                  )
-                      )
-    )
+                                           unname())))
   })
+  
+  
   observeEvent(input$info_match_season, {
     # map the selected league name to the league id
     league_ID <- API_map_league_to_id(input$info_match_league)
     updateSelectInput(session, 
                       inputId = "info_match_team2",
-                      choices = c(unique(all_leagues_fixture_stats %>%
-                                           filter(league_id == league_ID &
-                                                    season == 
+                      choices = c(unique(all_leagues_matches %>%
+                                           filter(league_name == input$info_match_league &
+                                                    league_season == 
                                                     as.numeric(
                                                       str_split(input$info_match_season,
                                                                 pattern = "/")[[1]][1])
                                            ) %>%
-                                           select(team_name) %>%
+                                           select(club_name_away) %>%
                                            unlist() %>%
-                                           unname()
-                                  )
-                      )
-    )
+                                           unname())))
   })
+  
   
   # reactive function (is executed every time something changes)
   # that returns the data frame which is needed for the match statistics
@@ -69,45 +92,46 @@ information_league_match_server <- function(input, output, session){
     req(input$info_match_team1)
     req(input$info_match_team2)
     
-    # season_n <- 2021
-    # team1 <- "Borussia Monchengladbach"
+    # season_n <- 2016
+    # team1 <- "SV Werder Bremen"
     # team2 <- "FC Bayern Munich"
     # season_half_selection <- "First half"
+    # season_selection <- 2016
+    
     
     # get the inputs in a proper format
     season_half_selection <- input$info_match_season_half
+    season_selection <- as.numeric(str_split(input$info_match_season,
+                                             pattern = "/")[[1]][1])
     
     # map the league name to the league id
-    league_ID <- #API_map_league_to_id("Bundesliga")#input$info_match_league)
-      API_map_league_to_id(input$info_match_league)
+    league_ID <- API_map_league_to_id(input$info_match_league)
+    league_ID <- API_map_league_to_id("Bundesliga")
       
     # # get the fixture id of the selected match
     # fixture_ID <- all_leagues_matches %>%
     #   filter(league_id == league_ID,
-    #          league_season == 2021,
+    #          league_season == season_selection,
     #          # take only those rows where the clubs match
     #          club_name_home %in% c(team1,
     #                                team2),
     #          club_name_away %in% c(team1,
-    #                                team2)) 
+    #                                team2))
     
     # extract the information for the possible fixture ids
     fixture_ID <- all_leagues_matches %>%
       filter(league_id == league_ID,
-             league_season == as.numeric(str_split(input$info_match_season,
-                                                   pattern = "/")[[1]][1]),
+             league_season == season_selection,
              # take only those rows where the clubs match
              club_name_home %in% c(input$info_match_team1,
                                    input$info_match_team2),
              club_name_away %in% c(input$info_match_team1,
                                    input$info_match_team2)) 
-    
-    
+
     # extract the number of matchdays
     number_of_rounds <- all_leagues_matches %>%
       filter(league_id == league_ID,
-             league_season == as.numeric(str_split(input$info_match_season,
-                                                   pattern = "/")[[1]][1])) %>%
+             league_season == season_selection) %>%
       summarize(number_rounds = max(league_round),
                 na.rm = TRUE) %>%
       select(number_rounds) %>% 
@@ -132,7 +156,7 @@ information_league_match_server <- function(input, output, session){
     # extract the match that is actually wanted by the user
     fixture_stats <- all_leagues_fixture_stats %>%
       filter(league_id == league_ID,
-             season == as.numeric(2021),
+             season == season_selection,
              fixture_id == fixture_ID$fixture_id)
     
     # if there is no data available (no rows)
@@ -222,7 +246,7 @@ information_league_match_server <- function(input, output, session){
     
     print("TEST2")
     # rename all columns
-    colnames(fixture_plot_data) <- c("statistic","team_2", "team_1")
+    colnames(fixture_plot_data) <- c("statistic","team_1", "team_2")
     
     # compute the relative values of the statistics to show 
     # them later on in the bar chart
@@ -232,8 +256,11 @@ information_league_match_server <- function(input, output, session){
       # again, replace all NAs with 0
       replace(is.na(.), 0)
     
+    # team names
+    team_names <- c(club_name_home, club_name_away)
     
-    return(fixture_plot_data)
+    # return the plot data and the team names
+    return(list(fixture_plot_data, team_names))
     
   })
   
@@ -244,14 +271,21 @@ information_league_match_server <- function(input, output, session){
     #req(matches_reactive())
     
     # get the data
-    fixture_plot_data <- matches_reactive()
+    matches_reac_data <- matches_reactive()
+    
+    # extract the data for the plot
+    fixture_plot_data <- matches_reac_data[[1]]
+    # fixture_plot_data2 <- info[[1]]
+    
+    # extract the team names
+    team_names <- matches_reac_data[[2]]
+    # team_names <- info[[2]]
     
     # if there is no data, do nothing (plot remains empty)
     if(nrow(fixture_plot_data) == 0){
       return()
     }
-    
-    
+
     # create names just for display in the plot
     plot_labels <- c("Goals", "Total shots", "Shots on target", "Shots off target", 
                      "Shots blocked", "Shots inside box", "Shots outside box",
@@ -278,7 +312,7 @@ information_league_match_server <- function(input, output, session){
                               y = ~ plot_labels,
                               type = "bar",
                               orientation = "h",
-                              name = ~ club_name_home,
+                              name = ~ team_names[1],
                               marker = list(color = c("#5cb504")),
                               text = ~ team_1,
                               textposition = 'outside') %>%
@@ -290,7 +324,7 @@ information_league_match_server <- function(input, output, session){
                               y = ~ plot_labels,
                               type = "bar",
                               orientation = "h",
-                              name = ~ club_name_away,
+                              name = ~ team_names[2],
                               marker = list(color = c("#2b71ba")),
                               text = ~ team_2,
                               textposition = 'outside') %>%
@@ -305,7 +339,7 @@ information_league_match_server <- function(input, output, session){
             margin = 0) %>%
       # set them to grouped and remove the axis titles because we don't need them
       layout(barmode = 'grouped',
-             title = paste0(club_name_home, "  -     ", club_name_away),
+             title = paste0(team_names[1], "  -     ", team_names[2]),
              xaxis = list(title = "",
                           showticklabels = FALSE),
              xaxis2 = list(title = "",
@@ -328,42 +362,61 @@ information_league_match_server <- function(input, output, session){
     req(input$info_match_season)
     req(input$info_match_team1)
     req(input$info_match_team2)
+    req(input$info_match_season_half)
     
-    # season <- 2021
-    # team1 <- "Borussia Monchengladbach"
-    # team2 <- "Borussia Dortmund"
+    # season_selection <- 2016
+    # team1 <- "FC Bayern Munich"
+    # team2 <- "SV Darmstadt 98"
     # season_half_selection <- "First half"
+    # league <- "Bundesliga"
+    # number_of_rounds <- 34
     
     season_half_selection <- input$info_match_season_half
+    season_selection <- input$info_match_season
     
     # get the data for the year
-    current_season_lineups <- #get(paste0("lineups_messy_", season))
-      #buli_2021_lineups 
-      #buli_fixture_lineups_2015_2021 
-      all_leagues_lineups %>% filter(league_name == input$info_match_league,
-                                     league_season == as.numeric(str_split(input$info_match_season,
-                                                                    pattern = "/")[[1]][1])) %>%
+    # match_lineups <- all_leagues_fixture_lineups %>%
+    #   filter(league_name == league,
+    #          league_season == season_selection,
+    # club_name_home %in% c(team1, team2),
+    # club_name_away %in% c(team1, team2)) %>%
+    #   data.frame()
+    
+    # get the lineups for the selected match
+    match_lineups <- all_leagues_fixture_lineups %>% 
+      filter(league_name == input$info_match_league,
+             league_season == as.numeric(str_split(input$info_match_season,
+                                                   pattern = "/")[[1]][1]),
+             club_name_home %in% c(input$info_match_team1, input$info_match_team2),
+             club_name_away %in% c(input$info_match_team1, input$info_match_team2)) %>%
       data.frame()
     
     
     # extract the number of matchdays
-    number_of_rounds <- max(current_season_lineups$league_round,
-                            na.rm = TRUE)
+    number_of_rounds <- all_leagues_matches %>%
+      filter(league_name == input$info_match_league,
+             league_season == as.numeric(str_split(input$info_match_season,
+                                                   pattern = "/")[[1]][1])) %>%
+      summarize(number_rounds = max(league_round),
+                na.rm = TRUE) %>%
+      select(number_rounds) %>% 
+      pull()
     
-    # number_of_rounds <- 34
     
     # half the number of matchdays to see how many days are in the
     # first half and how many in the second half of the season
     rounds_segment <- number_of_rounds / 2
     
-    # based on the season half selected, we only want to observe
-    # the selected half of the matchdays, i.e., for the Bundesliga (34 matchdays)
-    # for the first season half, matchday 1-17 and for the second 18-34.
+    
+    # filter the data based on the first half/second half of the season
     if(season_half_selection == "First half"){
-      important_matchdays <- c(1:rounds_segment)
+      match_lineups <- match_lineups %>%
+        filter(league_round <= rounds_segment)
     } else {
-      important_matchdays <- c((rounds_segment + 1):number_of_rounds)
+      match_lineups <- match_lineups %>%
+        filter(league_round > rounds_segment)
     }
+    
     
     # created empty variables to store the data
 #    selected_match_data <- NULL
@@ -432,102 +485,99 @@ information_league_match_server <- function(input, output, session){
 #      return(selected_match_data)
 #    }
 
-if(length(current_season_lineups) == 0){
-  shinyalert(title = "Error: no data avilable for your selection!",
-             text = paste0("Probably the match for the selected teams is not ",
-                           "yet played in the given season half."),
-             type = "error"
-  )
-  return(current_season_lineups)
-}
-    # if everything went well, we extract the lineups for both teams
-    # starting_lineups <- selected_match_data$starting_lineups
-#    starting_lineups_home <- selected_match_data[[1]]$starting_players[[1]]
-#    starting_lineups_away <- selected_match_data[[2]]$starting_players[[1]]
-    
-    # substitute_lineups <- selected_match_data$substitute_lineups
-#    substitute_lineups_home <- selected_match_data[[1]]$substitute_players[[1]]
-#    substitute_lineups_away <- selected_match_data[[2]]$substitute_players[[1]]
-    
-    # and split them into home and away team
-starting_lineups_home <-
-  current_season_lineups %>% filter(is_starting_grid == 1) %>%
-  select(team_name,
-         player_name,
-         player_number,
-         player_grid)
-      # add a variable for team name
-#      mutate(team_name = selected_match_data[[1]]$team_info[[1]]$team_name)
-    # set the column names appropriately
-#    colnames(starting_lineups_home) <- c("team_name", "player_name", "player_number", "player_grid",
-#                                         )
-    
-#    starting_lineups_away <- select(starting_lineups_away,
-#                                    player_name,
-#                                    player_number,
-#                                    player_grid) %>%
-      # add a variable for team name
-#      mutate(team_name = selected_match_data[[2]]$team_info[[1]]$team_name)
-    
-starting_lineups_away <-
-  current_season_lineups %>% filter(is_starting_grid == 0) %>%
-  select(team_name,
-         player_name,
-         player_number,
-         player_grid)
+    # if there is no data available, throw an error
+    if(length(match_lineups) == 0) {
+      shinyalert(
+        title = "Error: no data avilable for your selection!",
+        text = paste0(
+          "Probably the match for the selected teams is not ",
+          "yet played in the given season half."
+        ),
+        type = "error"
+      )
+      return(current_season_lineups)
+    }
 
-    # set the column names appropriately
-    colnames(starting_lineups_away) <- c("team_name","player_name", "player_number", "player_grid")
     
-    # starting_lineups <- bind_rows(starting_lineups_home,
-    #                               starting_lineups_away)
+    # extract the home and the away team
+    home_team <- unique(match_lineups$club_name_home)
+    away_team <- unique(match_lineups$club_name_away)
     
-    # return the data as a list (home as first element
-    # and away as second element)
-    return(list(starting_lineups_home,
-                starting_lineups_away,
-                current_season_lineups$fixture_date,
-                current_season_lineups$fixture_time))
-                #selected_match_data[[3]],
-                #selected_match_data#,
-                # selected_match_data$date,
-                #selected_match_data$time
-    #)
-   # )
+    # get the starting lineups for the home team with the necessary columns
+    starting_lineups_home <- match_lineups %>% 
+      filter(is_starting_grid == TRUE,
+             team_name == home_team) %>%
+      select(team_name,
+             player_name,
+             player_number,
+             player_grid,
+             # also get the formation
+             formation,
+             # to be able to join additional information later
+             player_id)
+    
+    # get the starting lineups for the away team with the necessary columns
+    starting_lineups_away <- match_lineups %>% 
+      filter(is_starting_grid == TRUE,
+             team_name == away_team) %>%
+      select(team_name,
+             player_name,
+             player_number,
+             player_grid,
+             # also get the formation
+             formation,
+             # to be able to join additional information later
+             player_id)
+    
+    
+    
+    # create a list with the lineups
+    lineups <- list(starting_lineups_home,
+                    starting_lineups_away)
+    
+    # create a vector with the date and time information
+    date_info <- list(unique(match_lineups$fixture_date),
+                      unique(match_lineups$fixture_time))
+    
+    
+    # return the data as a list lineups contains the home and away lineups
+    # and date info the match date and time
+    return(list(lineups, date_info))
+           
   })
   
   output$info_match_match_date <- renderText({
     req(lineups_reactive)
     
-    # get the fourth element of the lineups reactive function
-    # which contains the match date and the fifth for the match time
-    lineups_data <- lineups_reactive()[[3]]
-    date <- lineups_data$date
-    time <- lineups_data$time
+    # get the third element of the lineups reactive function
+    # which contains the match date and match time
+    lineups_data <- lineups_reactive()[[2]]
     
-    paste0(date, " - ", time)
+    # paste the date information together
+    paste0(lineups_data[[1]], " - ", lineups_data[[2]])
   })
   
-  
+  # output the formation of the home team
   output$info_match_match_formation_home <- renderText({
     req(lineups_reactive)
-    
-    # get the third element of the lineups reactive function
-    # which contains the starting formations
-    lineups_data <- lineups_reactive()[[4]]
-    formation <- lineups_data[[1]]$formation[[1]]
-    
+
+    # get the first element of the lineups reactive function
+    # which contains lineups including the formation
+    lineups_data <- lineups_reactive()[[1]]
+    formation <- unique(lineups_data[[1]]$formation)
+
     formation
   })
   
+  # output the formation of the away team
   output$info_match_match_formation_away <- renderText({
     req(lineups_reactive)
-    
-    # get the third element of the lineups reactive function
-    # which contains the starting formations
-    lineups_data <- lineups_reactive()[[4]]
-    formation <- lineups_data[[2]]$formation[[1]]
-    
+
+    # get the first element of the lineups reactive function
+    # which contains lineups including the formation
+    lineups_data <- lineups_reactive()[[1]]
+    formation <- unique(lineups_data[[2]]$formation)
+
     formation
   })
   
@@ -541,56 +591,95 @@ starting_lineups_away <-
     req(input$info_match_team2)
     req(input$info_match_season_half)
     
+    # season <- 2021
+    # team1 <- "Borussia Monchengladbach"
+    # team2 <- "Borussia Dortmund"
+    # season_half_selection <- "First half"
+    # league <- "Bundesliga"
+    
     # get all relevant events for the selection of the user
-    relevant_events <- buli_fixture_events_2010_to_2021 %>%#
+    # relevant_events <- all_leagues_fixture_events %>%#
+    #   # filter for the selected season and get only those matches
+    #   filter(league_season == season,
+    #          league_name == "Bundesliga",
+    #          # select the fitting team names to make the join faster
+    #          club_name_home %in% c(team1,
+    #                                team2),
+    #          club_name_away %in% c(team1,
+    #                                team2))
+    
+    
+    season_half_selection <- input$info_match_season_half
+    
+    # get all relevant events for the selection of the user
+    relevant_events <- all_leagues_fixture_events %>%#
       # filter for the selected season and get only those matches 
-      filter(season == as.numeric(str_split(input$info_match_season,
+      filter(league_season == as.numeric(str_split(input$info_match_season,
                                             pattern = "/")[[1]][1]),
-             # which are in the correct season half
-             ifelse(input$info_match_season_half == "First half",
-                    matchday <= 17,
-                    matchday > 17),
+             league_name == input$info_match_league,
              # select the fitting team names to make the join faster
-             team_name %in% c(input$info_match_team1, 
-                              input$info_match_team2)
-      ) %>%
-      inner_join(buli_matches_2010_2021,
-                 by = "fixture_id") %>%
-      # now finally filter for the teams to get really only those events
-      # that fit to the selected match
-      filter(club_name_home %in% c(input$info_match_team1,
+             club_name_home %in% c(input$info_match_team1,
                                    input$info_match_team2),
              club_name_away %in% c(input$info_match_team1,
-                                   input$info_match_team2)) %>%
+                                   input$info_match_team2))
+    
+    
+    # number_of_rounds <- all_leagues_matches %>%
+    #   filter(league_name == "Bundesliga",
+    #          league_season == 2021) %>%
+    #   summarize(number_rounds = max(league_round),
+    #             na.rm = TRUE) %>%
+    #   select(number_rounds) %>% 
+    #   pull()
+    
+    # extract the number of matchdays
+    number_of_rounds <- all_leagues_matches %>%
+      filter(league_name == input$info_match_league,
+             league_season == as.numeric(str_split(input$info_match_season,
+                                                   pattern = "/")[[1]][1])) %>%
+      summarize(number_rounds = max(league_round),
+                na.rm = TRUE) %>%
+      select(number_rounds) %>% 
+      pull()
+    
+    
+    # half the number of matchdays to see how many days are in the
+    # first half and how many in the second half of the season
+    rounds_segment <- number_of_rounds / 2
+    
+    
+    # filter the data based on the first half/second half of the season
+    if(season_half_selection == "First half"){
+      relevant_events <- relevant_events %>%
+        filter(league_round <= rounds_segment)
+    } else {
+      relevant_events <- relevant_events %>%
+        filter(league_round > rounds_segment)
+    }
+      
+    # create the table for the events we want to display
+    events_table <- relevant_events %>%
       # add a new column with values for the events such that the images can be
       # loaded based on the value
-      mutate(event_image = ifelse(str_to_lower(detail) %like% "goal",
+      mutate(event_image = ifelse(str_to_lower(event_detail) %like% "goal",
                                   "goal_icon",
-                                  ifelse(str_to_lower(detail) %like% "substitut",
+                                  ifelse(str_to_lower(event_detail) %like% "substitut",
                                          "change_icon",
-                                         ifelse(str_to_lower(detail) %like% "yellow card",
+                                         ifelse(str_to_lower(event_detail) %like% "yellow card",
                                                 "yellow_card_icon",
-                                                "red_card_icon"))),
-             time_extra = ifelse(is.na(time_extra),
-                                 0,
-                                 time_extra)) %>%
+                                                "red_card_icon")))) %>%
+      # arrange the events descending based on the times
       arrange(desc(time_elapsed), desc(time_extra)) %>%
+      # create a variable to display the time in an apropriate format
       mutate(time_display = ifelse(time_extra == 0,
-                                   time_elapsed,
-                                   paste0(time_elapsed, "+", time_extra))) %>%
-      select(#league_id = `league_id.x`,
-        #season, matchday, fixture_date = `fixture_date.x`,
-        #fixture_time = `fixture_time.x`,
-        #time_elapsed, time_extra, #team_id,
-        time_display,
-        team_logo,
-        #club_id_home, club_name_home, club_logo_home, club_id_away, 
-        #club_name_away, club_logo_away, 
-        event_image, #player_id,
-        player_name,
-        #assist_id, 
-        assist_name, #type, 
-        detail, comments)
+                                   paste0(time_elapsed, "'"),
+                                   paste0(time_elapsed, "+", time_extra, "'")),
+             # if there is no assist player given we insert a dash
+             assist_name = ifelse(is.na(assist_name),
+                                  "-", assist_name)) %>%
+      # reorder the data frame and drop values
+      select(time_display, team_logo, event_image, player_name,
+             assist_name, event_detail)#, event_comments)
     
     # test= "First half"
     # relevant_events <- buli_fixture_events_2019_2021_18_12_21 %>%
@@ -630,13 +719,16 @@ starting_lineups_away <-
     #          club_id_home, club_name_home, club_logo_home, club_id_away,
     #          club_name_away, club_logo_away, event_image)
     
-    reactable(relevant_events,
+    # create the reactable table for all the events happened during 
+    # the given match
+    reactable(events_table,
+              # rename the columns and add the images
               columns = list(
                 time_display = colDef(name = "Time",
                                       align = "left"),
                 team_logo = colDef(name = "Team",
                                    align = "center",
-                                   cell = embed_img()),
+                                   cell = embed_img(height = "30px", width = "30px")),
                 event_image = colDef(name = "Event",
                                      align = "center",
                                      cell = function(value){
@@ -647,14 +739,13 @@ starting_lineups_away <-
                                        )
                                      }),
                 player_name = colDef(name = "Player",
-                                     align = "center",
-                ),
+                                     align = "center"),
                 assist_name = colDef(name = "Assist from",
                                      align = "center"),
-                detail = colDef("Detail",
-                                align = "center"),
-                comments = colDef("Reason",
-                                  align = "center")
+                event_detail = colDef("Detail",
+                                      align = "center")#,
+                # event_comments = colDef("Reason",
+                #                         align = "center")
                 
               ),
               highlight = TRUE,
@@ -680,11 +771,10 @@ starting_lineups_away <-
   output$info_match_match_lineups_overview_home_text <- renderText({
     req(lineups_reactive)
     
-    # get the third element of the lineups reactive function
-    # which contains the starting formations
+    # get the first element of the lineups reactive function
+    # to get the team name
     lineups_data <- lineups_reactive()[[1]]
-    # lineups_data2 <- lineups_data[[1]]
-    team_name <- lineups_data$team_name %>% unique()
+    team_name <- lineups_data[[1]]$team_name %>% unique()
     
     team_name
   })
@@ -692,11 +782,10 @@ starting_lineups_away <-
   output$info_match_match_lineups_overview_away_text <- renderText({
     req(lineups_reactive)
     
-    # get the third element of the lineups reactive function
-    # which contains the starting formations
-    lineups_data <- lineups_reactive()[[2]]
-    # lineups_data2 <- lineups_data[[2]]
-    team_name <- lineups_data$team_name %>% unique()
+    # get the first element of the lineups reactive function
+    # to get the team name
+    lineups_data <- lineups_reactive()[[1]]
+    team_name <- lineups_data[[2]]$team_name %>% unique()
     
     team_name
   })
@@ -706,22 +795,25 @@ starting_lineups_away <-
   output$info_match_match_lineups_overview_home <- renderPlotly({
     req(lineups_reactive())
     
-    lineups_data <- lineups_reactive()
+    lineups_data <- lineups_reactive()[[1]]
     
-    # lineups_data <- selected_match_data
-    
-    # extract the data for the home and away lineups
+    # extract the lineups data for the home team
     starting_lineups_home <- lineups_data[[1]]
+    # starting_lineups_home <- lineups[[1]]
     
+    # drop the player id columns
+    starting_lineups_home <- select(starting_lineups_home, -player_id)
     
-    # starting_lineups_home2 <- starting_lineups_home 
+    # extract the formation for the home team
+    formation_home <- unique(starting_lineups_home$formation)
     
-    formation_home <- lineups_data[[4]][[1]]$formation[[1]]
-    
+    # map the player positions on a grid with the map_player_position function
     starting_lineups_home$player_grid <- sapply(starting_lineups_home$player_grid,
                                                 map_player_position,
                                                 formation = formation_home)
     
+    # split the player_grid columns into two columns named row_pos and col_pos
+    # to be able to plot the data on a grid
     starting_lineups_home <- starting_lineups_home %>%
       separate(col = player_grid, into = c("row_pos", "col_pos"),
                sep = ":")
@@ -743,7 +835,7 @@ starting_lineups_away <-
             text = ~player_number,
             hoverinfo = "text",
             hovertext = ~paste0(player_name),
-            marker = list(size = 20,
+            marker = list(size = 25,
                           color = "black")) %>%
       # add_markers(size = 15) %>%
       add_text(textpostion = "inner") %>%
@@ -775,35 +867,34 @@ starting_lineups_away <-
   output$info_match_match_lineups_overview_away <- renderPlotly({
     req(lineups_reactive())
     
-    lineups_data <- lineups_reactive()
+    lineups_data <- lineups_reactive()[[1]]
     
-    # lineups_data <- selected_match_data
-    
-    # extract the data for the home and away lineups
+    # extract the lineups data for the away team
     starting_lineups_away <- lineups_data[[2]]
+    # starting_lineups_away <- lineups[[2]]
     
+    # drop the player id columns
+    starting_lineups_away <- select(starting_lineups_away, -player_id)
     
-    # starting_lineups_home2 <- starting_lineups_home 
+    # extract the formation for the home team
+    formation_away <- unique(starting_lineups_away$formation)
     
-    formation_away <- lineups_data[[4]][[2]]$formation[[1]]
-    
+    # map the player positions on a grid with the map_player_position function
     starting_lineups_away$player_grid <- sapply(starting_lineups_away$player_grid,
                                                 map_player_position,
                                                 formation = formation_away)
     
+    # split the player_grid columns into two columns named row_pos and col_pos
+    # to be able to plot the data on a grid
     starting_lineups_away <- starting_lineups_away %>%
       separate(col = player_grid, into = c("row_pos", "col_pos"),
                sep = ":")
-    
-    # save(starting_lineups_away, file = "test.RData")
-    
-    
     
     plot_ly(starting_lineups_away,
             x = ~col_pos,
             y = ~row_pos,
             #size = 4,
-            marker = list(size = 20,
+            marker = list(size = 25,
                           color = "black"),
             text = ~player_number,
             hoverinfo = "text",
@@ -866,9 +957,15 @@ starting_lineups_away <-
   output$info_match_match_lineups_home <- renderReactable({
     # wait until the input of the lineups_reactive function is given
     req(lineups_reactive())
+    # also wait for the other inputs
+    req(input$info_match_league)
+    req(input$info_match_season)
+    req(input$info_match_team1)
+    req(input$info_match_team2)
+    req(input$info_match_season_half)
     
     # get the data
-    lineups <- lineups_reactive()
+    lineups <- lineups_reactive()[[1]]
     # lineups <- list(starting_lineups_home,
     #                 starting_lineups_away,
     #                 selected_match_data[[3]],
@@ -882,9 +979,40 @@ starting_lineups_away <-
     # extract the data for the home lineups
     starting_lineups_home <- lineups[[1]]
     
+    # player infos
+    starting_lineups_home_player_infos <- all_leagues_player_stats %>%
+      filter(player_id %in% starting_lineups_home$player_id,
+             league_name == input$info_match_league,
+             league_season == input$info_match_season)#,
+             # club_name_home %in% c(input$info_match_team1,
+             #                       input$info_match_team2),
+             # club_name_away %in% c(input$info_match_team1,
+             #                       input$info_match_team2))
+    
+    # starting_lineups_home_player_infos <- all_leagues_player_stats %>%
+    #   filter(player_id %in% starting_lineups_home$player_id,
+    #          league_name == "Bundesliga",
+    #          league_season == 2016)#,
+             # club_name_home %in% c("FC Bayern Munich",
+             #                       "SV Darmstadt 98"),
+             # club_name_away %in% c("FC Bayern Munich",
+             #                       "SV Darmstadt 98"))
+    
+    # aggregate the data for each player in the starting lineup
+    home_player_infos_agg <- starting_lineups_home_player_infos %>%
+      group_by(player_id, player_name, games_position, games_number) %>%
+      summarize(across(c(games_minutes, games_rating, goals_total, shots_total, passes_total,
+                         passes_accuracy, duels_total, duels_won),
+                       ~ mean(.x, na.rm = TRUE))) %>%
+      ungroup() %>%
+      select(-player_id)
+    
+
+   
+    
     
     # create the actual reactable (drop the team names)
-    reactable(starting_lineups_home[, -c(3, 4)],
+    reactable(home_player_infos_agg,
               defaultPageSize = 11,
               # # set general options for the table
               # # such as the possibility to filter or sort the table
@@ -908,7 +1036,7 @@ starting_lineups_away <-
               columns = list(
                 player_name = colDef(name = "Player",
                                      align = "left"),
-                player_number = colDef(name = "Number",
+                games_number = colDef(name = "Number",
                                        align = "center"))
     )
     
@@ -919,9 +1047,15 @@ starting_lineups_away <-
   output$info_match_match_lineups_away <- renderReactable({
     # wait until the input of the lineups_reactive function is given
     req(lineups_reactive())
+    # also wait for the other inputs
+    req(input$info_match_league)
+    req(input$info_match_season)
+    req(input$info_match_team1)
+    req(input$info_match_team2)
+    req(input$info_match_season_half)
     
     # get the data
-    lineups <- lineups_reactive()
+    lineups <- lineups_reactive()[[1]]
     
     # if there is no data, do nothing (plot remains empty)
     if(length(lineups) == 0){
@@ -931,8 +1065,37 @@ starting_lineups_away <-
     # extract the data for the away lineups
     starting_lineups_away <- lineups[[2]]
     
+    # player infos
+    starting_lineups_away_player_infos <- all_leagues_player_stats %>%
+      filter(player_id %in% starting_lineups_away$player_id,
+             league_name == input$info_match_league,
+             league_season == input$info_match_season)#,
+    # club_name_home %in% c(input$info_match_team1,
+    #                       input$info_match_team2),
+    # club_name_away %in% c(input$info_match_team1,
+    #                       input$info_match_team2))
+    
+    # starting_lineups_away_player_infos <- all_leagues_player_stats %>%
+    #   filter(player_id %in% starting_lineups_away$player_id,
+    #          league_name == "Bundesliga",
+    #          league_season == 2016)#,
+    # club_name_home %in% c("FC Bayern Munich",
+    #                       "SV Darmstadt 98"),
+    # club_name_away %in% c("FC Bayern Munich",
+    #                       "SV Darmstadt 98"))
+    
+    # aggregate the data for each player in the starting lineup
+    away_player_infos_agg <- starting_lineups_away_player_infos %>%
+      group_by(player_id, player_name, games_position, games_number) %>%
+      summarize(across(c(games_minutes, games_rating, goals_total, shots_total, passes_total,
+                         passes_accuracy, duels_total, duels_won),
+                       ~ mean(.x, na.rm = TRUE))) %>%
+      ungroup() %>%
+      select(-player_id)
+    
+    
     # create the actual reactable (drop the team names)
-    reactable(starting_lineups_away[, -c(3, 4)],
+    reactable(away_player_infos_agg,
               defaultPageSize = 11,
               # # set general options for the table
               # # such as the possibility to filter or sort the table
@@ -956,7 +1119,7 @@ starting_lineups_away <-
               columns = list(
                 player_name = colDef(name = "Player",
                                      align = "left"),
-                player_number = colDef(name = "Number",
+                games_number = colDef(name = "Number",
                                        align = "center"))
     )
     
@@ -1061,8 +1224,10 @@ starting_lineups_away <-
   # })
   
   
+  # outputs a table with past matches of the two selected teams
+  # in the current or previous seasons (also selected by the user)
   output$info_league_match_h2h <- renderReactable({
-    # wait until the input of the two teams
+    # wait for the input of the two teams
     req(input$info_match_team1)
     req(input$info_match_team2)
     req(input$info_match_season)
@@ -1072,28 +1237,28 @@ starting_lineups_away <-
     # team2 <- "FC Bayern Munich"
     # season_half_selection <- "First half"
     
-    # test <- buli_matches_2010_2021 %>%
-    #   filter(league_season <= season,
-    #          # take only those rows where the clubs match
-    #          club_name_home %in% c(team1,
-    #                                team2),
-    #          club_name_away %in% c(team1,
-    #                                team2),
-    #          fixture_date < Sys.Date()) %>%
     
-    buli_matches_2010_2021 %>%
+    # filter the all leagues matches table 
+    all_leagues_matches %>%
+      # for the club names
       filter(club_name_home %in% c(input$info_match_team1,
                                    input$info_match_team2),
              club_name_away %in% c(input$info_match_team1,
                                    input$info_match_team2),
+             # the selected season (smaller or equal than the current season, i.e.,
+             # all matches of these two teams in the past)
              league_season <= as.numeric(
                str_split(input$info_match_season,
                          pattern = "/")[[1]][1]),
              fixture_date < Sys.Date()) %>%
+      # add a variable for the result
       mutate(result_fixture = paste0(fulltime_score_home, ":", fulltime_score_away)) %>%
+      # select only the important variables
       select(fixture_date, league_season, 
-             league_round,club_name_home, result_fixture, club_name_away) %>%
+             league_round, club_name_home, result_fixture, club_name_away) %>%
+      # arrange them based on the date
       arrange(desc(fixture_date)) %>%
+      # create a table with that input
       reactable(
         highlight = TRUE,
         borderless = TRUE,
