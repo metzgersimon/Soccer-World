@@ -5,9 +5,9 @@ source("Get_data_API.R")
 # setup a connection to the database
 con <- dbConnect(RMariaDB::MariaDB(), 
                  host='127.0.0.1',
-                 dbname='Soccer_Prediction_Data',
-                 username='root',
-                 password='my-secret-pw')
+                 dbname='soccerworld',
+                 username='dev',
+                 password='worldpw')
 
 ################### 3. after matches: 23:00 ##################################
 
@@ -86,9 +86,7 @@ if(api_calls_left >= number_calls_needed){
   player_stats_today <- get_new_player_stats_API(con)
 }
 
-
-
-
+dbDisconnect(con)
 
 
 
