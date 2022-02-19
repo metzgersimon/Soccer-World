@@ -25,6 +25,12 @@ get_new_match_information_API <- function(con){
     summarize(max_season = max(league_season)) %>%
     pull()
   
+  all_leagues_club_stats <- tbl(con, "all_leagues_club_stats") %>% data.frame()
+  # extract the max available match days for each league and team
+  max_matchdays <- all_leagues_club_stats %>%
+    filter(league_season == max(league_season)) %>%
+    group_by(league_id, team_id) %>%
+    summarize(max_matchday = max(matchday))
   
   # create a variable to store the new match information
   all_leagues_new_matches <- NULL
