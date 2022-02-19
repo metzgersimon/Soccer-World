@@ -144,7 +144,10 @@ for(i in 1:nrow(max_matchday)){
   if(number_teams$number_matches[i] > teams_played){
     # if there are teams not in the lineups table we store the league
     # and the matchday in the missing_leagues frame
-    curr_info <- data.frame("league" = curr_league, "matchday" = curr_matchday)
+    curr_info <- data.frame(c(curr_league, curr_league ),
+                            c(curr_matchday, (curr_matchday + 1)))
+    
+    colnames(curr_info) <- c("league", "matchday")
     missing_leagues <- bind_rows(missing_leagues, curr_info)
   }
 }
