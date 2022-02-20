@@ -937,7 +937,7 @@ get_fixture_lineups <- function(fixture_id){
       
       # extracting the players of the start formation
       # get the plain data into a named character vector
-      player_data <- unlist(content[[i]]$startXI) 
+      player_data <- unlist_no_drop_nulls(content[[i]]$startXI)
       
       # compute the number of features that are available for each player
       number_features <- length(unique(names(player_data)))
