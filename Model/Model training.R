@@ -1,11 +1,8 @@
 
 train_buli_model <- function(){
-  # past_matches <- model_data_all %>%
-  #   drop_na()
-  future_matches <- model_data_all %>%
-    filter(is.na(goal_diff))
+
   
-  past_matches <- model_data_all %>%
+  past_matches <- model_data_all2 %>%
     filter(!(fixture_id %in% future_matches$fixture_id))
   
   
@@ -47,25 +44,29 @@ test_data <- past_matches[-train_index, ]
 
 train_data <- train_data %>%
                   select(-c("fixture_date.x", "fixture_id", "league_name.x.x",
-                            "fixture_date.x", "fixture_time.x", "league_name.x",
+                            "fixture_date.y", "fixture_time.x", "league_name.x",
                             "venue_id", "club_name_home", "club_name_away",
+                            "status_elapsed", "season", "matchday",
+                            "team_id_home", "team_id_away",
                             "club_name" ,"halftime_score_home","halftime_score_away", 
                             "fulltime_score_home.x", "fulltime_score_away.x",
                             "home_points", "away_points",
-                            "home_team_importance",
-                            "home_team_goal_diff", "away_team_goal_diff"))
+                            "home_team_goal_diff", "away_team_goal_diff",
+                            "fulltime_score_home.y", "fulltime_score_away.y"))
 
 train_data <- train_data[, !sapply(train_data, is.character)]
 
 test_data <- test_data %>%
-                          select(-c("fixture_date.x", "fixture_id", "league_name.x.x",
-                                    "fixture_date.x", "fixture_time.x", "league_name.x",
-                                    "venue_id", "club_name_home", "club_name_away",
-                                    "club_name" ,"halftime_score_home","halftime_score_away", 
-                                    "fulltime_score_home.x", "fulltime_score_away.x",
-                                    "home_points", "away_points", 
-                                     "home_team_importance", "home_team_goal_diff", 
-                                    "away_team_goal_diff"))
+  select(-c("fixture_date.x", "fixture_id", "league_name.x.x",
+            "fixture_date.y", "fixture_time.x", "league_name.x",
+            "venue_id", "club_name_home", "club_name_away",
+            "status_elapsed", "season", "matchday",
+            "team_id_home", "team_id_away",
+            "club_name" ,"halftime_score_home","halftime_score_away", 
+            "fulltime_score_home.x", "fulltime_score_away.x",
+            "home_points", "away_points",
+            "home_team_goal_diff", "away_team_goal_diff",
+            "fulltime_score_home.y", "fulltime_score_away.y"))
 
 test_data <- test_data[, !sapply(test_data, is.character)]
 
@@ -79,7 +80,7 @@ m1_xgb <-
   xgboost::xgboost(
     data =  train_data,
     label = as.numeric(lab),
-    nrounds = 50000,
+    nrounds = 5000,
     objective = "reg:squarederror",
     early_stopping_rounds = 3,
     max_depth = 2,
@@ -151,12 +152,12 @@ model_data_all_mer <- model_data_all %>% select(c(prediction, fixture_id))
 
 finaltest <- all_leagues_matches %>% left_join(model_data_all_mer, by = c("fixture_id" = "fixture_id" ))
 
-dbWriteTable()
-dbWriteTable(con, "all_leagues_matches", finaltest, overwrite = TRUE )
-
-finaltest2 <- finaltest %>% filter(is.na(prediction))                 
-
-xgbtest()
-
-dbWriteTable()
-db_write_table()
+# dbWriteTable()
+# dbWriteTable(con, "all_leagues_matches", finaltest, overwrite = TRUE )
+# 
+# finaltest2 <- finaltest %>% filter(is.na(prediction))                 
+# 
+# xgbtest()
+# 
+# dbWriteTable()
+# db_write_table()

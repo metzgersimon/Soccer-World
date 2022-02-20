@@ -153,11 +153,27 @@ prepare_fifa_team_stats <- function(){
     select(league_id, league_name, league_season, league_round,
            fixture_id, fixture_date, fixture_time)
   
+  # prepare the all leagues fixture stats
+  all_leagues_fixture_stats_prep <- all_leagues_fixture_stats %>%
+    filter(season >= 2016,
+           !is.na(matchday)) %>%
+    # group by the league and team id
+    group_by(league_id, team_id) %>%
+    # because we do not have the stats for e.g. matchday 1 at matchday 1
+    # we lag the variables we consider for prediction with a n of 1
+    mutate(across(c(shots_on_goal:passing_accuracy),
+                  ~lag(.x, n = 1))) %>%
+    # after that we calculate a cumulative running mean with a window of 2,
+    # i.e., 2 matches
+    group_by(league_id, season, team_id) %>%
+    mutate(across(c(shots_on_goal:passing_accuracy),
+                  ~rollmean(.x, k = 2, fill = NA)))
+  
+  
   # join the league name from the all_leagues_matches_matcher to
   # be able to join the fifa stats later on
-  all_leagues_fixture_stats2 <- all_leagues_fixture_stats %>% 
+  all_leagues_fixture_stats2 <- all_leagues_fixture_stats_prep %>% 
     distinct() %>%
-    filter(season >= 2016) %>%
     left_join(all_leagues_matches_matcher,
               by = c("league_id", 
                      "season" = "league_season",
