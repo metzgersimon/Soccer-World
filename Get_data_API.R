@@ -129,7 +129,7 @@ get_new_match_stats_API <- function(con, date = NULL){
   if(is.null(date)){
     past_matches_stats <- past_matches_stats %>%
       filter(season == max(season),
-             fixture_date <= Sys.Date()) %>%
+             fixture_date < Sys.Date()) %>%
       # extract all fixture ids
       select(fixture_id) %>% 
       pull() %>%
@@ -198,7 +198,7 @@ get_new_player_stats_API <- function(con, date = NULL){
   if(is.null(date)){
     past_matches_player_stats <- past_matches_player_stats %>%
       filter(league_season == max(league_season),
-           fixture_date <= Sys.Date()) %>%
+           fixture_date < Sys.Date()) %>%
     data.frame() %>%
     # extract all fixture ids
     select(fixture_id) %>% 
@@ -286,8 +286,13 @@ get_new_club_stats_API <- function(con){
              max_matchdays$team_id[i] == club_id_home |
                max_matchdays$team_id[i] == club_id_away,
              league_round > max_matchdays$max_matchday[i],
-             fixture_date <= Sys.Date(),
+             fixture_date < Sys.Date(),
              status_long == "Match Finished")
+    
+    # check if there is a match that can be extracted
+    if(nrow(current_club_missing_matchdays) == 0){
+      next
+    }
     
     # get the club stats for the extracted matchdays that are missing
     # in the all_leagues_club_stats frame
@@ -320,7 +325,7 @@ get_new_fixture_events_API <- function(con){
   # extract all past stats from the all_leagues_fixture_events frame
   past_matches_events <- all_leagues_fixture_events %>%
     filter(league_season == max(league_season),
-           fixture_date <= Sys.Date()) %>%
+           fixture_date < Sys.Date()) %>%
     # extract all fixture ids
     select(fixture_id) %>% 
     pull() %>%
@@ -330,7 +335,7 @@ get_new_fixture_events_API <- function(con){
   # in the data set
   all_not_contained_matches <- all_leagues_matches %>%
     filter(league_season == max(league_season),
-           fixture_date <= Sys.Date(),
+           fixture_date < Sys.Date(),
            status_long == "Match Finished",
            !fixture_id %in% past_matches_events)
   

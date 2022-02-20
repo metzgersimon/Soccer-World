@@ -123,7 +123,7 @@ get_team_stats_in_league_by_season <- function(league_id, team_id, season, match
   # take only those match_dates that are in the past because otherwise there is no
   # data available
   match_dates <- ymd(match_dates)
-  match_dates <- match_dates[match_dates <= Sys.Date()]
+  match_dates <- match_dates[match_dates < Sys.Date()]
   
   # set the endpoint of the API
   endpoint <- "https://v3.football.api-sports.io/teams/statistics"
@@ -143,11 +143,17 @@ get_team_stats_in_league_by_season <- function(league_id, team_id, season, match
                                  season = season,
                                  date = match_dates[i]))
     
+    
     # check if the request was successful and only then go on with the 
     # transformation of the data
     if(status_code(response) >= 200 & status_code(response) < 300){
       # extract the content from the response
       content <- content(response)$response
+      
+      
+      if(is.null(content)){
+        return(NULL)
+      }
       
       # extract the league information by using the helper function
       # get_content_for_list_element
