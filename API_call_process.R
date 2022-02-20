@@ -1,5 +1,5 @@
 # first source the necessary files
-source("Setup.R")
+source("global.R")
 source("Get_data_API.R")
 
 # setup a connection to the database
@@ -21,7 +21,9 @@ number_calls_needed <- compute_necessary_calls(number_leagues = 4,
                                                endpoint = "match_information")
 # check if we can make the call and get the data
 if(api_calls_left >= number_calls_needed){
+  print("test1")
   matches_happened_today <- get_new_match_information_API(con)
+  print("test2")
 } else {
   # if we do not have enough calls we want to write the missing data to the data base
   # to reload it at a later point
@@ -34,8 +36,8 @@ if(api_calls_left >= number_calls_needed){
     # add a new variable to check later on what type of data was missing
     mutate(info_type_missing = "match_information")
   
-  dbWriteTable(con, "all_leagues_matches_missed", matches_happened_today,
-               overwrite = FALSE, append = TRUE)
+  #dbWriteTable(con, "all_leagues_matches_missed", matches_happened_today,
+  #             overwrite = FALSE, append = TRUE)
 }
 
 # 3.15 recall the fixture information from the data base
@@ -51,15 +53,15 @@ number_calls_needed <- compute_necessary_calls(number_matches_today = nrow(all_l
 # check if we can make the call and get the data
 if(api_calls_left >= number_calls_needed){
   get_new_club_stats_API(con)
-} else {
-  # if we do not have enough calls we want to write the missing data to the data base
-  # to reload it at a later point
-  matches_happened_today <- tbl(con, "all_leagues_matches") %>%
-    data.frame() %>%
-    filter(fixture_date == Sys.Date())
-  
-  dbWriteTable(con, "all_leagues_matches_missed")
-}
+ } #else {
+#   # if we do not have enough calls we want to write the missing data to the data base
+#   # to reload it at a later point
+#   matches_happened_today <- tbl(con, "all_leagues_matches") %>%
+#     data.frame() %>%
+#     filter(fixture_date == Sys.Date())
+#   
+#   dbWriteTable(con, "all_leagues_matches_missed")
+# }
 
 
 
@@ -87,7 +89,6 @@ if(api_calls_left >= number_calls_needed){
 }
 
 dbDisconnect(con)
-
 
 
 
