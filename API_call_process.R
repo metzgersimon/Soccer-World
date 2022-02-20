@@ -14,7 +14,7 @@ con <- dbConnect(RMariaDB::MariaDB(),
 # 3.0 first call get_api_calls_left
 # check how many calls we still have
 api_calls_left <- get_api_calls_left()
-
+print(get_api_calls_left())
 # 3.1 fixture information call (for scores and points)
 # check how many calls we would need
 number_calls_needed <- compute_necessary_calls(number_leagues = 4,
@@ -63,7 +63,7 @@ if(api_calls_left >= number_calls_needed){
 #   dbWriteTable(con, "all_leagues_matches_missed")
 # }
 
-
+print(get_api_calls_left())
 
 # 3.2 fixture stats
 # check how many calls we still have
@@ -73,7 +73,9 @@ number_calls_needed <- compute_necessary_calls(number_matches_today = nrow(all_l
                                                endpoint = "fixture_stats")
 
 if(api_calls_left >= number_calls_needed){
+  print("match stats start")
   fixture_stats_today <- get_new_match_stats_API(con)
+  print("match stats start")
 }
 
 # 3.3 player stats
