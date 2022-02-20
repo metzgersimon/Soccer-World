@@ -50,6 +50,7 @@ all_leagues_fixture_stats <- tbl(con, "all_leagues_fixture_stats") %>% data.fram
 
 all_leagues_fifa_team_stats <- tbl(con, "all_leagues_fifa_team_stats") %>% data.frame()
 all_leagues_fifa_squads <- tbl(con, "all_leagues_fifa_squads") %>% data.frame()
+all_leagues_team_transfers <- tbl(con, "all_leagues_team_transfers") %>% data.frame()
 
 # merge all the player tab data for the overview and statistics tab
 filter_player_stats <- 
