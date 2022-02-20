@@ -1,13 +1,14 @@
 #### Loading libraries needed ####
 if (!require("binman")) install.packages("binman")
 if (!require("caret")) install.packages("caret")
-if (!require("cronR")) install.packages("cronR")
+#if (!require("cronR")) install.packages("cronR")
 if (!require("dashboardthemes")) install.packages("dashboardthemes")
 if (!require("data.table")) install.packages("data.table")
 if (!require("DBI")) install.packages("DBI")
 if (!require("dbplyr")) install.packages("dbplyr")
 if (!require("devtools")) install.packages("devtools")
 if (!require("dplyr")) install.packages("dplyr")
+if (!require("fmsb")) install.packages("fmsb")
 if (!require("forcats")) install.packages("forcats")
 if (!require("fuzzyjoin")) install.packages("fuzzyjoin")
 if (!require("geosphere")) install.packages("geosphere")
@@ -51,12 +52,13 @@ if (!require("zoo")) install.packages("zoo")
 
 library(binman)
 library(caret)
-library(cronR)
+#library(cronR)
 library(dashboardthemes)
 library(data.table)
 library(DBI)
 library(dbplyr)
 library(dplyr)
+library(fmsb)
 library(forcats)
 library(fuzzyjoin)
 library(geosphere)
@@ -108,10 +110,10 @@ source.all("Data/Mapping Tables/", grepstring="\\.R")
 source.all("Shiny/", grepstring="\\.R")
 # list all RData files in the Data folder
 rdata_files <- paste0("Data/", list.files("Data/", pattern="*.RData"))
-# load all the RData object into the global environment
-lapply(rdata_files, load, .GlobalEnv)
-# list all RData files in the Clean Data files folder
-rdata_files <- paste0("Clean Data files/", list.files("Clean Data files/", pattern="*.RData"))
-# load all the RData object into the global environment
-lapply(rdata_files, load, .GlobalEnv)
+# # load all the RData object into the global environment
+# lapply(rdata_files, load, .GlobalEnv)
+# # list all RData files in the Clean Data files folder
+# rdata_files <- paste0("Clean Data files/", list.files("Clean Data files/", pattern="*.RData"))
+# # load all the RData object into the global environment
+# lapply(rdata_files, load, .GlobalEnv)
 
