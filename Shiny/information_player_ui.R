@@ -79,7 +79,7 @@ tab_information_player_ui <- function(){
                                       htmlOutput("info_player_overview")
                                   )
                      ),box(width = 4,
-                           title = "Player profile", 
+                           title = "Player Profile", 
                            solidHeader = TRUE, 
                            status = "primary",     
                            div(style = "margin-top: 20px;",
@@ -87,7 +87,7 @@ tab_information_player_ui <- function(){
                            )
                      ),
                      box(width = 4,
-                         title = "Player club logo", 
+                         title = "Player Club Logo", 
                          solidHeader = TRUE, 
                          status = "primary",     
                          div(style = "margin-top: 20px;",
@@ -110,88 +110,151 @@ tab_information_player_ui <- function(){
                        # )
                      )
             ),
-            tabPanel("Statistics",  
-                     tabsetPanel(type = "pills",
-                                 tabPanel("General",
-                                          fluidRow(
-                                            box(title = "Game infos", 
-                                                status = "primary", width = 12,
-                                                solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                reactableOutput("info_player_stats_general_games") %>%
-                                                withSpinner(color = "black")
-                
-                                              )),
-                                          fluidRow(
-                                            box(title = "Goals infos", 
-                                                status = "primary", width = 8,
-                                                solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                reactableOutput("info_player_stats_general_goals") %>%
-                                                  withSpinner(color = "black")    
-                                            ),
-                                            box(title = "Shots infos", 
-                                                status = "primary", width = 4,
-                                                solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                reactableOutput("info_player_stats_general_shots") %>%
-                                                  withSpinner(color = "black")    
-                                            )
-                                            ),
-                                          fluidRow(
-                                            box(title = "Passes infos", 
-                                                status = "primary", width = 8,
-                                                solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                reactableOutput("info_player_stats_general_passes") %>%
-                                                  withSpinner(color = "black")    
-                                            ),
-                                            box(title = "Duel infos", 
-                                                status = "primary", width = 4,
-                                                solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                reactableOutput("info_player_stats_general_duel") %>%
-                                                  withSpinner(color = "black")    
-                                            )
-                                          )
-                                          ),
-                                 tabPanel("Details",
-                                          fluidRow(
-                                            box(title = "Dribbles and tackles", 
-                                                status = "primary", width = 12,
-                                                solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                reactableOutput("info_player_stats_general_dribbles") %>%
-                                                  withSpinner(color = "black")    
-                                            ),
-                                            box(title = "Penalty and cards", 
-                                                status = "primary", width = 12,
-                                                solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                reactableOutput("info_player_stats_general_cards") %>%
-                                                  withSpinner(color = "black")    
-                                            )
-                                          ),
-                                          fluidRow(box(title = "Offsides and fouls", 
-                                                       status = "primary", width = 12,
-                                                       solidHeader = TRUE,
-                                                       collapsible = TRUE,
-                                                       reactableOutput("info_player_stats_general_offsides") %>%
-                                                         withSpinner(color = "black")    
-                                          ))),
-                                 tabPanel("FIFA Player rating",
-                                          fluidRow(column(
-                                            width = 12,
-                                            # offset = 3,
-                                            align = "center",
-                                            div(
-                                              style = "margin-top: 20px;",
-                                              #"border: solid 2px #FFFFFF; margin-top: 20px;",
-                                              plotlyOutput("info_player_stats_rating") %>%
-                                                withSpinner(color = "white")
-                                            )
-                                          )))
-                     )),  
+            tabPanel(
+              "Statistics", # the tab for the player's stats
+              tabsetPanel(
+                type = "pills",
+                tabPanel("General", # general stats
+                         fluidRow(
+                           column(
+                             width = 6,
+                             height = 350,
+                             align = "left",
+                             div(
+                               style = "margin-top: 20px; background-color:grey",
+                               plotOutput('info_player_stats_radarplot', width = "80%") %>%
+                                 withSpinner(color = "black")
+                             )
+                           ),
+                           column(
+                             width = 6,
+                             align = "right",
+                             height = 200,
+                             br(),
+                             valueBoxOutput("game_minute",
+                                            width = 3),
+                             valueBoxOutput("passes_accuracy",
+                                            width = 3),
+                             valueBoxOutput("game_substitute",
+                                            width = 3),
+                             valueBoxOutput("goals_assist",
+                                            width = 3)
+                           )
+                           ,
+                           column(
+                             width = 6,
+                             align = "right",
+                             height = 200,
+                             br(),
+                             valueBoxOutput("card_yellow",
+                                            width = 3),
+                             valueBoxOutput("card_red",
+                                            width = 3),
+                             valueBoxOutput("penalty_scored",
+                                            width = 3),
+                             valueBoxOutput("penalty_saved",
+                                            width = 3)
+                           )
+                         )
+                         ,
+                         fluidRow(
+                           box(
+                             title = "Game Infos",
+                             status = "primary",
+                             width = 12,
+                             solidHeader = TRUE,
+                             collapsible = TRUE,
+                             reactableOutput("info_player_stats_general_games") %>%
+                               withSpinner(color = "black")
+                             
+                           )
+                         ),
+                         fluidRow(
+                           box(
+                             title = "Goals Infos",
+                             status = "primary",
+                             width = 8,
+                             solidHeader = TRUE,
+                             collapsible = TRUE,
+                             reactableOutput("info_player_stats_general_goals") %>%
+                               withSpinner(color = "black")
+                           ),
+                           box(
+                             title = "Shots Infos",
+                             status = "primary",
+                             width = 4,
+                             solidHeader = TRUE,
+                             collapsible = TRUE,
+                             reactableOutput("info_player_stats_general_shots") %>%
+                               withSpinner(color = "black")
+                           )
+                         ),
+                         fluidRow(
+                           box(
+                             title = "Passes Infos",
+                             status = "primary",
+                             width = 8,
+                             solidHeader = TRUE,
+                             collapsible = TRUE,
+                             reactableOutput("info_player_stats_general_passes") %>%
+                               withSpinner(color = "black")
+                           ),
+                           box(
+                             title = "Duel Infos",
+                             status = "primary",
+                             width = 4,
+                             solidHeader = TRUE,
+                             collapsible = TRUE,
+                             reactableOutput("info_player_stats_general_duel") %>%
+                               withSpinner(color = "black")
+                           )
+                         )
+                ),
+                tabPanel("Details",  # more detailed infos for the player stats
+                         fluidRow(
+                           box(
+                             title = "Dribbles and Tackles",
+                             status = "primary",
+                             width = 12,
+                             solidHeader = TRUE,
+                             collapsible = TRUE,
+                             reactableOutput("info_player_stats_general_dribbles") %>%
+                               withSpinner(color = "black")
+                           ),
+                           box(
+                             title = "Penalty and Cards",
+                             status = "primary",
+                             width = 12,
+                             solidHeader = TRUE,
+                             collapsible = TRUE,
+                             reactableOutput("info_player_stats_general_cards") %>%
+                               withSpinner(color = "black")
+                           )
+                         ),
+                         fluidRow(
+                           box(
+                             title = "Offsides and Fouls",
+                             status = "primary",
+                             width = 12,
+                             solidHeader = TRUE,
+                             collapsible = TRUE,
+                             reactableOutput("info_player_stats_general_offsides") %>%
+                               withSpinner(color = "black")
+                           )
+                         )),
+                tabPanel("FIFA Player rating",
+                         fluidRow(column(
+                           width = 12,
+                           # offset = 3,
+                           align = "center",
+                           div(
+                             style = "margin-top: 20px;",
+                             #"border: solid 2px #FFFFFF; margin-top: 20px;",
+                             plotlyOutput("info_player_stats_rating") %>%
+                               withSpinner(color = "white")
+                           )
+                         )))
+              )),  
             tabPanel(
               "Transfers",
               fluidRow(

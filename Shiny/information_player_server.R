@@ -304,38 +304,236 @@ information_player_server <- function(input, output, session){
     )
   })
   
-########### player market value plot
-  output$info_player_market_value <- renderPlotly({
+  output$game_minute <- renderValueBox({
     # we need the user to select a player first
     # there has to be a player selected
     req(input$information_player_player_selection)
     req(input$information_player_team_selection)
     req(input$information_player_league_selection)
-
-
-    player_tab_data %>% 
-      filter(
-        league_name == input$information_player_league_selection,
-        team_name == input$information_player_team_selection,
-        player_name == input$information_player_player_selection,
-        )  %>% 
-      # create actual plot for the market value over time by club
-      plot_ly(
-        x = ~ league_season,
-        y = ~ player_market_value_in_million_euro,
-        mode = 'lines+markers'
-      ) %>%
-      layout(
-        title = "stats for market value",
-        yaxis = list(title = "Value"),
-        xaxis = list(title = "season"),
-        font = list(color = "white"),
-        plot_bgcolor = "rgba(0, 65, 87, 10)",
-        paper_bgcolor = "rgba(0, 65, 87, 10)",
-        fig_bg_color = "rgba(0, 65, 87, 10)"
-      )
+    req(input$information_player_season_selection)  
     
+    valueBox(
+      filter_player_data() %>%
+        select(games_minutes) %>%
+        pull() %>% round(2),
+      "Mean Game Minutes",
+      # icon = icon("clock"),
+      color = "green",
+      width = 3
+    )
   })
+  
+  output$passes_accuracy <- renderValueBox({
+    # we need the user to select a player first
+    # there has to be a player selected
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    req(input$information_player_league_selection)
+    req(input$information_player_season_selection)  
+    
+    valueBox(
+      filter_player_data() %>%
+        select(passes_accuracy) %>%
+        pull() %>%round(2), 
+      "Mean Passes Accuracy",
+      # icon = icon("flag"),
+      color = "blue",
+      width = 3
+    )
+  })
+  
+  
+  output$card_yellow <- renderValueBox({
+    # we need the user to select a player first
+    # there has to be a player selected
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    req(input$information_player_league_selection)
+    req(input$information_player_season_selection)  
+    
+    valueBox(
+      filter_player_data() %>%
+        select(cards_yellow) %>%
+        pull() , 
+      "Total Yellow Cards",
+      # icon = icon("cross"),
+      color = "orange",
+      width = 3
+    )
+  })
+  
+  output$card_red <- renderValueBox({
+    # we need the user to select a player first
+    # there has to be a player selected
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    req(input$information_player_league_selection)
+    req(input$information_player_season_selection)  
+    
+    valueBox(
+      filter_player_data() %>%
+        select(cards_red) %>%
+        pull() , 
+      "Total Red Cards",
+      # icon = icon("cross"),
+      color = "purple",
+      width = 3
+    )
+  })
+  
+  output$game_substitute <- renderValueBox({
+    # we need the user to select a player first
+    # there has to be a player selected
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    req(input$information_player_league_selection)
+    req(input$information_player_season_selection)  
+    
+    valueBox(
+      filter_player_data() %>%
+        select(games_substitute) %>%
+        pull() , 
+      "Total Games Substitute",
+      # icon = icon("flag"),
+      color = "purple",
+      width = 3
+    )
+  })
+  
+  output$goals_assist <- renderValueBox({
+    # we need the user to select a player first
+    # there has to be a player selected
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    req(input$information_player_league_selection)
+    req(input$information_player_season_selection)  
+    
+    valueBox(
+      filter_player_data() %>%
+        select(goals_assists) %>%
+        pull() , 
+      "Total Goals Assists",
+      # icon = icon("arrow"),
+      color = "orange",
+      width = 3
+    )
+  })
+  
+  output$goals_assist <- renderValueBox({
+    # we need the user to select a player first
+    # there has to be a player selected
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    req(input$information_player_league_selection)
+    req(input$information_player_season_selection)  
+    
+    valueBox(
+      filter_player_data() %>%
+        select(goals_assists) %>%
+        pull() , 
+      "Total Goals Assists",
+      # icon = icon("arrow"),
+      color = "orange",
+      width = 3
+    )
+  })
+  
+  
+  output$penalty_scored <- renderValueBox({
+    # we need the user to select a player first
+    # there has to be a player selected
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    req(input$information_player_league_selection)
+    req(input$information_player_season_selection)  
+    
+    valueBox(
+      filter_player_data() %>%
+        select(penalty_scored) %>%
+        pull() , 
+      "Total Scored Penalty",
+      # icon = icon("arrow"),
+      color = "green",
+      width = 3
+    )
+  })
+  
+  output$penalty_saved <- renderValueBox({
+    # we need the user to select a player first
+    # there has to be a player selected
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    req(input$information_player_league_selection)
+    req(input$information_player_season_selection)  
+    
+    valueBox(
+      filter_player_data() %>%
+        select(penalty_saved) %>%
+        pull() , 
+      "Total Saved Penalty",
+      icon = icon("arrow"),
+      color = "blue",
+      width = 3
+    )
+  })
+  
+########### radar plot
+  output$info_player_stats_radarplot <- renderPlot({
+    # we need the user to select a player first
+    # there has to be a player selected
+    req(input$information_player_player_selection)
+    req(input$information_player_team_selection)
+    req(input$information_player_league_selection)
+    req(input$information_player_season_selection)  
+    
+    data <- filter_player_data() %>% select(goals_total,dribbles_success, shots_total,tackles_total, fouls_committed , passes_total  ,duels_total )
+    
+    # To use the fmsb package, I have to add 2 lines to the dataframe: the max and min of each topic to show on the plot!
+    data <- rbind(rep(max(data, na.rm = TRUE),10) , rep(0,10) , data)
+    
+    # Custom the radarChart !
+    radarchart( data  , axistype=1 , 
+                
+                #custom polygon
+                pcol=rgb(0.2,0.5,0.5,0.9) , pfcol=rgb(0.2,0.5,0.5,0.5) , plwd=4 , 
+                
+                #custom the grid
+                cglcol="grey", cglty=1, axislabcol="grey", caxislabels=seq(0,20,5), cglwd=0.8,
+                
+                #custom labels
+                vlcex=0.8 
+    )
+    # radarchart(
+    #   data   ,
+    #   axistype = 1 )
+      # #custom polygon
+      # pcol = colors_border ,
+      # pfcol = colors_in ,
+      # plwd = 8 ,
+      # plty = 1
+      #custom the grid
+      # cglcol = "grey",
+      # cglty = 1,
+      # axislabcol = "grey",
+      # caxislabels = seq(0, 20, 5),
+      # cglwd = 0.8,
+      # #custom labels
+      # vlcex = 0.8
+    # )
+    # legend(
+    #   x = 0.7,
+    #   y = 1,
+    #   legend = rownames(data[-c(1, 2), ]),
+    #   bty = "n",
+    #   pch = 20 ,
+    #   col = colors_in ,
+    #   text.col = "grey",
+    #   cex = 1.2,
+    #   pt.cex = 3
+    # )
+  })
+
+ 
   
   
 ############## stats
@@ -594,7 +792,7 @@ information_player_server <- function(input, output, session){
     # last_name <- str_split(input$information_player_player_selection, " ")[[1]][-1]
     
     player_stats() %>%
-      select(fixture_date, tackles_total,tackles_blocks,tackles_interceptions,contains("dribbles")) %>%
+      select(fixture_date, tackles_total,tackles_blocks,tackles_interception,contains("dribbles")) %>%
       reactable(
         defaultColDef = colDef(
           align = "center",
