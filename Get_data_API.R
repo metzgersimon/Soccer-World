@@ -286,7 +286,7 @@ get_new_club_stats_API <- function(con){
              max_matchdays$team_id[i] == club_id_home |
                max_matchdays$team_id[i] == club_id_away,
              league_round > max_matchdays$max_matchday[i],
-             fixture_date <= Sys.Date(),
+             fixture_date < Sys.Date(),
              status_long == "Match Finished")
     
     # check if there is a match that can be extracted
