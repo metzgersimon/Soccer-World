@@ -9,7 +9,7 @@ get_team_stats_fifa_all_leagues <- function(leagues, fifa_version, date){
   for(i in 1:length(leagues)){
     # for every league, get the fifa team stats for the given fifa version
     # and date
-    curr_league_stats <- get_team_stats_full_fifa(fifa_version, league = leagues[i],
+    curr_league_stats <- get_team_stats_fifa(fifa_version, league = leagues[i],
                                                   max_date_in_database = date)
     
     # check if the stats are null and if so return NULL
@@ -231,7 +231,7 @@ get_squads_fifa_all_leagues <- function(leagues, fifa_version, date){
     ran_port <- randomPort()
     # for every league, get the fifa squads for the given fifa version
     # and date
-    curr_league_squads <- get_squads_full_fifa(fifa_version, league = leagues[i],
+    curr_league_squads <- get_squads_fifa(fifa_version, league = leagues[i],
                                                max_date_in_database = date,
                                                single_fifa_version = TRUE,
                                                port = ran_port)
