@@ -989,14 +989,14 @@ information_league_match_server <- function(input, output, session){
              # club_name_away %in% c(input$info_match_team1,
              #                       input$info_match_team2))
     
-    # starting_lineups_home_player_infos <- all_leagues_player_stats %>%
-    #   filter(player_id %in% starting_lineups_home$player_id,
-    #          league_name == "Bundesliga",
-    #          league_season == 2016)#,
-             # club_name_home %in% c("FC Bayern Munich",
-             #                       "SV Darmstadt 98"),
-             # club_name_away %in% c("FC Bayern Munich",
-             #                       "SV Darmstadt 98"))
+    starting_lineups_home_player_infos <- all_leagues_player_stats %>%
+      filter(player_id %in% starting_lineups_home$player_id,
+             league_name == "Bundesliga",
+             league_season == 2016)#,
+    # club_name_home %in% c("FC Bayern Munich",
+    #                       "SV Darmstadt 98"),
+    # club_name_away %in% c("FC Bayern Munich",
+    #                       "SV Darmstadt 98"))
     
     # aggregate the data for each player in the starting lineup
     home_player_infos_agg <- starting_lineups_home_player_infos %>%
@@ -1005,11 +1005,36 @@ information_league_match_server <- function(input, output, session){
                          passes_accuracy, duels_total, duels_won),
                        ~ mean(.x, na.rm = TRUE))) %>%
       ungroup() %>%
-      select(-player_id)
+      select(-player_id) %>%
+      unique()
     
+    # convert the position into a factor
+    home_player_infos_agg$games_position <- factor(home_player_infos_agg$games_position,
+                                                   levels = c("G", "D", "M", "F"))
 
-   
-    
+    # reorder the data set based on this factor
+    home_player_infos_agg <- home_player_infos_agg %>%
+      arrange(games_position) %>%
+      # round the values
+      mutate(# create a variable for the successful duels
+        successful_duels = (duels_won / duels_total) * 100,
+        across(c(games_minutes:successful_duels),
+               ~ round(.x, digits = 0)),
+        # divide the passing accuracy/duel quota by 100 to present them as percentages
+        passes_accuracy = passes_accuracy / 100,
+        successful_duels = successful_duels / 100,
+        # rename the positions
+        games_position = ifelse(games_position == "G",
+                                "Goal", 
+                                ifelse(games_position == "D",
+                                       "Defense", 
+                                       ifelse(games_position == "M",
+                                              "Midfield",
+                                              ifelse(games_position == "F",
+                                                     "Attack",
+                                                     games_position))))) %>%
+      # drop columns
+      select(-c(duels_total, duels_won))
     
     # create the actual reactable (drop the team names)
     reactable(home_player_infos_agg,
@@ -1037,7 +1062,26 @@ information_league_match_server <- function(input, output, session){
                 player_name = colDef(name = "Player",
                                      align = "left"),
                 games_number = colDef(name = "Number",
-                                       align = "center"))
+                                      align = "center"),
+                games_position = colDef(name = "Position",
+                                     align = "center"),
+                games_minutes = colDef(name = "Minutes",
+                                     align = "center"),
+                games_rating = colDef(name = "Rating",
+                                      align = "center"),
+                goals_total = colDef(name = "Goals",
+                                        align = "center"),
+                shots_total = colDef(name = "Shots",
+                                        align = "center"),
+                passes_total = colDef(name = "Passes",
+                                       align = "center"),
+                passes_accuracy = colDef(name = "Pass Accuracy",
+                                      align = "center",
+                                      format = colFormat(percent = TRUE)),
+                successful_duels = colDef(name = "Duel Quota",
+                                     align = "center", 
+                                     format = colFormat(percent = TRUE)))
+                
     )
     
   })
@@ -1091,8 +1135,36 @@ information_league_match_server <- function(input, output, session){
                          passes_accuracy, duels_total, duels_won),
                        ~ mean(.x, na.rm = TRUE))) %>%
       ungroup() %>%
-      select(-player_id)
+      select(-player_id) %>%
+      unique()
     
+    # convert the position into a factor
+    away_player_infos_agg$games_position <- factor(away_player_infos_agg$games_position,
+                                                   levels = c("G", "D", "M", "F"))
+    
+    # reorder the data set based on this factor
+    away_player_infos_agg <- away_player_infos_agg %>%
+      arrange(games_position) %>%
+      # round the values
+      mutate(# create a variable for the successful duels
+        successful_duels = (duels_won / duels_total) * 100,
+        across(c(games_minutes:successful_duels),
+               ~ round(.x, digits = 0)),
+        # divide the passing accuracy/duel quota by 100 to present them as percentages
+        passes_accuracy = passes_accuracy / 100,
+        successful_duels = successful_duels / 100,
+        # rename the positions
+        games_position = ifelse(games_position == "G",
+                                "Goal", 
+                                ifelse(games_position == "D",
+                                       "Defense", 
+                                       ifelse(games_position == "M",
+                                              "Midfield",
+                                              ifelse(games_position == "F",
+                                                     "Attack",
+                                                     games_position))))) %>%
+      # drop columns
+      select(-c(duels_total, duels_won))
     
     # create the actual reactable (drop the team names)
     reactable(away_player_infos_agg,
@@ -1120,10 +1192,27 @@ information_league_match_server <- function(input, output, session){
                 player_name = colDef(name = "Player",
                                      align = "left"),
                 games_number = colDef(name = "Number",
-                                       align = "center"))
+                                      align = "center"),
+                games_position = colDef(name = "Position",
+                                        align = "center"),
+                games_minutes = colDef(name = "Minutes",
+                                       align = "center"),
+                games_rating = colDef(name = "Rating",
+                                      align = "center"),
+                goals_total = colDef(name = "Goals",
+                                     align = "center"),
+                shots_total = colDef(name = "Shots",
+                                     align = "center"),
+                passes_total = colDef(name = "Passes",
+                                      align = "center"),
+                passes_accuracy = colDef(name = "Pass Accuracy",
+                                         align = "center",
+                                         format = colFormat(percent = TRUE)),
+                successful_duels = colDef(name = "Duel Quota",
+                                          align = "center", 
+                                          format = colFormat(percent = TRUE)))
+              
     )
-    
-    
   })
   
   
