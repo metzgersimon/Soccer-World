@@ -208,6 +208,7 @@ get_new_player_stats_API <- function(con, date = NULL){
     # now get all matches that are already finished but not yet
     # in the data set
     all_not_contained_matches <- tbl(con, "all_leagues_matches") %>%
+      data.frame() %>%
       filter(league_season == max(league_season),
              fixture_date <= Sys.Date(),
              status_long == "Match Finished",
@@ -238,6 +239,7 @@ get_new_player_stats_API <- function(con, date = NULL){
   
   # iterate over all matches we extracted above
   for(i in 1:length(all_not_contained_matches$fixture_id)){
+    print(paste0("Current iteration", i))
     # extract the player stats of the current match
     curr_player_stats <- get_player_stats_fixture(all_not_contained_matches$fixture_id[i])
     
@@ -345,6 +347,7 @@ get_new_fixture_events_API <- function(con){
   
   # iterate over all matches we extracted above
   for(i in 1:length(all_not_contained_matches$fixture_id)){
+    print(paste0("Current iteration: ", i))
     # extract the event of the current match
     curr_match_events <- get_fixture_events(all_not_contained_matches$fixture_id[i])
     
