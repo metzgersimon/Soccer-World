@@ -289,6 +289,11 @@ get_new_club_stats_API <- function(con){
              fixture_date <= Sys.Date(),
              status_long == "Match Finished")
     
+    # check if there is a match that can be extracted
+    if(nrow(current_club_missing_matchdays) == 0){
+      next
+    }
+    
     # get the club stats for the extracted matchdays that are missing
     # in the all_leagues_club_stats frame
     current_club_stats <- 
