@@ -1,12 +1,5 @@
 ########## get newest match information ############
 
-# setup a connection to the database
-con <- dbConnect(RMariaDB::MariaDB(), 
-                 host='127.0.0.1',
-                 dbname='soccerworld',
-                 username='dev',
-                 password='worldpw')
-
 get_new_match_information_API <- function(con){
   all_leagues_matches <- tbl(con, "all_leagues_matches") %>% data.frame()
   # extract the matchday of the games that happen today
@@ -19,28 +12,20 @@ get_new_match_information_API <- function(con){
     select(league_id, league_round) %>%
     distinct()
       
-  
   # extract the current (and max) season
   max_season <- all_leagues_matches %>%
     summarize(max_season = max(league_season)) %>%
     pull()
   
-  all_leagues_club_stats <- tbl(con, "all_leagues_club_stats") %>% data.frame()
-  # extract the max available match days for each league and team
-  max_matchdays <- all_leagues_club_stats %>%
-    filter(league_season == max(league_season)) %>%
-    group_by(league_id, team_id) %>%
-    summarize(max_matchday = max(matchday))
-  
   # create a variable to store the new match information
   all_leagues_new_matches <- NULL
   
   # iterate over all leagues in the newest_matchdays frame
-  for(i in 1:nrow(max_matchdays)){
+  for(i in 1:nrow(curr_matchday)){
     # for every league get all the matches for the new matchday
-    curr_league_matches <- get_fixtures_in_league_by_season(max_matchdays$league_id[i],
+    curr_league_matches <- get_fixtures_in_league_by_season(curr_matchday$league_id[i],
                                                             season = max_season,
-                                                            matchday = max_matchdays$league_round[i]) 
+                                                            matchday = curr_matchday$league_round[i]) 
     
     curr_leagues_matches_today <- curr_league_matches %>%
       # filter for only matches that happen today
@@ -408,8 +393,6 @@ api_call_is_possible <- function(){
     fixture_stats_today <- get_new_match_stats_API()
   }
 }
-
-dbDisconnect(con)
 
 # 
 # ########## get newest team transfers ############
