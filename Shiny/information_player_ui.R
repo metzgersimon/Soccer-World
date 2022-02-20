@@ -118,11 +118,11 @@ tab_information_player_ui <- function(){
                          fluidRow(
                            column(
                              width = 6,
-                             height = 350,
+                             height = 200,
                              align = "left",
                              div(
-                               style = "margin-top: 20px; background-color:grey",
-                               plotOutput('info_player_stats_radarplot', width = "80%") %>%
+                               style = "margin-top: 20px;",
+                               plotOutput('info_player_stats_radarplot', width = "100%", height = 300) %>%
                                  withSpinner(color = "black")
                              )
                            ),

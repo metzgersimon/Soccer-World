@@ -4,7 +4,7 @@ information_player_server <- function(input, output, session){
     sum(is.na(x)))
 
    observeEvent(input$information_player_league_selection, {
-     updateSelectInput(session, 
+     updateSelectizeInput(session, 
                        inputId = "information_player_team_selection",
                        choices = unique(player_tab_data %>%
                                           filter(league_name == input$information_player_league_selection) %>%
@@ -18,7 +18,7 @@ information_player_server <- function(input, output, session){
   # create an observer to display for the club selection to display
   # only those players that are present in the selected club
   observeEvent(input$information_player_team_selection, {
-    updateSelectInput(session, 
+    updateSelectizeInput(session, 
                       inputId = "information_player_season_selection",
                       choices = c(
                         "",
@@ -43,7 +43,7 @@ information_player_server <- function(input, output, session){
   })
   
   observeEvent(input$information_player_season_selection, {
-    updateSelectInput(session, 
+    updateSelectizeInput(session, 
                       inputId = "information_player_player_selection",
                       choices = unique(player_tab_data %>%
                                          filter(team_name == input$information_player_team_selection &
@@ -983,46 +983,65 @@ information_player_server <- function(input, output, session){
     req(input$information_player_player_selection)
     req(input$information_player_team_selection)
     
-    last_name <- str_split(input$information_player_player_selection, " ")[[1]][-1]
+    # some player name has only one word, we should distinguish the name length to avoid the warning
+    if (str_count(input$information_player_player_selection, ' ') >= 1) {
+      last_name <-
+        str_split(input$information_player_player_selection, " ")[[1]][-1]
+    } else if (str_count(input$information_player_player_selection, ' ') == 0){ # name with only one word 
+      last_name <-
+        input$information_player_player_selection
+    }
     
-    major_five_league_transfers %>%
-      filter(player_name %like% last_name) %>% 
-          #   from_team_name == input$information_player_team_selection |
-          #     to_team_name == input$information_player_team_selection) %>%
-      select(date, player_name, type, from_team_name,
-             to_team_name) %>%
+    # get the transfer infos for the selected player and team
+    all_leagues_team_transfers  %>%
+      filter(
+        player_name %like% last_name,
+        from_team_name == input$information_player_team_selection |
+          to_team_name == input$information_player_team_selection
+      ) %>%
+      select(
+        transfer_date,
+        player_name,
+        transfer_type,
+        from_team_name,
+        to_team_name,
+        transfer_sum_mil_euro
+      ) %>%
       distinct() %>%
-      arrange(desc(date)) %>%
-      reactable(defaultColDef = colDef(
-        align = "center",
-        minWidth = 150,
-        headerStyle = list(background = "darkblue")
-      ),
-      striped = TRUE,
-      highlight = TRUE,
-      borderless = TRUE, 
-                # set the theme for the table
-                theme = reactableTheme(
-                  borderColor = "#000000",
-                  color = "#000000",
-                  backgroundColor = "#004157",
-                  highlightColor = "#2f829e",
-                  cellPadding = "8px 12px",
-                  style = list(color = "white")
-                ), 
-                # modify the layout and names of the columns
-                columns = list(
-                  date = colDef(name = "Date",
-                                align = "left"),
-                  player_name = colDef(name = "Player",
-                                       align = "center"),
-                  type = colDef(name = "Type",
-                                align = "center"),
-                  from_team_name = colDef(name = "From Team",
-                                          align = "center"),
-                  to_team_name = colDef(name = "To Team",
-                                        align = "center")
-                )
+      arrange(desc(transfer_date)) %>%
+      reactable(
+        defaultColDef = colDef(
+          align = "center",
+          minWidth = 150,
+          headerStyle = list(background = "darkblue")
+        ),
+        striped = TRUE,
+        highlight = TRUE,
+        borderless = TRUE,
+        # set the theme for the table
+        theme = reactableTheme(
+          borderColor = "#000000",
+          color = "#000000",
+          backgroundColor = "#004157",
+          highlightColor = "#2f829e",
+          cellPadding = "8px 12px",
+          style = list(color = "white")
+        ),
+        # modify the layout and names of the columns
+        columns = list(
+          transfer_date = colDef(name = "Date",
+                                 align = "left"),
+          player_name = colDef(name = "Player",
+                               align = "center"),
+          transfer_type = colDef(name = "Type",
+                                 align = "center"),
+          transfer_sum_mil_euro = colDef(name = "Money (million)",
+                                         align = "center"),
+          from_team_name = colDef(name = "From Team",
+                                  align = "center"),
+          to_team_name = colDef(name = "To Team",
+                                align = "center")
+        )
       )
   })
   
