@@ -3,6 +3,8 @@
 
 ########## get newest fifa team stats ############
 
+source("global.R")
+
 # setup a connection to the database
 con <- dbConnect(RMariaDB::MariaDB(), 
                  host='127.0.0.1',
