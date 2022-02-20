@@ -614,6 +614,8 @@ prepare_lineup_data <- function(match_id){
                 contains("score"), contains("club")))
   }
   
+  matched_lineups_complete <- NULL
+  
   
   
   
@@ -659,150 +661,27 @@ prepare_lineup_data <- function(match_id){
       # filter for the players in the current lineup
       filter(player_id %in% matched_players$player_id)
     
-    
     positions <- c("G", "D", "M", "F")
     
     # check if every position is available for both teams
     positions_home <- matched_players_stats %>%
       filter(team_id == home_id)
     
-    missing_pos_home <- setdiff(positions, positions_home$games_position) %>%
-      data.frame("pos" = .) %>%
-      mutate(team_id = unique(positions_home$team_id))
-    
     positions_away <- matched_players_stats %>%
       filter(team_id != home_id) 
     
-    missing_pos_away <- setdiff(positions, positions_away$games_position) %>%
-      data.frame("pos" = .) %>%
-      mutate(team_id = unique(positions_away$team_id))
     
-    if(nrow(missing_pos_home) > 0 | nrow(missing_pos_away) > 0){
-      
-      
-      # prepare the linups tm data
-      curr_lineups_tm <- curr_lineups_tm %>%
-        # split the name by spaces
-        mutate(player_lastname2 = str_split(player_name, " "))  %>%
-        filter(league == league_name)
-      
-      # now get from the string split only the last element
-      curr_lineups_tm$player_lastname2 <-
-        sapply(curr_lineups_tm$player_lastname2,
-               tail, 1)
-      
-      curr_lineups_tm <- curr_lineups_tm %>%
-        mutate(# map all special characters to plain ones
-          player_lastname_map = stri_trans_general(player_lastname2, id = "Latin-ASCII"),
-          # map transfermarkt positions to match API positions
-          player_pos_API_to_map = ifelse(str_detect(player_pos, pattern = "Goal"),
-                                         "G",
-                                         ifelse(str_detect(player_pos, pattern = "Back|Sweeper"),
-                                                "D",
-                                                ifelse(str_detect(player_pos, pattern = "Midfield"),
-                                                       "M",
-                                                       ifelse(str_detect(player_pos, pattern = "Winger|Striker|Forward"),
-                                                              "F",
-                                                              player_pos)))),
-          # adjust the nationalities such that we can map them later
-          player_nationality = ifelse(player_nationality == "United States",
-                                      "USA",
-                                      player_nationality))
-      
-      # average the stats over the whole season in the league for each position
-      imputed_lineups_stats_all_teams <- player_stats %>%
-        inner_join(curr_lineups_tm,
-                   by = c("team_name" = "team", 
-                          "games_number" = "player_number",
-                          "player_lastname_map")) %>%
-        group_by(games_position) %>%
-        summarize(across(c(player_age, player_market_value_in_million_euro,
-                           player_rating_tm, games_minutes, games_rating, goals_total:cards_red),
-                         ~ mean(.x, na.rm = TRUE))) %>%
-        ungroup()
-      
-      
-      # compute aggregated values for the transfers grouped by team and position
-      imputed_lineups_transfers_all_teams <- curr_lineups_tm %>%
-        group_by(player_pos_API_to_map) %>%
-        summarize(across(c(player_is_new_transfer, player_is_new_winter_transfer,
-                           player_is_returnee),
-                         ~ median(.x, na.rm = TRUE))) %>%
-        ungroup() %>%
-        # drop unwanted positions
-        filter(player_pos_API_to_map %in% c("G", "D", "M", "F")) 
-      
-      
-      # bind the two frames together
-      imputed_lineups_complete <- imputed_lineups_stats_all_teams %>%
-        inner_join(imputed_lineups_transfers_all_teams,
-                   by = c("games_position" = "player_pos_API_to_map")) %>%
-        # filter only for the needed position
-        filter(games_position %in% c(missing_pos_home$pos, missing_pos_away$pos))
-      
-      imputed_values_home <- imputed_lineups_complete %>%
-        filter(games_position %in% missing_pos_home$pos) %>%
-        # insert the missing team id
-        mutate(team_id = unique(missing_pos_home$team_id)) %>%
-        # reorder the values
-        select(team_id, everything())
-      
-      imputed_values_away <- imputed_lineups_complete %>%
-        filter(games_position %in% missing_pos_away$pos) %>%
-        # insert the missing team id
-        mutate(team_id = unique(missing_pos_away$team_id)) %>%
-        # reorder the values
-        select(team_id, everything())
-      
-      imputed_values_total <- bind_rows(imputed_values_home,
-                                        imputed_values_away)
-      
-      
-      matched_lineups_stats <- matched_players %>%
-        inner_join(matched_players_stats,
-                   by = c("team_name", "team_id", "player_id")) %>%
-        group_by(team_id, games_position) %>%
-        summarize(across(c(player_age, player_market_value_in_million_euro,
-                           player_rating_tm, games_minutes, games_rating, goals_total:cards_red),
-                         ~ mean(.x, na.rm = TRUE))) %>%
-        ungroup()
-      
-      # compute aggregated values for the transfers grouped by team and position
-      matched_lineups_transfers <- matched_players %>%
-        inner_join(matched_players_stats,
-                   by = c("team_name", "team_id", "player_id")) %>%
-        distinct(player_id, .keep_all = TRUE) %>%
-        group_by(team_id, games_position) %>%
-        summarize(across(c(player_is_new_transfer, player_is_new_winter_transfer,
-                           player_is_returnee),
-                         ~ sum(.x, na.rm = TRUE))) %>%
-        ungroup()
-      
-      # bind the two frames together
-      matched_lineups_complete <- matched_lineups_stats %>%
-        inner_join(matched_lineups_transfers,
-                   by = c("team_id", "games_position"))
-      
-      # check if there is a team missing
-      if(nrow(matched_lineups_complete) < 8){
-        matched_lineups_complete <- bind_rows(matched_lineups_complete,
-                                              imputed_values_total) %>%
-          arrange(team_id, games_position)
-      }
-      
-  
+    if(nrow(positions_home) == 0 | nrow(positions_away) == 0){
       # in case the matched_player_stats only contain one team (because
       # of a successful relegation of a imperior league) we
       # give the team the average over the whole season of all teams
-    } else if(length(unique(matched_players_stats$team_id)) == 1){
-      
-      # extract the missing team id
+        # extract the missing team id
       missing_team_id <- current_game_lineup %>%
         filter(!(team_id %in% matched_players_stats$team_id)) %>%
         select(team_id) %>%
         distinct() %>%
         pull()
-      
+        
       # prepare the linups tm data
       curr_lineups_tm <- curr_lineups_tm %>%
         # split the name by spaces
@@ -813,7 +692,7 @@ prepare_lineup_data <- function(match_id){
       curr_lineups_tm$player_lastname2 <-
         sapply(curr_lineups_tm$player_lastname2,
                tail, 1)
-      
+        
       curr_lineups_tm <- curr_lineups_tm %>%
         mutate(# map all special characters to plain ones
           player_lastname_map = stri_trans_general(player_lastname2, id = "Latin-ASCII"),
@@ -870,13 +749,156 @@ prepare_lineup_data <- function(match_id){
                    by = c("team_id", 
                           "games_position" = "player_pos_API_to_map"))
       
+      matched_lineups_stats <- matched_players %>%
+        inner_join(matched_players_stats,
+                   by = c("team_name", "team_id", "player_id")) %>%
+        group_by(team_id, games_position) %>%
+        summarize(across(c(player_age, player_market_value_in_million_euro,
+                           player_rating_tm, games_minutes, games_rating, goals_total:cards_red),
+                         ~ mean(.x, na.rm = TRUE))) %>%
+        ungroup()
+      
+      # compute aggregated values for the transfers grouped by team and position
+      matched_lineups_transfers <- matched_players %>%
+        inner_join(matched_players_stats,
+                   by = c("team_name", "team_id", "player_id")) %>%
+        distinct(player_id, .keep_all = TRUE) %>%
+        group_by(team_id, games_position) %>%
+        summarize(across(c(player_is_new_transfer, player_is_new_winter_transfer,
+                           player_is_returnee),
+                         ~ sum(.x, na.rm = TRUE))) %>%
+        ungroup()
+      
+      # bind the two frames together
+      matched_lineups_complete <- matched_lineups_stats %>%
+        inner_join(matched_lineups_transfers,
+                   by = c("team_id", "games_position"))
+      
       # check if there is a team missing
       if(nrow(matched_lineups_complete) < 8){
         matched_lineups_complete <- bind_rows(matched_lineups_complete,
                                               imputed_lineups_complete)
       }
-      
     } else {
+      missing_pos_home <- setdiff(positions, positions_home$games_position) %>%
+        data.frame("pos" = .) %>%
+        mutate(team_id = unique(positions_home$team_id))
+      
+      missing_pos_away <- setdiff(positions, positions_away$games_position) %>%
+        data.frame("pos" = .) %>%
+        mutate(team_id = unique(positions_away$team_id))
+      
+      if(nrow(missing_pos_home) > 0 | nrow(missing_pos_away) > 0){
+        # prepare the linups tm data
+        curr_lineups_tm <- curr_lineups_tm %>%
+          # split the name by spaces
+          mutate(player_lastname2 = str_split(player_name, " "))  %>%
+          filter(league == league_name)
+        
+        # now get from the string split only the last element
+        curr_lineups_tm$player_lastname2 <-
+          sapply(curr_lineups_tm$player_lastname2,
+                 tail, 1)
+        
+        curr_lineups_tm <- curr_lineups_tm %>%
+          mutate(# map all special characters to plain ones
+            player_lastname_map = stri_trans_general(player_lastname2, id = "Latin-ASCII"),
+            # map transfermarkt positions to match API positions
+            player_pos_API_to_map = ifelse(str_detect(player_pos, pattern = "Goal"),
+                                           "G",
+                                           ifelse(str_detect(player_pos, pattern = "Back|Sweeper"),
+                                                  "D",
+                                                  ifelse(str_detect(player_pos, pattern = "Midfield"),
+                                                         "M",
+                                                         ifelse(str_detect(player_pos, pattern = "Winger|Striker|Forward"),
+                                                                "F",
+                                                                player_pos)))),
+            # adjust the nationalities such that we can map them later
+            player_nationality = ifelse(player_nationality == "United States",
+                                        "USA",
+                                        player_nationality))
+        
+        # average the stats over the whole season in the league for each position
+        imputed_lineups_stats_all_teams <- player_stats %>%
+          inner_join(curr_lineups_tm,
+                     by = c("team_name" = "team", 
+                            "games_number" = "player_number",
+                            "player_lastname_map")) %>%
+          group_by(games_position) %>%
+          summarize(across(c(player_age, player_market_value_in_million_euro,
+                             player_rating_tm, games_minutes, games_rating, goals_total:cards_red),
+                           ~ mean(.x, na.rm = TRUE))) %>%
+          ungroup()
+        
+        
+        # compute aggregated values for the transfers grouped by team and position
+        imputed_lineups_transfers_all_teams <- curr_lineups_tm %>%
+          group_by(player_pos_API_to_map) %>%
+          summarize(across(c(player_is_new_transfer, player_is_new_winter_transfer,
+                             player_is_returnee),
+                           ~ median(.x, na.rm = TRUE))) %>%
+          ungroup() %>%
+          # drop unwanted positions
+          filter(player_pos_API_to_map %in% c("G", "D", "M", "F")) 
+        
+        
+        # bind the two frames together
+        imputed_lineups_complete <- imputed_lineups_stats_all_teams %>%
+          inner_join(imputed_lineups_transfers_all_teams,
+                     by = c("games_position" = "player_pos_API_to_map")) %>%
+          # filter only for the needed position
+          filter(games_position %in% c(missing_pos_home$pos, missing_pos_away$pos))
+        
+        imputed_values_home <- imputed_lineups_complete %>%
+          filter(games_position %in% missing_pos_home$pos) %>%
+          # insert the missing team id
+          mutate(team_id = unique(missing_pos_home$team_id)) %>%
+          # reorder the values
+          select(team_id, everything())
+        
+        imputed_values_away <- imputed_lineups_complete %>%
+          filter(games_position %in% missing_pos_away$pos) %>%
+          # insert the missing team id
+          mutate(team_id = unique(missing_pos_away$team_id)) %>%
+          # reorder the values
+          select(team_id, everything())
+        
+        imputed_values_total <- bind_rows(imputed_values_home,
+                                          imputed_values_away)
+        
+        
+        matched_lineups_stats <- matched_players %>%
+          inner_join(matched_players_stats,
+                     by = c("team_name", "team_id", "player_id")) %>%
+          group_by(team_id, games_position) %>%
+          summarize(across(c(player_age, player_market_value_in_million_euro,
+                             player_rating_tm, games_minutes, games_rating, goals_total:cards_red),
+                           ~ mean(.x, na.rm = TRUE))) %>%
+          ungroup()
+        
+        # compute aggregated values for the transfers grouped by team and position
+        matched_lineups_transfers <- matched_players %>%
+          inner_join(matched_players_stats,
+                     by = c("team_name", "team_id", "player_id")) %>%
+          distinct(player_id, .keep_all = TRUE) %>%
+          group_by(team_id, games_position) %>%
+          summarize(across(c(player_is_new_transfer, player_is_new_winter_transfer,
+                             player_is_returnee),
+                           ~ sum(.x, na.rm = TRUE))) %>%
+          ungroup()
+        
+        # bind the two frames together
+        matched_lineups_complete <- matched_lineups_stats %>%
+          inner_join(matched_lineups_transfers,
+                     by = c("team_id", "games_position"))
+        
+        # check if there is a team missing
+        if(nrow(matched_lineups_complete) < 8){
+          matched_lineups_complete <- bind_rows(matched_lineups_complete,
+                                                imputed_values_total) %>%
+            arrange(team_id, games_position)
+        }
+      } else {
       # if there are players that did not match we want to impute their values
       # based on the lineups of their team on the given position
       matched_lineups_stats <- matched_players %>%
@@ -956,6 +978,7 @@ prepare_lineup_data <- function(match_id){
         inner_join(matched_lineups_transfers,
                    by = c("team_id", "games_position"))
     
+      }
     }
 
   }
@@ -1057,7 +1080,8 @@ prepare_lineup_data <- function(match_id){
 historical_lineup_data <- function(){
   # get all the historical matches
   historical_matches <- all_leagues_matches %>%
-    filter(league_season == 2020,
+    filter(league_id == 79,
+           league_season >= 2016,
            fixture_date <= Sys.Date(),
            status_long == "Match Finished") %>%
     select(fixture_id) %>%
@@ -1065,33 +1089,33 @@ historical_lineup_data <- function(){
     unique()
   
   # all past matches lineup data
-  historical_lineup_data <- NULL
-  missing_lineups <- NULL
+  historical_lineup_data_buli2 <- NULL
+  missing_lineups_buli2 <- NULL
   
   # for all of these matches iterate over the ids and use the prepare_lineups_function
   for(i in 1:length(historical_matches)){
+    print(i)
     print(paste0("Current iteration: ", i))
     print(paste0("Current id: ", historical_matches[i]))
     
-    curr_lineup <- prepare_lineup_data(historical_matches[i])
+    # curr_lineup <- prepare_lineup_data(historical_matches[i])
+    curr_lineup <- prepare_lineup_data_subset(historical_matches[i])
     
-    # add a variable for the fixture id
-    curr_lineup <- curr_lineup %>%
-      mutate(fixture_id = historical_matches[i]) %>%
-      select(fixture_id, everything())
-    
-    if(ncol(curr_lineup) < 278){
-      missing_lineups <- bind_rows(missing_lineups,
+    if(is.null(curr_lineup)){
+      next
+    }
+    if(ncol(curr_lineup) < 238){
+      missing_lineups_buli2 <- bind_rows(missing_lineups_buli2,
                                    curr_lineup)
     } else {
       # bind the data together
-      historical_lineup_data <- bind_rows(historical_lineup_data,
+      historical_lineup_data_buli2 <- bind_rows(historical_lineup_data_buli2,
                                           curr_lineup)
     }
     
     if(i %% 300 == 0){
-      save(historical_lineup_data, file = paste0("historical_lineup_data_2021_", i, ".RData"))
-      save(missing_lineups, file = paste0("missing_lineups_2021_", i, ".RData"))
+      save(historical_lineup_data_buli2, file = paste0("historical_lineup_data_buli2_", i, ".RData"))
+      save(missing_lineups_buli2, file = paste0("missing_lineups_buli2_", i, ".RData"))
     }
     
     
@@ -1101,6 +1125,276 @@ historical_lineup_data <- function(){
   # dbWriteTable(con, "all_leagues_historical_lineups_data",
   #              historical_lineup_data)
   
+  
+}
+
+
+
+
+prepare_lineup_data_subset <- function(match_id){
+  # get the lineups from the data base
+  current_game_lineup <- all_leagues_fixture_lineups %>%
+    filter(fixture_id == match_id) %>%
+    # prepare the name of the players to map the API and the TM data
+    mutate(player_lastname = str_remove(player_name, pattern = ".*\\. |.*\\s"),
+           # split the name by spaces
+           player_lastname2 = str_split(player_lastname, " "))
+  
+  if(nrow(current_game_lineup) == 0){
+    return(NULL)
+  }
+  
+  home_id <- unique(current_game_lineup$club_id_home)
+  away_id <- unique(current_game_lineup$club_id_away)
+  
+  # extract the league name
+  league_name <- unique(current_game_lineup$league_name)
+  
+  # now get from the string split only the last element
+  current_game_lineup$player_lastname2 <- sapply(current_game_lineup$player_lastname2,
+                                                 tail, 1)
+  
+  # create the lastname for mapping by removing special characters
+  current_game_lineup <- current_game_lineup %>%
+    mutate( 
+      # map all special characters to plain ones
+      player_lastname_map = stri_trans_general(player_lastname2, id = "Latin-ASCII")
+    )
+  
+  # if it is a relegation game we just want to return NULL
+  if(is.na(unique(current_game_lineup$league_round))){
+    return(NULL)
+  }
+  
+  # check if it is the first matchday of the season because then we 
+  # have to take the values of the last season as reference
+  if(unique(current_game_lineup$league_round) == 1){
+    # search for the players in the player stats
+    player_stats <- all_leagues_player_stats %>%
+      filter(league_season == (unique(current_game_lineup$league_season) - 1),
+             league_round >= unique(current_game_lineup$league_round))#,
+             # player_id %in% current_game_lineup$player_id,
+             # team_id %in% current_game_lineup$team_id)
+  } else {
+    # search for the players in the player stats
+    player_stats <- all_leagues_player_stats %>%
+      filter(league_season == unique(current_game_lineup$league_season),
+             league_round < unique(current_game_lineup$league_round))#,
+
+      
+  }
+  
+  # add the formation info (number defenders, midfielders, attackers)
+  formation_data_home <- current_game_lineup %>% 
+    filter(team_id == home_id,
+           is_starting_grid == TRUE) %>%
+    group_by(player_pos) %>%
+    count() %>%
+    # drop the goalkeeper
+    filter(player_pos != "G") %>%
+    # convert into one line
+    pivot_wider(names_from = player_pos,
+                values_from = n,
+                names_glue = "home_number_{player_pos}")
+  
+  
+  formation_data_away <- current_game_lineup %>% 
+    filter(team_id == away_id,
+           is_starting_grid == TRUE) %>%
+    group_by(player_pos) %>%
+    count() %>%
+    # drop the goalkeeper
+    filter(player_pos != "G") %>%
+    # convert into one line
+    pivot_wider(names_from = player_pos,
+                values_from = n,
+                names_glue = "away_number_{player_pos}")
+  
+  # compute the aggregated values for both teams for each position
+  aggregated_values_pos <- player_stats %>% 
+    filter(player_id %in% current_game_lineup$player_id,
+           team_id %in% current_game_lineup$team_id) %>%
+    group_by(team_id, games_position) %>%
+    summarize(across(c(games_minutes, games_rating, goals_total:cards_red),
+                     ~ mean(.x, na.rm = TRUE))) %>%
+    ungroup()
+  
+  # drop all positions that are not in the normal "G", "D", "M", "F"
+  # available positions
+  positions <- c("G", "D", "M", "F")
+
+  aggregated_values_pos <- aggregated_values_pos %>%
+    filter(games_position %in% positions)
+  
+  # there should be 8 rows (1 per team per position (G, D, M, F))
+  if(nrow(aggregated_values_pos) < 8){
+    
+    # check if there is only one team id, i.e., one team is missing
+    # then we want to impute the values for this team
+    if(length(unique(aggregated_values_pos$team_id)) == 1){
+      missing_id <- ifelse(home_id %in% aggregated_values_pos$team_id,
+                           away_id, home_id)
+      
+      # compute the aggregated values for over the whole seasons
+      # of all teams as replacement for the missing teams
+      aggregated_values_pos_missing <- player_stats %>% 
+        group_by(games_position) %>%
+        summarize(across(c(games_minutes, games_rating, goals_total:cards_red),
+                         ~ mean(.x, na.rm = TRUE))) %>%
+        ungroup() %>%
+        mutate(team_id = missing_id)
+      
+      # bind the two team values together
+      aggregated_values_pos <- bind_rows(aggregated_values_pos,
+                                         aggregated_values_pos_missing)
+      
+      
+      # if there is no team in the aggregated_values_pos we need to impute
+      # the values for both teams
+    } else if(length(unique(aggregated_values_pos$team_id)) == 0){
+      
+      # compute the aggregated values for over the whole seasons
+      # of all teams as replacement for the missing teams
+      aggregated_values_pos_missing_home <- player_stats %>% 
+        group_by(games_position) %>%
+        summarize(across(c(games_minutes, games_rating, goals_total:cards_red),
+                         ~ mean(.x, na.rm = TRUE))) %>%
+        ungroup() %>%
+        mutate(team_id = home_id)
+      
+      aggregated_values_pos_missing_away <- player_stats %>% 
+        group_by(games_position) %>%
+        summarize(across(c(games_minutes, games_rating, goals_total:cards_red),
+                         ~ mean(.x, na.rm = TRUE))) %>%
+        ungroup() %>%
+        mutate(team_id = away_id)
+      
+      # bind the two team values together (in this case basically 
+      # add exactly the same data to the frame)
+      aggregated_values_pos <- bind_rows(aggregated_values_pos,
+                                         aggregated_values_pos_missing_home,
+                                         aggregated_values_pos_missing_away)
+      
+      # otherwise there have to be missing positions (but not the whole team)
+    }
+    
+    if(nrow(aggregated_values_pos) < 8){
+      
+      # check which position is missing for which team
+      positions_per_team <- aggregated_values_pos %>%
+        group_by(team_id) %>%
+        # filter for these teams that have missing positions
+        filter(n_distinct(games_position) < 4)
+      
+      
+      missing_pos_home <- positions_per_team %>%
+        filter(team_id == home_id)
+      
+      if(nrow(missing_pos_home) != 0){
+        missing_pos_home <- setdiff(positions, missing_pos_home$games_position) %>%
+          data.frame("pos" = .) %>%
+          mutate(team_id = home_id)
+      }
+        
+      missing_pos_away <- positions_per_team %>%
+        filter(team_id == away_id)
+      
+      if(nrow(missing_pos_away) != 0){
+        missing_pos_away <- setdiff(positions, missing_pos_away$games_position) %>%
+          data.frame("pos" = .) %>%
+          mutate(team_id = away_id)
+      }
+      
+      
+      # compute the aggregated values for over the whole seasons
+      # of all teams as replacement for the missing teams
+      aggregated_values_pos_missing <- player_stats %>% 
+        group_by(games_position) %>%
+        summarize(across(c(games_minutes, games_rating, goals_total:cards_red),
+                         ~ mean(.x, na.rm = TRUE))) %>%
+        ungroup()
+      
+      
+      # if there are missing positions we want to filter the respective position
+      # out 
+      aggregated_values_pos_missing_home <- NULL
+      aggregated_values_pos_missing_away <- NULL
+      
+      # join the data to it
+      if(nrow(missing_pos_home) != 0){
+        aggregated_values_pos_missing_home <- aggregated_values_pos_missing %>%
+          inner_join(missing_pos_home, by = c("games_position" = "pos")) %>%
+          select(team_id, everything())
+      }
+      
+      # join the data to it
+      if(nrow(missing_pos_away) != 0){
+        aggregated_values_pos_missing_away <- aggregated_values_pos_missing %>%
+          inner_join(missing_pos_away, by = c("games_position" = "pos")) %>%
+          select(team_id, everything())
+      }
+      
+      # based on the content of the home and away missings we bind the
+      # data together
+      if(!is.null(aggregated_values_pos_missing_home) & 
+         !is.null(aggregated_values_pos_missing_away)){
+        
+        aggregated_values_pos_missings <- bind_rows(aggregated_values_pos_missing_home,
+                                                    aggregated_values_pos_missing_away)
+      } else if(!is.null(aggregated_values_pos_missing_home) &
+                is.null(aggregated_values_pos_missing_away)){
+        aggregated_values_pos_missings <- aggregated_values_pos_missing_home
+      } else {
+        aggregated_values_pos_missings <- aggregated_values_pos_missing_away
+      }
+      
+      
+      # finally, bind the computed data with the data of the both teams
+      aggregated_values_pos <- bind_rows(aggregated_values_pos,
+                                         aggregated_values_pos_missings) %>%
+        arrange(team_id, games_position)
+      
+      
+    }
+  }
+  
+  
+  # filter the positions to only contain "G", "D", "M", "F"
+  aggregated_values_pos <- aggregated_values_pos %>%
+    filter(games_position %in% positions)
+  
+  
+  # extract the away team values
+  home_lineups_stats <- aggregated_values_pos %>%
+    filter(team_id == home_id) %>%
+    # convert it into a one liner
+    pivot_wider(names_from = c(team_id, games_position),
+                values_from = c(games_minutes:cards_red),
+                names_glue = "home_{games_position}_{.value}") %>%
+    # bind the number of positions to it
+    bind_cols(., formation_data_home)
+  
+  
+  # extract the away team values
+  away_lineups_stats <- aggregated_values_pos %>%
+    filter(team_id == away_id) %>%
+    # convert it into a one liner
+    pivot_wider(names_from = c(team_id, games_position),
+                values_from = c(games_minutes:cards_red),
+                names_glue = "away_{games_position}_{.value}") %>%
+    # bind the number of positions to it
+    bind_cols(., formation_data_away)
+  
+  
+  
+  # bind the whole data frame together
+  lineup_stats_combined <- bind_cols(home_lineups_stats,
+                                     away_lineups_stats) %>%
+    # add a variable for the fixture id 
+    mutate(fixture_id = match_id)
+  
+  
+  return(lineup_stats_combined)
   
 }
 
