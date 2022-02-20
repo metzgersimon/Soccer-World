@@ -52,7 +52,8 @@ train_data <- train_data %>%
                             "fulltime_score_home.x", "fulltime_score_away.x",
                             "home_points", "away_points",
                             "home_team_goal_diff", "away_team_goal_diff",
-                            "fulltime_score_home.y", "fulltime_score_away.y"))
+                            "fulltime_score_home.y", "fulltime_score_away.y",
+                            "shots_on_goal_away", "shots_on_goal_away"))
 
 train_data <- train_data[, !sapply(train_data, is.character)]
 
@@ -66,7 +67,8 @@ test_data <- test_data %>%
             "fulltime_score_home.x", "fulltime_score_away.x",
             "home_points", "away_points",
             "home_team_goal_diff", "away_team_goal_diff",
-            "fulltime_score_home.y", "fulltime_score_away.y"))
+            "fulltime_score_home.y", "fulltime_score_away.y",
+            "shots_on_goal_away", "shots_on_goal_away"))
 
 test_data <- test_data[, !sapply(test_data, is.character)]
 
