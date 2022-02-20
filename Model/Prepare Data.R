@@ -94,7 +94,7 @@ prepare_team_match_stats_historical <- function(){
            season >= 2016,
            !is.na(matchday)) %>%
     # group by the league and team id
-    group_by(league_id, team_id,) %>%
+    group_by(league_id, team_id) %>%
     # because we do not have the stats for e.g. matchday 1 at matchday 1
     # we lag the variables we consider for prediction with a n of 1
     mutate(across(c(shots_on_goal:passing_accuracy),
@@ -149,6 +149,7 @@ prepare_fifa_team_stats <- function(){
 
   # get the all_leagues_matches data set with just a few columns to join
   all_leagues_matches_matcher <- all_leagues_matches %>%
+    filter(league_season >= 2016) %>%
     select(league_id, league_name, league_season, league_round,
            fixture_id, fixture_date, fixture_time)
   
@@ -156,13 +157,16 @@ prepare_fifa_team_stats <- function(){
   # be able to join the fifa stats later on
   all_leagues_fixture_stats2 <- all_leagues_fixture_stats %>% 
     distinct() %>%
+    filter(season >= 2016) %>%
     left_join(all_leagues_matches_matcher,
               by = c("league_id", 
                      "season" = "league_season",
                      "matchday" = "league_round",
                      "fixture_date",
                      "fixture_time",
-                     "fixture_id"))
+                     "fixture_id")) %>%
+    # drop relegation games
+    filter(!is.na(matchday))
   
   # create the min and max dates of the team stats
   min_date_team_stats <- min(all_leagues_fifa_team_stats$date)
@@ -211,6 +215,8 @@ prepare_fifa_team_stats <- function(){
                      "date_minus1" = "date",
                      "team_name" = "club"),
               keep = TRUE)
+  
+  return(fifa_stats_joined)
   
 }
   
@@ -1131,9 +1137,9 @@ historical_lineup_data <- function(){
 
 
 
-prepare_lineup_data_subset <- function(match_id, con){
+prepare_lineup_data_subset <- function(match_id, all_leagues_fixture_lineups){
   # get the lineups from the data base
-  current_game_lineup <- tbl(con, "all_leagues_fixture_lineups") %>%
+  current_game_lineup <- all_leagues_fixture_lineups %>%
     data.frame() %>%
     filter(fixture_id == match_id) %>%
     # prepare the name of the players to map the API and the TM data
