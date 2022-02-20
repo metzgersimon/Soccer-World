@@ -61,7 +61,7 @@ max_fifa <- all_leagues_fifa_squads %>%
 league_ids <- c(19, 20, 13, 16)
 
 # get the new fifa squads stats for all leagues in the above vector
-all_leagues_fifa_squads_new <- get_squads_fifa_all_leagues(league_ids[i],
+all_leagues_fifa_squads_new <- get_squads_fifa_all_leagues(league_ids,
                                                            fifa_version = max_fifa,
                                                            date = max_date) 
                                                                    
