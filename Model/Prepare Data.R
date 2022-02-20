@@ -1080,7 +1080,7 @@ prepare_lineup_data <- function(match_id){
 historical_lineup_data <- function(){
   # get all the historical matches
   historical_matches <- all_leagues_matches %>%
-    filter(league_id == 79,
+    filter(league_id == 39,
            league_season >= 2016,
            fixture_date <= Sys.Date(),
            status_long == "Match Finished") %>%
@@ -1089,8 +1089,8 @@ historical_lineup_data <- function(){
     unique()
   
   # all past matches lineup data
-  historical_lineup_data_buli2 <- NULL
-  missing_lineups_buli2 <- NULL
+  historical_lineup_data_pl <- NULL
+  missing_lineups_pl <- NULL
   
   # for all of these matches iterate over the ids and use the prepare_lineups_function
   for(i in 1:length(historical_matches)){
@@ -1105,17 +1105,17 @@ historical_lineup_data <- function(){
       next
     }
     if(ncol(curr_lineup) < 238){
-      missing_lineups_buli2 <- bind_rows(missing_lineups_buli2,
+      missing_lineups_pl <- bind_rows(missing_lineups_pl,
                                    curr_lineup)
     } else {
       # bind the data together
-      historical_lineup_data_buli2 <- bind_rows(historical_lineup_data_buli2,
+      historical_lineup_data_pl <- bind_rows(historical_lineup_data_pl,
                                           curr_lineup)
     }
     
     if(i %% 300 == 0){
-      save(historical_lineup_data_buli2, file = paste0("historical_lineup_data_buli2_", i, ".RData"))
-      save(missing_lineups_buli2, file = paste0("missing_lineups_buli2_", i, ".RData"))
+      save(historical_lineup_data_pl, file = paste0("historical_lineup_data_pl_", i, ".RData"))
+      save(missing_lineups_pl, file = paste0("missing_lineups_pl_", i, ".RData"))
     }
     
     
@@ -1131,9 +1131,10 @@ historical_lineup_data <- function(){
 
 
 
-prepare_lineup_data_subset <- function(match_id){
+prepare_lineup_data_subset <- function(match_id, con){
   # get the lineups from the data base
-  current_game_lineup <- all_leagues_fixture_lineups %>%
+  current_game_lineup <- tbl(con, "all_leagues_fixture_lineups") %>%
+    data.frame() %>%
     filter(fixture_id == match_id) %>%
     # prepare the name of the players to map the API and the TM data
     mutate(player_lastname = str_remove(player_name, pattern = ".*\\. |.*\\s"),
