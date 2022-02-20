@@ -190,9 +190,11 @@ get_past_odds_ts <-
     # //*[@id="tooltipdiv"] location of the odds were changed on the site
     repeat {
       Sys.sleep(2)
-      elements <- remDr$findElement(using = 'xpath', value = paste0("//div[@id='odds-data-table']//",
-                                                                    "div[@class='table-container']//table[@class='table-main detail-odds sortable'][1]",
-                                                                    "//td[contains(@class, 'right odds')]"))
+      #elements <- remDr$findElement(using = 'xpath', value = paste0("//div[@id='odds-data-table']//",
+      #                                                              "div[@class='table-container']//table[@class='table-main detail-odds sortable'][1]",
+      #                                                              "//td[contains(@class, 'right odds')]"))
+      
+      elements <- remDr$findElements(using = "class", "right")
       
       if(!is.null(elements)){
         break
