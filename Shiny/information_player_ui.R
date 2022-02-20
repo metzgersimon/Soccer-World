@@ -57,7 +57,7 @@ tab_information_player_ui <- function(){
           tabsetPanel(# overview tab is for useful information and statistics
             # about the player
             tabPanel("Overview",
-                     fluidRow(
+                     fluidRow(br(),
                          valueBoxOutput(
                            "age", 
                            width = 3),
@@ -70,30 +70,33 @@ tab_information_player_ui <- function(){
                          valueBoxOutput(
                            "contract_date", 
                            width = 3)),
-                       # ui output to display the logo of the club and player image
-                     fluidRow(box(width = 4,
-                                  title = "Player Overview", 
-                                  solidHeader = TRUE, 
-                                  status = "primary",     
-                                  div(style = "margin-top: 20px;",
-                                      htmlOutput("info_player_overview")
-                                  )
-                     ),box(width = 4,
-                           title = "Player Profile", 
-                           solidHeader = TRUE, 
-                           status = "primary",     
-                           div(style = "margin-top: 20px;",
-                               htmlOutput("info_player_player_img")
-                           )
-                     ),
-                     box(width = 4,
-                         title = "Player Club Logo", 
-                         solidHeader = TRUE, 
-                         status = "primary",     
+                     # ui output to display the logo of the club and player image
+                     fluidRow(
+                       br(),
+                       box(
+                         width = 4,
+                         title = "Player Overview",
+                         solidHeader = TRUE,
+                         status = "primary",
                          div(style = "margin-top: 20px;",
-                             htmlOutput("info_player_club_img")
-                         )
-                     )
+                             htmlOutput("info_player_overview"))
+                       ),
+                       box(
+                         width = 4,
+                         title = "Player Profile",
+                         solidHeader = TRUE,
+                         status = "primary",
+                         div(style = "margin-top: 20px;",
+                             htmlOutput("info_player_player_img"))
+                       ),
+                       box(
+                         width = 4,
+                         title = "Player Club Logo",
+                         solidHeader = TRUE,
+                         status = "primary",
+                         div(style = "margin-top: 20px;",
+                             htmlOutput("info_player_club_img"))
+                       )
                      # column(width =4 ,
                      #          align = "left",
                      #          div(style = "margin-top: 20px;",
@@ -114,9 +117,8 @@ tab_information_player_ui <- function(){
               "Statistics", # the tab for the player's stats
               tabsetPanel(
                 type = "pills",
-                tabPanel("General", # general stats
-                         fluidRow(
-                           column(
+                tabPanel(div("General", style = "color: LightSkyBlue"),  # general stats
+                         fluidRow(column(
                              width = 6,
                              height = 200,
                              align = "left",
@@ -210,8 +212,8 @@ tab_information_player_ui <- function(){
                            )
                          )
                 ),
-                tabPanel("Details",  # more detailed infos for the player stats
-                         fluidRow(
+                tabPanel(div("Details", style = "color: LightSkyBlue;"),  # more detailed infos for the player stats
+                         fluidRow(br(),
                            box(
                              title = "Dribbles and Tackles",
                              status = "primary",
@@ -242,8 +244,8 @@ tab_information_player_ui <- function(){
                                withSpinner(color = "black")
                            )
                          )),
-                tabPanel("FIFA Player rating",
-                         fluidRow(column(
+                tabPanel(div("FIFA Player Rating", style = "color: LightSkyBlue;"),
+                         fluidRow(br(),column(
                            width = 12,
                            # offset = 3,
                            align = "center",
