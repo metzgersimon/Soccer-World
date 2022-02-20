@@ -1,4 +1,5 @@
 ### script should update the spi data set daily ###
+setwd("/srv/shiny-server/Soccer-Prediction-App")
 source("global.R")
 # setup a connection to the database
 con <- dbConnect(RMariaDB::MariaDB(), 
