@@ -276,6 +276,8 @@ get_new_club_stats_API <- function(con){
   all_leagues_club_stats_new <- NULL
   
   for(i in 1:nrow(max_matchdays)){
+    print(paste0("current_league", max_matchdays$league_id[i], "--"))
+    print(paste0("current_team", max_matchdays$team_id[i], "--"))
     # get for the current club all the matches that are not currently
     # considered in the club stats frame
     current_club_missing_matchdays <- all_leagues_matches %>%
