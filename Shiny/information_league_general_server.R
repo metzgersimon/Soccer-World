@@ -4,7 +4,7 @@ information_league_general_server <- function(input, output, session){
   # create an observer to display for the season selection
   # only those clubs that are present in the selected league
    observeEvent(input$information_league_league_selection, {
-     updateSelectInput(session, 
+     updateSelectizeInput(session, 
                           inputId = "information_league_season_selection",
                           choices = c("", paste0(unique(
                             all_leagues_matches %>% filter(
@@ -85,7 +85,7 @@ information_league_general_server <- function(input, output, session){
     req(input$info_team_season_selection)
     
     overview_filtered <-
-      all_leagues_matches %>% left_join(all_leagues_tm_squads, by = c("club_name_home" =
+      all_leagues_matches %>% left_join(all_leagues_squads_tm, by = c("club_name_home" =
                                                                         "club"))
     
   })
@@ -354,8 +354,9 @@ information_league_general_server <- function(input, output, session){
       plot_ly(x = ~cut_off_day, y = ~value_then, color = ~club,
               colors = colors) %>%
       add_lines() %>%
-      layout(title = "Market value over time",
-             yaxis = list(title = "Current Market Value"),
+      layout(
+        title = list(text = "Market value over time", y = 0.95, x = 0.5),
+            yaxis = list(title = "Current Market Value"),
              xaxis = list(title = "Year"),
              font = list(color = "white"),
              plot_bgcolor = "rgba(0, 65, 87, 10)",
@@ -411,7 +412,8 @@ information_league_general_server <- function(input, output, session){
               frame = ~season,
               ids = ~club) %>%
       add_bars() %>%
-      layout(title = paste0("Number of league wins"),
+      layout(
+        title = list(text = "Number of league wins", y = 0.95, x = 0.5),
              xaxis = list(title = "Season"),
              yaxis = list(title = "# League wins"),
              font = list(color = "white"),

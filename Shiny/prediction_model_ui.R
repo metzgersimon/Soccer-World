@@ -35,29 +35,29 @@ tab_prediction_model_ui <- function(){
                 selected = ""
               )
             )
-          ), 
+          ),  fluidRow(
+            column(width = 2,
+                   align = "center",
+                   div(style = "margin-top: 20px;",
+                       selectInput("prediction_model_type",
+                                   "Model",
+                                   choices = c("XGBoost",
+                                               "Linear Regression",
+                                               "Best"),
+                                   selected = "Best"))),
+            column(width = 2,
+                   align = "center",
+                   div(style = "margin-top: 20px;",
+                       checkboxInput("prediction_model_lineups",
+                                     "Integrate Lineups",
+                                     value = FALSE)))),  
           # tabs for information regarding the player
           tabsetPanel(
             # overview tab is for useful information and statistics
             # about the player
             tabPanel(
               "Moving Accuracy",tabPanel("Model",
-                                         fluidRow(
-                                           column(width = 2,
-                                                  align = "center",
-                                                  div(style = "margin-top: 20px;",
-                                                      selectInput("prediction_model_type",
-                                                                  "Model",
-                                                                  choices = c("XGBoost",
-                                                                              "Linear Regression",
-                                                                              "Best"),
-                                                                  selected = "Best"))),
-                                           column(width = 2,
-                                                  align = "center",
-                                                  div(style = "margin-top: 20px;",
-                                                      checkboxInput("prediction_model_lineups",
-                                                                    "Integrate Lineups",
-                                                                    value = FALSE)))),      
+                                            
                                          fluidRow(
                                            column(width = 10,
                                                   align = "center",
@@ -65,11 +65,21 @@ tab_prediction_model_ui <- function(){
               )),
             tabPanel(
               "Past Matches",
-              fluidRow()
+              fluidRow(column(
+                width = 10,
+                align = "center",     
+                reactableOutput("prediction_model_historical_results") %>%
+                  withSpinner(color = "black")
+              ))
             ),
             tabPanel(
               "Future Matches",
-              fluidRow()
+              fluidRow(column(
+                width = 10,
+                align = "center",     
+                reactableOutput("prediction_model_future_results") %>%
+                  withSpinner(color = "black")
+              ))
             )
               
   ))

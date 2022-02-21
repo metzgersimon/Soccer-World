@@ -18,3 +18,55 @@ prediction_model_server <- function(input, output, session){
   })
   
 }
+
+# output$prediction_model_historical_results <- renderReactable({
+#   req(input$information_model_league_selection)
+#   req(input$information_model_season_selection)
+#   req(input$information_league_matchday_selection)
+#   req(input$information_player_season_selection)      
+#   
+#   player_stats() %>%
+#     select(fixture_date,
+#            contains("goals")) %>%
+#     reactable(
+#       defaultColDef = colDef(
+#         align = "center",
+#         minWidth = 150,
+#         headerStyle = list(background = "darkblue")
+#       ),
+#       searchable = TRUE,
+#       striped = TRUE,
+#       highlight = TRUE,
+#       borderless = TRUE,
+#       # set the theme for the table
+#       theme = reactableTheme(
+#         borderColor = "#000000",
+#         color = "#000000",
+#         backgroundColor = "#004157",
+#         highlightColor = "#2f829e",
+#         cellPadding = "8px 12px",
+#         style = list(color = "white"),
+#         searchInputStyle = list(width = "100%",
+#                                 color = "black")
+#       )
+#       ,
+#       # modify the layout and names of the columns
+#       columns = list(
+#         fixture_date = colDef(name = "Date",
+#                               align = "left"),
+#         goals_total = colDef(name = "Total goals",
+#                              align = "center"),
+#         goals_conceded = colDef(name = "Conceded goals",
+#                                 align = "center"),
+#         goals_assists = colDef(name = "Assist goals",
+#                                align = "center"),
+#         goals_saves = colDef(name = "Saved goals",
+#                              align = "center")
+#         
+#       )
+#     )
+# })
+
+
+
+
