@@ -24,7 +24,7 @@ con <- dbConnect(RMariaDB::MariaDB(),
 ####### with data base
 ### match tab data
 all_leagues_matches <- tbl(con, "all_leagues_matches") %>% data.frame()
-all_leagues_spi_538_available_matches <- tbl(con, "all_leagues_spi_538") %>%
+all_leagues_spi_538 <- tbl(con, "all_leagues_spi_538") %>%
   data.frame()
 
 
@@ -38,7 +38,15 @@ all_infos_club <- inner_join(all_leagues_squads_tm, unique(all_leagues_matches[,
                              by=c("club"="club_name_home", "league"="league_name"))
 
 all_leagues_club_stats <- tbl(con, "all_leagues_club_stats") %>%
-  data.frame()
+  data.frame() 
+
+colnames_club_stats <- colnames(all_leagues_club_stats) 
+
+colnames_club_stats <- str_replace_all(colnames_club_stats, pattern = "\\.", "_")
+
+colnames(all_leagues_club_stats) <- colnames_club_stats
+  
+  
 all_leagues_team_transfers <- tbl(con, "all_leagues_team_transfers") %>%
   data.frame()
 
@@ -85,7 +93,7 @@ player_stats <- inner_join(x,y, by=c("league_season", "player_name", "league_nam
 
 # filter the season larger than 2015 so that we don't have many missing values
 # as the player stats starts from 2015
-filter_all_leagues_squads_tm <- all_leagues_squads_tm %>% filter(season>=2015)
+filter_all_leagues_squads_tm <- all_leagues_squads_tm %>% filter(season>=2016)
 
 # merge the stats with the basic infos of players
 player_tab_data <-
