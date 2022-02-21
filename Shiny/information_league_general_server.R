@@ -26,44 +26,6 @@ information_league_general_server <- function(input, output, session){
      
    })
   
-
-  ########### NOT READY TO USE ###########
-  # create an observer to display for the club selection
-  # only those clubs that are present in the selected league
-  # observeEvent(input$information_league_season_selection_end, {
-  #   all_seasons_scoring_ratio <- all_seasons_scoring_ratio %>%
-  #     separate(col = season, into = c("season_start_year", "season_end_year"),
-  #              sep = "/") %>%
-  #     mutate(season_start_year = as.numeric(season_start_year),
-  #            season_end_year = as.numeric(season_end_year))
-  #   
-  #   print(input$information_league_season_selection_start)
-  #   season_start <- input$information_league_season_selection_start %>%
-  #     str_split(., pattern = "/") %>%
-  #     .[[1]] %>%
-  #     .[1]
-  #   print(season_start)
-  #   
-  #   season_end <- input$information_league_season_selection_end %>%
-  #     str_split(., pattern = "/") %>%
-  #     .[[1]] %>%
-  #     .[1]
-  #   
-  #   print(season_end)
-  #   
-  #   updateSelectizeInput(session, 
-  #                     inputId = "information_league_team_selection",
-  #                     choices = c("All", unique(all_seasons_scoring_ratio %>%
-  #                                                 filter(between(season_start_year, 
-  #                                                                season_start,
-  #                                                                season_end)) %>%
-  #                                                 select(club) %>%
-  #                                                 unlist() %>%
-  #                                                 unname()))
-  #   )
-  # })
-  
-  
   # create an observer for the multiple seasons option
   # if the checkbox multiple seasons is not selected, there is only
   # one select field to select the season
@@ -77,7 +39,6 @@ information_league_general_server <- function(input, output, session){
   #     shinyjs::hide(id = "information_league_season_selection_end")
   #   }
   # })
-  
   
   # create the output for the table on the overview page
   overview_data <- reactive({
@@ -338,25 +299,15 @@ information_league_general_server <- function(input, output, session){
   # create a plot for the market value over time
   # for each club
   output$market_value_over_time <- renderPlotly({
-    market_values <- market_values_over_time %>%
-      # currently we have to filter out these dates
-      #filter(cut_off_day != "2011-07-01",
-      #       cut_off_day != "2020-07-01",
-      #       cut_off_day != "2014-06-01",
-      #       cut_off_day != "2014-07-01",
-      #       cut_off_day != "2014-08-01",
-      #       cut_off_day != "2014-09-01",
-      #       cut_off_day != "2014-10-01") %>%
-      # transform the market value at the given time to a numeric
-      mutate(value_then = as.numeric(str_remove_all(value_then,"[\u20AC|m]")) * 1000000) %>%
-      group_by(club) %>%
+    market_values <- all_leagues_market_values_over_time %>% 
+       filter(league==input$information_league_league_selection) %>%
       # create actual plot for the market value over time by club
-      plot_ly(x = ~cut_off_day, y = ~value_then, color = ~club,
+      plot_ly(x = ~date, y = ~value_then_mil_euro, color = ~club,
               colors = colors) %>%
       add_lines() %>%
       layout(
-        title = list(text = "Market value over time", y = 0.95, x = 0.5),
-            yaxis = list(title = "Current Market Value"),
+        title = list(text = "Team market value over time", y = 0.95, x = 0.5),
+            yaxis = list(title = "Market Value"),
              xaxis = list(title = "Year"),
              font = list(color = "white"),
              plot_bgcolor = "rgba(0, 65, 87, 10)",
@@ -365,136 +316,5 @@ information_league_general_server <- function(input, output, session){
     
     market_values
   })
-  
-  # create a plot with animation to show all winners of the league
-  # over time
-  output$most_winners_since <- renderPlotly({
-    
-    # selected_season_start <- as.numeric(str_split(input$information_league_season_selection_start, 
-    #                                               pattern = "/")[[1]][1])
-    # 
-    # selected_season_end <- as.numeric(str_split(input$information_league_season_selection_end, 
-    #                                             pattern = "/")[[1]][1])
-    
-    # create the data
-    all_seasons_running_winners <- buli_understat_data %>%
-      # group by season to be able to extract for each season
-      # the last matchday to extract the winner of the season
-      group_by(season) %>%
-      filter(matchday == max(matchday)) %>%
-      # then count the number of wins for each club
-      mutate(count = n(),
-             # also count the number of teams
-             number_of_teams = length(unique(club))) %>%
-      # filter those where count is equals to number_of_teams
-      # this filters out season that are not completed yet
-      filter(count == number_of_teams) %>%
-      # create a is_winner variable with TRUE if rank is equals to 1
-      # and FALSE otherwise
-      mutate(is_winner = ifelse(rank == 1,
-                                TRUE,
-                                FALSE)) %>%
-      ungroup() %>%
-      # drop the count
-      select(-count) %>%
-      group_by(club) %>%
-      # compute the cumulative league wins by club
-      mutate(cum_league_wins = cumsum(is_winner))
-    
-    # all_season_number_wins <- all_seasons_running_winners %>%
-    #   group_by(club) %>%
-    #   mutate(cum_league_wins = cumsum(is_winner))
-    
-    # plot the winners with animation over the seasons
-    all_seasons_running_winners %>%
-      plot_ly(x = ~cum_league_wins, y = ~club, color = ~club,
-              colors = colors,
-              frame = ~season,
-              ids = ~club) %>%
-      add_bars() %>%
-      layout(
-        title = list(text = "Number of league wins", y = 0.95, x = 0.5),
-             xaxis = list(title = "Season"),
-             yaxis = list(title = "# League wins"),
-             font = list(color = "white"),
-             plot_bgcolor = "rgba(0, 65, 87, 10)",
-             paper_bgcolor = "rgba(0, 65, 87, 10)",
-             fig_bg_color = "rgba(0, 65, 87, 10)")
-  })
-  
-  
-  
-  # create a plot to show the rank of every club over the season
-  #output$league_rank_over_season <- renderPlotly({
-    # convert the selected season into a number
-   # selected_season <- as.numeric(str_split(input$information_league_season_selection, 
-   #                                         pattern = "/")[[1]][1])
-    
-   # create the frame for the plot
-   #  buli_understat_data %>%
-   # filter the season to be the season selected by the user
-   #   filter(season == selected_season) %>%
-   # order them by rank
-   #   arrange(rank) %>%
-   # create the actual plot
-   #   plot_ly(x = ~matchday, y = ~rank, color = ~club,
-   #           colors = colors) %>%
-   #   add_lines() %>%
-   # set the title to contain the selected season
-   #  layout(title = paste0("Cumulative ranks in season ", 
-   #                        input$information_league_season_selection),
-   #          xaxis = list(title = "Matchday"),
-   #          yaxis = list(title = "Current league position", autorange = "reversed"),
-   #          font = list(color = "white"),
-   #          plot_bgcolor = "rgba(0, 65, 87, 10)",
-   #          paper_bgcolor = "rgba(0, 65, 87, 10)",
-   #          fig_bg_color = "rgba(0, 65, 87, 10)")
-  #})
-  
-  
-  # 
-  # # create a plot to show all points for each club cumulated over all seasons
-  # output$all_seasons_over_time <- renderPlotly({
-  #   # convert the season start year into numeric
-  #   selected_season_start <- as.numeric(str_split(input$information_league_season_selection_start, 
-  #                                           pattern = "/")[[1]][1])
-  #   # convert the season end year into numeric
-  #   selected_season_end <- as.numeric(str_split(input$information_league_season_selection_end, 
-  #                                                 pattern = "/")[[1]][1])
-  #   
-  # 
-  #   plot_data %>%
-  #     group_by(club, matchday) %>%
-  #     summarize(cum_points_all_seasons = sum(cum_points)) %>%
-  #     plot_ly(x = ~matchday, y = ~cum_points_all_seasons, color = ~club,
-  #             colors = colors) %>%
-  #     add_lines() %>%
-  #     layout(title = paste0("Cumulative points all_seasons "),
-  #            xaxis = list(title = "Matchday"),
-  #            yaxis = list(title = "Cumulative points"))
-  # })
-  
-
-  
- 
-  # create a plot for a selected season
-  # to show the points over the season for all clubs
-  # output$one_season_over_time <- renderPlotly({
-  #   # convert the selected season into a number
-  #   selected_season <- as.numeric(str_split(input$information_league_season_selection, 
-  #                                           pattern = "/")[[1]][1])
-  #   # create the data
-  #   all_seasons_running_table %>%
-  #     # filter the data to only contain data for the selected season
-  #     filter(season_start_year == selected_season) %>%
-  #     # create actual plot
-  #     plot_ly(x = ~matchday, y = ~cum_points, color = ~club,
-  #             colors = colors) %>%
-  #     add_lines() %>%
-  #     layout(title = paste0("Cumulative points in season "), 
-  #                           #input$information_league_season_selection),
-  #            xaxis = list(title = "Matchday"),
-  #            yaxis = list(title = "Cumulative points"))
-  # })
   
 }
