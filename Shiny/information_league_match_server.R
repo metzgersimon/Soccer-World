@@ -91,6 +91,7 @@ information_league_match_server <- function(input, output, session){
     req(input$info_match_season)
     req(input$info_match_team1)
     req(input$info_match_team2)
+    req(input$info_match_season_half)
     
     # season_n <- 2016
     # team1 <- "SV Werder Bremen"
@@ -106,7 +107,6 @@ information_league_match_server <- function(input, output, session){
     
     # map the league name to the league id
     league_ID <- API_map_league_to_id(input$info_match_league)
-    league_ID <- API_map_league_to_id("Bundesliga")
       
     # # get the fixture id of the selected match
     # fixture_ID <- all_leagues_matches %>%
@@ -132,8 +132,7 @@ information_league_match_server <- function(input, output, session){
     number_of_rounds <- all_leagues_matches %>%
       filter(league_id == league_ID,
              league_season == season_selection) %>%
-      summarize(number_rounds = max(league_round),
-                na.rm = TRUE) %>%
+      summarise(number_rounds = max(league_round, na.rm = TRUE)) %>%
       select(number_rounds) %>% 
       pull()
     
@@ -397,8 +396,7 @@ information_league_match_server <- function(input, output, session){
       filter(league_name == input$info_match_league,
              league_season == as.numeric(str_split(input$info_match_season,
                                                    pattern = "/")[[1]][1])) %>%
-      summarize(number_rounds = max(league_round),
-                na.rm = TRUE) %>%
+      summarise(number_rounds = max(league_round, na.rm = TRUE)) %>%
       select(number_rounds) %>% 
       pull()
     
@@ -586,6 +584,7 @@ information_league_match_server <- function(input, output, session){
   # creates the plot for the match overview, i.e., the events happened
   # during the match
   output$info_match_match_events <- renderReactable({
+    req(input$info_match_league)
     req(input$info_match_season)
     req(input$info_match_team1)
     req(input$info_match_team2)
@@ -627,9 +626,9 @@ information_league_match_server <- function(input, output, session){
     # number_of_rounds <- all_leagues_matches %>%
     #   filter(league_name == "Bundesliga",
     #          league_season == 2021) %>%
-    #   summarize(number_rounds = max(league_round),
-    #             na.rm = TRUE) %>%
-    #   select(number_rounds) %>% 
+    #   # group_by(league_name, league_season) %>%
+    #   summarise(number_rounds = max(league_round, na.rm = TRUE)) %>%
+    #   select(number_rounds) %>%
     #   pull()
     
     # extract the number of matchdays
@@ -637,8 +636,7 @@ information_league_match_server <- function(input, output, session){
       filter(league_name == input$info_match_league,
              league_season == as.numeric(str_split(input$info_match_season,
                                                    pattern = "/")[[1]][1])) %>%
-      summarize(number_rounds = max(league_round),
-                na.rm = TRUE) %>%
+      summarise(number_rounds = max(league_round, na.rm = TRUE)) %>%
       select(number_rounds) %>% 
       pull()
     
