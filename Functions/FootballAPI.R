@@ -679,15 +679,37 @@ get_fixture_stats <- function(fixture_id){
         pivot_wider(names_from = name, values_from = value,
                     names_glue = "team_{name}")
       
-      # create the team_stats frame by converting the statistics list
-      # element into a data frame with enframe
+      
+      
       team_stats <- enframe(content[[i]]$statistics) %>%
         # extract the list in the value column into separate columns
         # with "_" as separator
-        unnest_wider(value, names_sep = "_") %>%
-        # unlist the elements (enframe converts the data into list elements)
-        mutate(value_value = unlist(value_value)) %>%
+        unnest_wider(value, names_sep = "_")
+      
+      test1 <- team_stats$value_value
+      save(test1, file = "test1.RData")
+      print(fixture_id)
+      
+      team_stats$value_value[sapply(team_stats$value_value, is.null)] <- as.character(NA)
+      
+      # unlist the elements (enframe converts the data into list elements)
+      team_stats <- team_stats %>%
+        mutate(value_value = unlist(value_value))
+      
+      save(team_stats, file = "team.RData")
+      
+      team_stats <- team_stats %>%
         select(-name) %>%
+        
+      # create the team_stats frame by converting the statistics list
+      # element into a data frame with enframe
+      # team_stats <- enframe(content[[i]]$statistics) %>%
+      #   # extract the list in the value column into separate columns
+      #   # with "_" as separator
+      #   unnest_wider(value, names_sep = "_") %>%
+      #   # unlist the elements (enframe converts the data into list elements)
+      #   mutate(value_value = unlist(value_value)) %>%
+      #   select(-name) %>%
         # transform the frame by separating the value_type column with the
         # values from the value_value column
         pivot_wider(names_from = value_type, values_from = value_value,
@@ -709,6 +731,7 @@ get_fixture_stats <- function(fixture_id){
                passes_total = `Total passes`,
                passes_accurate= `Passes accurate`,
                passing_accuracy = `Passes %`) %>%
+        api_football_fixtures_general_complete_check(., content_type = "fixture_stats") %>%
         # add a column for the fixture id
         # and a variable to indicate whether the team is the home or the away team
         # remove the % sign for the possession and the passing accuracy
@@ -716,7 +739,7 @@ get_fixture_stats <- function(fixture_id){
                ball_possession = str_remove(ball_possession, "%"),
                passing_accuracy = str_remove(passing_accuracy, "%"),
                # replace all NAs with 0
-               across(c(shots_on_goal:passing_accuracy), ~replace_na(.x, 0))) %>%
+               across(c(shots_on_goal:passing_accuracy), ~replace_na(.x, "0"))) %>%
         # convert all numeric variables into numerics
         mutate(across(c(shots_on_goal:passing_accuracy), as.numeric)) %>%
         # change the order such that the frame begins with the fixture_id
@@ -1174,7 +1197,8 @@ get_player_stats_fixture <- function(fixture_id){
         current_player_compl <- api_football_fixtures_general_complete_check(
           current_player, "player_stats_fixture") %>%
           # fill all NA values with 0
-          mutate(across(.cols = everything(), ~replace_na(.x, 0)),
+          mutate(across(.cols = everything(), as.character),
+            across(.cols = everything(), ~replace_na(.x, "0")),
                  # convert most of the variables dynamically into numeric variables
                  across(c(contains("offsides"), contains("shots"),
                           contains("goals"), contains("tackles"),

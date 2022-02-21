@@ -27,6 +27,11 @@ all_leagues_matches <- tbl(con, "all_leagues_matches") %>% data.frame()
 all_leagues_spi_538 <- tbl(con, "all_leagues_spi_538") %>%
   data.frame()
 
+## predictions
+all_leagues_historical_predictions <- tbl(con, "all_leagues_historical_predictions") %>%
+  data.frame() %>%
+  right_join(all_leagues_matches, by = c("fixture_id", "league_id", "league_season",
+                                         "league_round", "club_id_home", "club_id_away"))
 
 ### load team tab data
 all_leagues_squads_tm <- tbl(con, "all_leagues_squads_tm") %>% data.frame()

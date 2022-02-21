@@ -121,6 +121,18 @@ api_football_fixtures_general_complete_check <- function(data_frame_to_observe,
                                        "assist_id", "assist_name",
                                        "type", "detail", "comments")
     
+  } else if(content_type == "fixture_stats"){
+      data_frame_template <- data.frame(matrix(ncol = 16,
+                                               nrow = 0))
+      
+      colnames(data_frame_template) <- c("shots_on_goal", "shots_off_goal",
+                                         "shots_total", "shots_blocked", "shots_inside_box",
+                                         "shots_outside_box", "fouls",
+                                         "corners", "offsides",
+                                         "ball_possession", "cards_yellow", "cards_red",
+                                         "goalkeeper_saves", "passes_total", "passes_accurate",
+                                         "passing_accuracy")
+    
   } else if(content_type == "team_transfer"){
     data_frame_template <- data.frame(matrix(ncol = 11,
                                              nrow = 0))
