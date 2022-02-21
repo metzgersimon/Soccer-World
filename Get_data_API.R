@@ -7,11 +7,12 @@ get_new_match_information_API <- function(con){
     # filter in the current season and the past matches
     filter(league_season == max(league_season),#
            # get only matches that happen today
-           fixture_date == Sys.Date()) %>% 
+           fixture_date >= Sys.Date() - days(1) &
+             fixture_date <= Sys.Date()) %>% 
     group_by(league_id) %>%
     select(league_id, league_round) %>%
     distinct()
-      
+  
   # extract the current (and max) season
   max_season <- all_leagues_matches %>%
     summarize(max_season = max(league_season)) %>%
@@ -30,8 +31,9 @@ get_new_match_information_API <- function(con){
     curr_leagues_matches_today <- curr_league_matches %>%
       # filter for only matches that happen today
       filter(!(status_long %in% c("Match Cancelled", "Match Postponed")),
-             fixture_date == Sys.Date())
-
+             fixture_date >= Sys.Date() - days(1) &
+               fixture_date <= Sys.Date())
+    
     
     # bind them together with the matches frame for all leagues
     all_leagues_new_matches <- bind_rows(all_leagues_new_matches,
@@ -59,7 +61,6 @@ get_new_match_information_API <- function(con){
   # we also want to return this frame to further use it in the process
   return(all_leagues_new_matches)
 }
-
 
 
 ###### daily morning call to get the todays matches ######

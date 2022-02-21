@@ -4,7 +4,6 @@
 # for this, we source the setup file to get all the needed functions
 # and rdata objects for the shiny app
 
-
 source("Setup.R")
 # set a color scheme
 colors <- viridis_pal(option = "D")(30)
@@ -33,6 +32,8 @@ all_leagues_spi_538_available_matches <- tbl(con, "all_leagues_spi_538") %>%
 all_leagues_squads_tm <- tbl(con, "all_leagues_squads_tm") %>% data.frame()
 all_leagues_market_values_over_time <- tbl(con, "all_leagues_market_values_over_time") %>%
   data.frame()
+
+# merge the squads infos with the matches info for the team tab data
 all_infos_club <- inner_join(all_leagues_squads_tm, unique(all_leagues_matches[,c(2,3,19)]), 
                              by=c("club"="club_name_home", "league"="league_name"))
 

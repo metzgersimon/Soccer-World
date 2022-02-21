@@ -8,7 +8,7 @@ tab_information_league_general_ui <- function(){
             # selectInputs to select a start season and an end season
             column(
               width = 3, align = "center",
-              selectInput("information_league_league_selection", 
+              selectizeInput("information_league_league_selection", 
                           label = "League",
                           choices = c("Bundesliga",
                                       "Bundesliga 2",
@@ -18,7 +18,7 @@ tab_information_league_general_ui <- function(){
               ),
             column(
               width = 3, align = "center",
-              selectInput("information_league_season_selection", 
+              selectizeInput("information_league_season_selection", 
                           label = "Season",
                           choices = seasons,
                           selected = seasons[1]
@@ -33,23 +33,26 @@ tab_information_league_general_ui <- function(){
                    "Overview",
                    fluidRow(
                      column(width = 6,
-                            align = "center",
-                            div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
-                                tableOutput("info_league_overview_table")
+                            align = "left",
+                            div(style = "margin-top: 20px;",
+                                br(),#"border: solid 2px #FFFFFF; margin-top: 20px;",
+                                tableOutput("info_league_overview_table"),br(),
+                                htmlOutput("info_league_league_logo", width = "150%")
                             )
                      ),
-                     column(width = 3,
+                     column(width = 6,
                             align = "left",
                             div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
-                                tableOutput("info_league_league_logo")
+                                htmlOutput("info_league_country_logo",width = "100%")
+                                
                             )
-                     ),
-                     column(width = 3,
-                            align = "center",
-                            div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
-                                tableOutput("info_league_country_logo")
-                            )
-                     ) 
+                     )
+                     # column(width = 3,
+                     #        align = "center",
+                     #        div(style = "margin-top: 20px;",#"border: solid 2px #FFFFFF; margin-top: 20px;",
+                     #            htmlOutput("info_league_country_logo")
+                     #        )
+                     # ) 
                    )
                  ),
                  # create an season specific page for the league to show information

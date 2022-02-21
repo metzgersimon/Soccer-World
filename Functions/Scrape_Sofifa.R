@@ -248,7 +248,7 @@ get_squads_fifa_all_leagues <- function(leagues, fifa_version, date){
     Sys.sleep(30)
   }
   
-  return(all_leagues_team_stats)
+  return(all_leagues_squads)
 }
 
 
@@ -326,6 +326,9 @@ get_squads_fifa <- function(league_id, fifa_version, port = 4124L,
     } else {
       url_for_date <- available_refs_dates[[1]]
       available_dates <- available_refs_dates[[2]]
+      
+      available_dates_curr <- mdy(available_dates) %>%
+        .[. > max_date_in_database]
       
       # if the max available date is already in the data base
       # the available_dates_curr element is empty and we return NULL

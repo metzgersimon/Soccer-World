@@ -2,7 +2,7 @@
 # the fifa squads or team stats daily ###
 
 ########## get newest fifa team stats ############
-
+setwd("/srv/shiny-server/Soccer-Prediction-App")
 source("global.R")
 
 # setup a connection to the database
