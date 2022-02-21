@@ -126,6 +126,7 @@ get_past_odds_ts <-
   
   for(j in 1:length(ex)){ #(ll in ex) {
     
+    
     # navigate to matchup page
     print(paste("https://www.oddsportal.com", ex[j], sep = ''))
     Sys.sleep(1)
@@ -159,7 +160,7 @@ get_past_odds_ts <-
       }
     }
     
-    if(bookmaker != "Pinnacle"){
+    if(is.null(bookmaker)){
       r <- 1
       while(TRUE) {
         
@@ -276,7 +277,8 @@ get_past_odds_ts <-
       
       # assign the type of odds (1 means home team, 2 means draw,..)
       outcome <- otc[(1+(t-1)%%3)]
-      bookmaker <- bookies
+      
+      # bookmaker <- bookmaker
       
       if (is.na(bookmaker)) break
       
@@ -298,6 +300,7 @@ get_past_odds_ts <-
                              "away_win_date_end", "away_win_odd_end")
         }
         
+        print("TEST1")
         
         # create a data frame for the current info (for the current outcome)
         curr_frame <- data.frame(date_start, odd_start, date_end, odd_end)
@@ -335,12 +338,93 @@ get_past_odds_ts <-
         # combine the data
         match_odds_frame <- cbind(match_odds_frame, curr_frame)
         
+        # 
+        
+        
       }
-      
+
     }
     
     # bind the info from the current match to the overall results frame
     ress <- rbind(ress, match_odds_frame)
+    
+    # convert the variables into a proper format
+    all_season_odds <- ress %>%
+      mutate(across(c(contains("odd")), as.numeric),
+             fixture_date_raw = str_split(beginning, ","),
+             odd_date_start_raw = str_split(home_win_date_start, ","),
+             home_win_odd_date_end_raw = str_split(home_win_date_end , ","),
+             draw_odd_date_end_raw = str_split(draw_date_end , ","),
+             away_win_odd_date_end_raw = str_split(away_win_date_end , ","))
+             
+    
+    # extract the date and the time from the split
+    all_season_odds$fixture_date <- sapply(all_season_odds$fixture_date_raw,
+                                           "[[", 2)
+    all_season_odds$fixture_date <- dmy(all_season_odds$fixture_date)
+    
+    all_season_odds$fixture_time <- sapply(all_season_odds$fixture_date_raw,
+                                           "[[", 3)
+
+    all_season_odds$odd_date_start <- sapply(all_season_odds$odd_date_start_raw,
+                                             "[[", 1)
+    all_season_odds$odd_time_start <- sapply(all_season_odds$odd_date_start_raw,
+                                             "[[", 2)
+    
+    all_season_odds$home_win_odd_date_end <- sapply(all_season_odds$home_win_odd_date_end_raw,
+                                             "[[", 1)
+    all_season_odds$home_win_odd_time_end <- sapply(all_season_odds$home_win_odd_date_end_raw,
+                                             "[[", 2)
+    
+    all_season_odds$draw_odd_date_end <- sapply(all_season_odds$draw_odd_date_end_raw,
+                                                    "[[", 1)
+    all_season_odds$draw_odd_time_end <- sapply(all_season_odds$draw_odd_date_end_raw,
+                                                    "[[", 2)
+    
+    all_season_odds$away_win_odd_date_end <- sapply(all_season_odds$away_win_odd_date_end_raw,
+                                                    "[[", 1)
+    all_season_odds$away_win_odd_time_end <- sapply(all_season_odds$away_win_odd_date_end_raw,
+                                                    "[[", 2)
+    
+    
+    
+    all_season_odds <- all_season_odds %>% 
+      mutate(across(c(contains("time")), trimws), 
+             odd_date_start = paste0(odd_date_start, " ", year(fixture_date)),
+             odd_datetime_start = dmy_hm(paste0(odd_date_start, " ", odd_time_start),
+                                         tz = "Europe/London"),
+             odd_datetime_start = with_tz(odd_datetime_start, tz = "Europe/Berlin"),
+             
+             # for the final home win odds
+             home_win_odd_date_end = paste0(home_win_odd_date_end, " ", year(fixture_date)),
+             home_win_odd_datetime_end = dmy_hm(paste0(home_win_odd_date_end, " ", 
+                                                       home_win_odd_time_end),
+                                                tz = "Europe/London"),
+             home_win_odd_datetime_end = with_tz(home_win_odd_datetime_end, tz = "Europe/Berlin"),
+             
+             # for the final draw ods
+             draw_odd_date_end = paste0(draw_odd_date_end, " ", year(fixture_date)),
+             draw_odd_datetime_end = dmy_hm(paste0(draw_odd_date_end, " ", 
+                                                   draw_odd_time_end),
+                                            tz = "Europe/London"),
+             draw_odd_datetime_end = with_tz(draw_odd_datetime_end, tz = "Europe/Berlin"),
+             
+             # for the final away win ods
+             away_win_odd_date_end = paste0(away_win_odd_date_end, " ", year(fixture_date)),
+             away_win_odd_datetime_end = dmy_hm(paste0(away_win_odd_date_end, " ", 
+                                                       away_win_odd_time_end),
+                                                tz = "Europe/London"),
+             away_win_odd_datetime_end = with_tz(away_win_odd_datetime_end, tz = "Europe/Berlin"),
+             
+             # also do the same thing for the match time (date)
+             fixture_datetime = ymd_hm(paste0(fixture_date, " ", 
+                                              fixture_time),
+                                       tz = "Europe/London"),
+             fixture_datetime = with_tz(fixture_datetime, tz = "Europe/Berlin"),
+             # split the datetime into date and time back
+             fixture_date = as.Date(fixture_datetime),
+             # extract only the time
+             fixture_time = trimws(str_extract(fixture_datetime, " [0-9]+:[0-9]+")))
     
   }
   
@@ -356,64 +440,11 @@ get_past_odds_ts <-
                                         "Ligue 1",
                                         league))))
   # do some final mutations 
-  final_odds <- ress %>%
+  all_season_odds <- all_season_odds %>%
     # split the opponents into home and away team
     separate(col = opponents, sep = " - ",
              into = c("home_team", "away_team")) %>%
-    # extract the date of the match
-    mutate(fixture_date = trimws(str_split(beginning, ",")[[1]][2]),
-           fixture_date = dmy(fixture_date),
-           # extract the time of the match
-           fixture_time = trimws(str_split(beginning, ",")[[1]][3]),
-           across(c(contains("odd")), as.numeric),
-           # split the odd date columns to add the year and then convert
-           # them into a posixct object and convert it into the correct 
-           # time zone
-           # for the opening odds
-           odd_date_start = trimws(str_split(home_win_date_start, ",")[[1]][1]),
-           odd_date_start = paste0(odd_date_start, " ", year(fixture_date)),
-           odd_time_start = trimws(str_split(home_win_date_start, ",")[[1]][2]),
-           odd_datetime_start = dmy_hm(paste0(odd_date_start, " ", odd_time_start),
-                                       tz = "Europe/London"),
-           odd_datetime_start = with_tz(odd_datetime_start, tz = "Europe/Berlin"),
-           
-           # for the final home win odds
-           home_win_odd_date_end = trimws(str_split(home_win_date_end , ",")[[1]][1]),
-           home_win_odd_date_end = paste0(home_win_odd_date_end, " ", year(fixture_date)),
-           home_win_odd_time_end = trimws(str_split(home_win_date_end, ",")[[1]][2]),
-           home_win_odd_datetime_end = dmy_hm(paste0(home_win_odd_date_end, " ", 
-                                                     home_win_odd_time_end),
-                                              tz = "Europe/London"),
-           home_win_odd_datetime_end = with_tz(home_win_odd_datetime_end, tz = "Europe/Berlin"),
-           
-           # for the final draw ods
-           draw_odd_date_end = trimws(str_split(draw_date_end , ",")[[1]][1]),
-           draw_odd_date_end = paste0(draw_odd_date_end, " ", year(fixture_date)),
-           draw_odd_time_end = trimws(str_split(draw_date_end, ",")[[1]][2]),
-           draw_odd_datetime_end = dmy_hm(paste0(draw_odd_date_end, " ", 
-                                                 draw_odd_time_end),
-                                          tz = "Europe/London"),
-           draw_odd_datetime_end = with_tz(draw_odd_datetime_end, tz = "Europe/Berlin"),
-           
-           # for the final away win ods
-           away_win_odd_date_end = trimws(str_split(away_win_date_end , ",")[[1]][1]),
-           away_win_odd_date_end = paste0(away_win_odd_date_end, " ", year(fixture_date)),
-           away_win_odd_time_end = trimws(str_split(away_win_date_end, ",")[[1]][2]),
-           away_win_odd_datetime_end = dmy_hm(paste0(away_win_odd_date_end, " ", 
-                                                     away_win_odd_time_end),
-                                              tz = "Europe/London"),
-           away_win_odd_datetime_end = with_tz(away_win_odd_datetime_end, tz = "Europe/Berlin"),
-           
-           # also do the same thing for the match time (date)
-           fixture_datetime = ymd_hm(paste0(fixture_date, " ", 
-                                            fixture_time),
-                                     tz = "Europe/London"),
-           fixture_datetime = with_tz(fixture_datetime, tz = "Europe/Berlin"),
-           # split the datetime into date and time back
-           fixture_date = as.Date(fixture_datetime),
-           # extract only the time
-           fixture_time = trimws(str_extract(fixture_datetime, " [0-9]+:[0-9]+")),
-           # add columns for the league and season
+    mutate(# add columns for the league and season
            "league" = league,
            "season" = (season - 1)) %>%
     # drop unwanted columns and reoder the data frame
@@ -424,8 +455,8 @@ get_past_odds_ts <-
            draw_odd_end, away_win_odd_end)
   
   # map the club names
-  final_odds$home_team <- sapply(final_odds$home_team, club_name_mapping)
-  final_odds$away_team <- sapply(final_odds$away_team, club_name_mapping)
+  all_season_odds$home_team <- sapply(all_season_odds$home_team, club_name_mapping)
+  all_season_odds$away_team <- sapply(all_season_odds$away_team, club_name_mapping)
 
   #===============================================================================
   # close the driver (client) and the server
@@ -436,7 +467,7 @@ get_past_odds_ts <-
   
   Sys.sleep(30)
   
-  return(final_odds)
+  return(all_season_odds)
   
   }
 
