@@ -17,10 +17,6 @@ get_model_data <- function(){
     select(-c(team_logo, league, date, date_minus1, fifa_vers, club_home, 
               club_away)) %>%
     unique()
-  
-  venues <- prepare_venue_data()
-  
-  
   league_ids <- c(78, 79, 39, 61)
   seasons <- c(2016:2021)
   
@@ -67,8 +63,7 @@ get_model_data <- function(){
                       "league_id",
                       "league_round",
                       "club_id_home" = "club_id")) %>%
-    filter(fixture_date <= "2022-01-31",
-           !is.na(league_round))
+    filter(!is.na(league_round))
   
   
   model_data_away <- spi_data %>%
@@ -83,8 +78,7 @@ get_model_data <- function(){
                       "league_id",
                       "league_round",
                       "club_id_away" = "club_id")) %>%
-    filter(fixture_date <= "2022-01-31",
-           !is.na(league_round)) %>%
+    filter(!is.na(league_round)) %>%
     # drop unwanted columns
     select(fixture_id, club_id_away, club_name_away, away_team_points,
            away_team_goals_against, away_team_goal_diff, away_team_rank,
