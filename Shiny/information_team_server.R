@@ -12,7 +12,7 @@ information_team_server <- function(input, output, session) {
   
   # update the select inputs
   observeEvent(input$info_team_league_selection, {
-    updateSelectInput(session,
+    updateSelectizeInput(session,
                       inputId = "info_team_club_selection",
                       choices = c(
                         "",
@@ -28,7 +28,7 @@ information_team_server <- function(input, output, session) {
   # only those seasons that are present for the selected club
   # paste("Hello", "world", sep=" ")
   observeEvent(input$info_team_club_selection, {
-    updateSelectInput(
+    updateSelectizeInput(
       session,
       inputId = "info_team_season_selection",
       selected = NULL,
@@ -1097,7 +1097,7 @@ information_team_server <- function(input, output, session) {
         visible = "legendonly"
       ) %>%
       layout(
-        title = "stats as home team over matchday",
+        title = list(text = "stats as home team over matchday", y = 0.95, x = 0.5),
         yaxis = list(title = "Value"),
         xaxis = list(title = "Matchday"),
         font = list(color = "white"),
@@ -1144,7 +1144,7 @@ information_team_server <- function(input, output, session) {
         visible = "legendonly"
       ) %>%
       layout(
-        title = "stats as away team over matchday",
+        title = list(text = "stats as away team over matchday", y = 0.95, x = 0.5),
         yaxis = list(title = "Value"),
         xaxis = list(title = "Matchday"),
         font = list(color = "white"),
@@ -1416,7 +1416,7 @@ information_team_server <- function(input, output, session) {
         visible = "legendonly"
       ) %>%
       layout(
-        title = "Fifa team rating over time",
+        title = list(text = "Fifa team rating over time", y = 0.95, x = 0.5),
         yaxis = list(title = "Rating"),
         xaxis = list(title = "Year"),
         font = list(color = "white"),

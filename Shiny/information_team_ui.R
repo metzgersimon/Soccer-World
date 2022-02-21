@@ -42,7 +42,7 @@ tab_information_team_ui <- function(){
             # selection) for the selection of the season
             column(width = 3,
                    align = "center",
-                   selectInput(
+                   selectizeInput(
                      "info_team_season_selection", 
                      label = "Season", 
                      selected = NULL,
@@ -58,6 +58,7 @@ tab_information_team_ui <- function(){
             tabPanel(
               "Overview",
               fluidRow(
+                br(),
                 # insert four value boxes for the overview infos of team
                 valueBoxOutput("info_team_team_age", width = 3),
                 valueBoxOutput("info_team_team_height", width = 3),
@@ -71,7 +72,7 @@ tab_information_team_ui <- function(){
                 valueBoxOutput("info_team_team_leftfoot", width = 3),
                 valueBoxOutput("info_team_team_german", width = 3)
               ),
-              fluidRow(
+              fluidRow(br(),
                 # table output for the team logo
                 column(
                   width = 4,
@@ -91,7 +92,7 @@ tab_information_team_ui <- function(){
             # such as form, previous matches, future matches, etc.
             tabPanel("Match & Stats",
                      tabsetPanel(type = "pills",
-                       tabPanel("Matches",
+                       tabPanel(div("Matches", style = "color: LightSkyBlue"),
                                 fluidRow(column(
                                   width = 12,
                                   align = "center",
@@ -136,7 +137,7 @@ tab_information_team_ui <- function(){
                                     reactableOutput("info_team_season")
                                   )
                                 ))),
-                       tabPanel("Statistics",
+                       tabPanel(div("Statistics", style = "color: LightSkyBlue"),
                                 fluidRow(
                                   # Frontpage - boxes - start 
                                   # insert four value boxes for the infos of team
@@ -277,7 +278,7 @@ tab_information_team_ui <- function(){
               tabsetPanel(
                 type = "pills",
                 tabPanel(
-                  "Market value", # market value over time 
+                  div("Market value", style = "color: LightSkyBlue"), # market value over time 
                   fluidRow(
                     column(width = 12,
                            align = "center",
@@ -290,7 +291,7 @@ tab_information_team_ui <- function(){
                     )
                   ),
                 tabPanel(
-                    "FIFA Rating", # fifa rating over time
+                  div("FIFA Rating", style = "color: LightSkyBlue"), # fifa rating over time
                     fluidRow(
                       column(width = 12,
                              align = "center",
@@ -303,7 +304,7 @@ tab_information_team_ui <- function(){
                     )
                   ),
                 tabPanel(
-                  "Transfers", # transfer over time
+                  div("Transfers", style = "color: LightSkyBlue"), # transfer over time
                   fluidRow(
                     column(width = 12,
                            align = "center",
