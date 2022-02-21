@@ -29,28 +29,38 @@ tab_prediction_model_ui <- function(){
               width = 3,
               align = "center",
               selectizeInput(
-                "information_league_matchday_selection",
+                "information_model_matchday_selection",
                 label = "Matchday",
                 choices = c("All"),
                 selected = ""
               )
             )
-          ),  fluidRow(
-            column(width = 2,
-                   align = "center",
-                   div(style = "margin-top: 20px;",
-                       selectInput("prediction_model_type",
-                                   "Model",
-                                   choices = c("XGBoost",
-                                               "Linear Regression",
-                                               "Best"),
-                                   selected = "Best"))),
-            column(width = 2,
-                   align = "center",
-                   div(style = "margin-top: 20px;",
-                       checkboxInput("prediction_model_lineups",
-                                     "Integrate Lineups",
-                                     value = FALSE)))),  
+          ),  fluidRow(column(
+            width = 2,
+            align = "center",
+            div(
+              style = "margin-top: 20px;",
+              selectInput(
+                "prediction_model_type",
+                "Model",
+                choices = c("XGBoost",
+                            "Linear Regression",
+                            "Best"),
+                selected = "Best"
+              )
+            )
+          ),
+          column(
+            width = 2,
+            align = "center",
+            
+            div(
+              style = "margin-top: 20px;",
+              checkboxInput("prediction_model_lineups",
+                            "Integrate Lineups",
+                            value = FALSE)
+            )
+          )),  
           # tabs for information regarding the player
           tabsetPanel(
             # overview tab is for useful information and statistics
@@ -66,16 +76,22 @@ tab_prediction_model_ui <- function(){
             tabPanel(
               "Past Matches",
               fluidRow(column(
-                width = 10,
+                width = 12,
                 align = "center",     
                 reactableOutput("prediction_model_historical_results") %>%
                   withSpinner(color = "black")
-              ))
+              # ),column(
+              #   width = 10,
+              #   align = "center",     
+              #   reactableOutput("prediction_model_historical_results_lineup") %>%
+              #     withSpinner(color = "black")
+              )
+              )
             ),
             tabPanel(
               "Future Matches",
               fluidRow(column(
-                width = 10,
+                width = 12,
                 align = "center",     
                 reactableOutput("prediction_model_future_results") %>%
                   withSpinner(color = "black")

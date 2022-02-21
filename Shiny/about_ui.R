@@ -9,8 +9,7 @@ tab_about_ui <- function() {
                                    "margin-top: 20px; font-family: Century Gothic"
                                    #  "background-color: #004157;"
                                  ),
-                                 h1("About The Soccer World App"),
-                                 br(),
+                                 # h1("About The Soccer World App"),
                                  h2(em("Project Information and Goal")),
                                  p(
                                    "This project has been developed as a part of the Master program for Data Science in Business and Economics at the University of Tuebingen (Germany). The project mainly aims to predict the soccer results (the accurate goals) of four famous leagues including German first national league (Bundesliga), German second national league (2. Bundesliga), English Premier League and French Ligue 1. The prediction based on the state-of-the-art machine learning method - XGboost. We also provide linear regression method to compare the results. With hundreds of features from different perspectives of player, team, match levels information, we select the most relative features and try to make the best prediction. We want to compare whether the accuracy of our engine can win the prediction according to the bet quote from the bookmaker. We develop a bwcloud-based shiny app to enable all users to visualize, analyze and interact with the plots, results and models we have. "
