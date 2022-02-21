@@ -44,51 +44,55 @@ if(api_calls_left >= number_calls_needed){
 # 3.15 recall the fixture information from the data base
 all_leagues_matches_today <- matches_happened_today
 
-# 3.2 team stats
-api_calls_left <- get_api_calls_left()
+if (!is.null(all_leagues_matches_today)) {
+  
+  # 3.2 team stats
+  api_calls_left <- get_api_calls_left()
+  
+  # check how many calls we would need
+  number_calls_needed <- compute_necessary_calls(number_matches_today = nrow(all_leagues_matches_today),
+                                                 endpoint = "club_stats")
+  
+  # check if we can make the call and get the data
+  if(api_calls_left >= number_calls_needed){
+    get_new_club_stats_API(con)
+   } #else {
+  #   # if we do not have enough calls we want to write the missing data to the data base
+  #   # to reload it at a later point
+  #   matches_happened_today <- tbl(con, "all_leagues_matches") %>%
+  #     data.frame() %>%
+  #     filter(fixture_date == Sys.Date())
+  #   
+  #   dbWriteTable(con, "all_leagues_matches_missed")
+  # }
+  
+  print(get_api_calls_left())
+  
+  # 3.2 fixture stats
+  # check how many calls we still have
+  api_calls_left <- get_api_calls_left()
+  # check how many calls we would need
+  number_calls_needed <- compute_necessary_calls(number_matches_today = nrow(all_leagues_matches_today),
+                                                 endpoint = "fixture_stats")
+  
+  if(api_calls_left >= number_calls_needed){
+    print("match stats start")
+    fixture_stats_today <- get_new_match_stats_API(con)
+    print("match stats start")
+  }
+  
+  # 3.3 player stats
+  # check how many calls we still have
+  api_calls_left <- get_api_calls_left()
+  
+  # check how many calls we would need
+  number_calls_needed <- compute_necessary_calls(number_matches_today = nrow(all_leagues_matches_today),
+                                                 endpoint = "player_stats")
+  
+  if(api_calls_left >= number_calls_needed){
+    player_stats_today <- get_new_player_stats_API(con)
+  }
 
-# check how many calls we would need
-number_calls_needed <- compute_necessary_calls(number_matches_today = nrow(all_leagues_matches_today),
-                                               endpoint = "club_stats")
-
-# check if we can make the call and get the data
-if(api_calls_left >= number_calls_needed){
-  get_new_club_stats_API(con)
- } #else {
-#   # if we do not have enough calls we want to write the missing data to the data base
-#   # to reload it at a later point
-#   matches_happened_today <- tbl(con, "all_leagues_matches") %>%
-#     data.frame() %>%
-#     filter(fixture_date == Sys.Date())
-#   
-#   dbWriteTable(con, "all_leagues_matches_missed")
-# }
-
-print(get_api_calls_left())
-
-# 3.2 fixture stats
-# check how many calls we still have
-api_calls_left <- get_api_calls_left()
-# check how many calls we would need
-number_calls_needed <- compute_necessary_calls(number_matches_today = nrow(all_leagues_matches_today),
-                                               endpoint = "fixture_stats")
-
-if(api_calls_left >= number_calls_needed){
-  print("match stats start")
-  fixture_stats_today <- get_new_match_stats_API(con)
-  print("match stats start")
-}
-
-# 3.3 player stats
-# check how many calls we still have
-api_calls_left <- get_api_calls_left()
-
-# check how many calls we would need
-number_calls_needed <- compute_necessary_calls(number_matches_today = nrow(all_leagues_matches_today),
-                                               endpoint = "player_stats")
-
-if(api_calls_left >= number_calls_needed){
-  player_stats_today <- get_new_player_stats_API(con)
 }
 
 dbDisconnect(con)
