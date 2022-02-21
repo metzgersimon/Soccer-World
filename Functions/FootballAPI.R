@@ -739,7 +739,7 @@ get_fixture_stats <- function(fixture_id){
                ball_possession = str_remove(ball_possession, "%"),
                passing_accuracy = str_remove(passing_accuracy, "%"),
                # replace all NAs with 0
-               across(c(shots_on_goal:passing_accuracy), ~replace_na(.x, 0))) %>%
+               across(c(shots_on_goal:passing_accuracy), ~replace_na(.x, "0"))) %>%
         # convert all numeric variables into numerics
         mutate(across(c(shots_on_goal:passing_accuracy), as.numeric)) %>%
         # change the order such that the frame begins with the fixture_id
