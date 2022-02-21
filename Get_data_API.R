@@ -20,42 +20,46 @@ get_new_match_information_API <- function(con){
   # create a variable to store the new match information
   all_leagues_new_matches <- NULL
   
-  # iterate over all leagues in the newest_matchdays frame
-  for(i in 1:nrow(curr_matchday)){
-    # for every league get all the matches for the new matchday
-    curr_league_matches <- get_fixtures_in_league_by_season(curr_matchday$league_id[i],
-                                                            season = max_season,
-                                                            matchday = curr_matchday$league_round[i]) 
-    
-    curr_leagues_matches_today <- curr_league_matches %>%
-      # filter for only matches that happen today
-      filter(!(status_long %in% c("Match Cancelled", "Match Postponed")),
-             fixture_date == Sys.Date())
-
-    
-    # bind them together with the matches frame for all leagues
-    all_leagues_new_matches <- bind_rows(all_leagues_new_matches,
-                                         curr_leagues_matches_today)
-  }
+  # only if there are actually information in curr_matchday
+  if (nrow(curr_matchday) > 0){
   
-  # finally, if we have actual stats data, we want to write it to the data base
-  if(nrow(all_leagues_new_matches) != 0){
-    # delete the matches that are new from the data set in the data base
-    all_leagues_matches_new <- all_leagues_matches %>%
-      filter(!(fixture_id %in% all_leagues_new_matches$fixture_id))
-    
-    # and then insert the new data (with the score, points, etc)
-    all_leagues_matches_new <- all_leagues_matches_new %>%
-      bind_rows(all_leagues_new_matches) %>%
-      # reorder the frame
-      arrange(league_id, league_season, league_round, fixture_date, fixture_time)
-    
-    # write the new frame with the new match data into the data base
-    # by overwriting the old frame
-    dbWriteTable(con, "all_leagues_matches", all_leagues_matches_new,
-                 overwrite = TRUE)
-  }
+    # iterate over all leagues in the newest_matchdays frame
+    for(i in 1:nrow(curr_matchday)){
+      # for every league get all the matches for the new matchday
+      curr_league_matches <- get_fixtures_in_league_by_season(curr_matchday$league_id[i],
+                                                              season = max_season,
+                                                              matchday = curr_matchday$league_round[i]) 
+      
+      curr_leagues_matches_today <- curr_league_matches %>%
+        # filter for only matches that happen today
+        filter(!(status_long %in% c("Match Cancelled", "Match Postponed")),
+               fixture_date == Sys.Date())
   
+      
+      # bind them together with the matches frame for all leagues
+      all_leagues_new_matches <- bind_rows(all_leagues_new_matches,
+                                           curr_leagues_matches_today)
+    }
+  
+  
+    # finally, if we have actual stats data, we want to write it to the data base
+    if(nrow(all_leagues_new_matches) != 0){
+      # delete the matches that are new from the data set in the data base
+      all_leagues_matches_new <- all_leagues_matches %>%
+        filter(!(fixture_id %in% all_leagues_new_matches$fixture_id))
+      
+      # and then insert the new data (with the score, points, etc)
+      all_leagues_matches_new <- all_leagues_matches_new %>%
+        bind_rows(all_leagues_new_matches) %>%
+        # reorder the frame
+        arrange(league_id, league_season, league_round, fixture_date, fixture_time)
+      
+      # write the new frame with the new match data into the data base
+      # by overwriting the old frame
+      dbWriteTable(con, "all_leagues_matches", all_leagues_matches_new,
+                   overwrite = TRUE)
+    }
+  }
   # we also want to return this frame to further use it in the process
   return(all_leagues_new_matches)
 }
