@@ -3,8 +3,8 @@
 
 ########## get market values from TM ############
 
+setwd("/srv/shiny-server/Soccer-Prediction-App")
 source("global.R")
-
 # setup a connection to the database
 con <- dbConnect(RMariaDB::MariaDB(), 
                  host='127.0.0.1',

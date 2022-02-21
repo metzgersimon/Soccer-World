@@ -1,4 +1,5 @@
 # first source the necessary files
+setwd("/srv/shiny-server/Soccer-Prediction-App")
 source("global.R")
 source("Get_data_API.R")
 
