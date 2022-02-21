@@ -1197,7 +1197,8 @@ get_player_stats_fixture <- function(fixture_id){
         current_player_compl <- api_football_fixtures_general_complete_check(
           current_player, "player_stats_fixture") %>%
           # fill all NA values with 0
-          mutate(across(.cols = everything(), ~replace_na(.x, "0")),
+          mutate(across(.cols = everything(), ~replace_na(.x, as.character(NA))),
+            across(.cols = everything(), ~replace_na(.x, "0")),
                  # convert most of the variables dynamically into numeric variables
                  across(c(contains("offsides"), contains("shots"),
                           contains("goals"), contains("tackles"),
