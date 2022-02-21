@@ -1,6 +1,6 @@
 # create the main-ui for the app with a dashboard-layout
 ui <- dashboardPage(
-  dashboardHeader(title = "Soccer-Prediction App"),
+  dashboardHeader(title = "Soccer-World App"),
   dashboardSidebar(
     # create a sidebarmenu with menu items and subitems (subpages)
     sidebarMenu(
@@ -18,12 +18,12 @@ ui <- dashboardPage(
       menuItem("Prediction", tabName = "prediction", icon = icon("battle-net"),
                startExpanded = TRUE,
                menuSubItem("Model", tabName = "prediction-model")),
-      #         menuSubItem("Investment", tabName = "prediction-investment")),
+      # menuSubItem("Investment", tabName = "prediction-investment")),
       menuItem("About", tabName = "about", icon = icon("address-book"))
     )
   ),
   dashboardBody(
-    tags$head(
+    tags$head( # change the front for the tab
       tags$style("*{font-family: Century Gothic;}")
     ),
     # set the theme for the ui

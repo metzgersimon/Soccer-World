@@ -38,7 +38,6 @@ tab_information_player_ui <- function() {
                 choices = seasons,
                 selected = seasons[1]
               )
-              
             ),
             column(
               width = 3,

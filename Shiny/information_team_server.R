@@ -4,7 +4,7 @@ information_team_server <- function(input, output, session) {
   
   all_infos_club <-
     inner_join(
-      all_leagues_tm_squads,
+      all_leagues_squads_tm,
       unique(all_leagues_matches[, c(2, 3, 19)]),
       by = c("club" = "club_name_home", "league" = "league_name")
     )
@@ -266,7 +266,7 @@ information_team_server <- function(input, output, session) {
   #   
   #   all_infos_club <-
   #     inner_join(
-  #       all_leagues_tm_squads,
+  #       all_leagues_squads_tm,
   #       unique(all_leagues_matches[, c(2, 3, 19)]),
   #       by = c("club" = "club_name_home", "league" = "league_name")
   #     )
@@ -1169,7 +1169,7 @@ information_team_server <- function(input, output, session) {
     } else {league <- input$info_team_league_selection}
     
     squads_filtered <-
-      all_leagues_tm_squads %>%
+      all_leagues_squads_tm %>%
       filter(
         club == input$info_team_club_selection &
           season == as.numeric(
