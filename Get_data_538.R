@@ -9,7 +9,7 @@ con <- dbConnect(RMariaDB::MariaDB(),
                  password='worldpw')
 
 # get the current csv from the 538 web page 
-all_leagues_spi_538_matches <- 
+all_leagues_spi_538_new <- 
   read.csv("https://projects.fivethirtyeight.com/soccer-api/club/spi_matches.csv",
            encoding = "UTF-8") %>%
   # filter for only those leagues that are important to us
@@ -46,14 +46,14 @@ all_leagues_spi_538_matches <-
          away_team_adjusted_goals = adj_score2)
 
 # map the club names (home and away) with the club_name_mapping function
-all_leagues_spi_538_matches$home_team <- sapply(all_leagues_spi_538_matches$home_team,
+all_leagues_spi_538_new$home_team <- sapply(all_leagues_spi_538_new$home_team,
                                                 club_name_mapping)
 
-all_leagues_spi_538_matches$away_team <- sapply(all_leagues_spi_538_matches$away_team,
+all_leagues_spi_538_new$away_team <- sapply(all_leagues_spi_538_new$away_team,
                                                 club_name_mapping)
 
 # filter for only those matches that are not already in the data base
-all_leagues_spi_538_matches_new <- all_leagues_spi_538_matches %>%
+all_leagues_spi_538_matches_new <- all_leagues_spi_538_new %>%
   # use an anti join to get all of those matches that are not in the data base
   anti_join(all_leagues_spi_538_available_matches, 
             by = c("season", "date", "league",
