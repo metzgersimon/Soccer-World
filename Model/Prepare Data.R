@@ -1,6 +1,6 @@
 # function should prepare the venue data frame to be able to be used in the model.
 prepare_venue_data <- function(){
-  venues <- venues_with_coordinates %>%
+  venues <- all_leagues_venue_information %>%
     # we want to start the model with 2016
     filter(season >= 2016) %>%
     # drop unnecessary variables
@@ -85,13 +85,11 @@ convert_two_lines_into_one <- function(frame_to_convert, columns_to_drop = NULL,
 
 # prepare the match stats for every club by aggregating the data
 # and convert it into one row per match
-# Immer nur für aktuelle Saison neu, für historische einmalig
 prepare_team_match_stats_historical <- function(){
   match_stats_historical <- all_leagues_fixture_stats %>%
     # get only past seaons and remove matchdays that are not the regular season,
     # i.e., relegation matches
-    filter(#season < max(season),
-           season >= 2016,
+    filter(season >= 2016,
            !is.na(matchday)) %>%
     # group by the league and team id
     group_by(league_id, team_id) %>%
@@ -104,7 +102,6 @@ prepare_team_match_stats_historical <- function(){
     group_by(league_id, season, team_id) %>%
     mutate(across(c(shots_on_goal:passing_accuracy),
                   ~rollmean(.x, k = 2, fill = NA))) %>%
-                  # ~rollme(.x, n = 2, cumulative = TRUE))) %>%
     # then we use the helper function convert_two_lines_into_one to convert
     # the data frame from two rows for 1 match into one row per match
     convert_two_lines_into_one(., columns_to_drop = c("league_id", "season",
@@ -285,7 +282,8 @@ get_league_ranking_overall <- function(league_ids = c(78, 79, 39, 61),
     select(league_id, season, league_round, everything())
 
   
-  
+  # based on whether home or away is given we rename the features
+  # accordingly
   if(type == "home"){
     all_leagues_running_table <- all_leagues_running_table %>%
       rename(home_team_rank = rank,

@@ -36,7 +36,7 @@ get_model_data <- function(){
     group_by(league_season, team_id) %>%
     # because we do not have the stats for e.g. matchday 1 at matchday 1
     # we lag the variables we consider for prediction with a n of 1
-    mutate(across(c(fixtures_played_home:`cards_red_106-120_percentage`),
+    mutate(across(c(fixtures_played_home:cards_red_106_120_percentage),
                   ~lag(.x, n = 1)))
   
   # join the club stats to the historical match stats
