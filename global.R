@@ -38,8 +38,10 @@ all_leagues_squads_tm <- tbl(con, "all_leagues_squads_tm") %>% data.frame()
 all_leagues_market_values_over_time <- tbl(con, "all_leagues_market_values_over_time") %>%
   data.frame()
 
+# filter the infos from 2016
+filter_all_leagues_squads_tm <- all_leagues_squads_tm %>% filter(season >=2016)
 # merge the squads infos with the matches info for the team tab data
-all_infos_club <- inner_join(all_leagues_squads_tm, unique(all_leagues_matches[,c(2,3,19)]), 
+all_infos_club <- inner_join(filter_all_leagues_squads_tm, unique(all_leagues_matches[,c(2,3,19)]), 
                              by=c("club"="club_name_home", "league"="league_name"))
 
 all_leagues_club_stats <- tbl(con, "all_leagues_club_stats") %>%
