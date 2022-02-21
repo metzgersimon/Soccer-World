@@ -37,7 +37,7 @@ tab_information_league_general_ui <- function(){
                             div(style = "margin-top: 20px;",
                                 br(),#"border: solid 2px #FFFFFF; margin-top: 20px;",
                                 tableOutput("info_league_overview_table"),br(),
-                                htmlOutput("info_league_league_logo", width = "200%")
+                                htmlOutput("info_league_league_logo", width = "200%", height = 300)
                             )
                      ),
                      column(width = 6,

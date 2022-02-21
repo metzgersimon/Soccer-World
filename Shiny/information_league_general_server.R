@@ -300,7 +300,7 @@ information_league_general_server <- function(input, output, session){
   # for each club
   output$market_value_over_time <- renderPlotly({
     market_values <- all_leagues_market_values_over_time %>% 
-      # group_by(club) %>%
+       filter(league==input$information_league_league_selection) %>%
       # create actual plot for the market value over time by club
       plot_ly(x = ~date, y = ~value_then_mil_euro, color = ~club,
               colors = colors) %>%
