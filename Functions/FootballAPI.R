@@ -684,9 +684,22 @@ get_fixture_stats <- function(fixture_id){
       team_stats <- enframe(content[[i]]$statistics) %>%
         # extract the list in the value column into separate columns
         # with "_" as separator
-        unnest_wider(value, names_sep = "_") %>%
+        unnest_wider(value, names_sep = "_")
+        test1 <- team_stats$value_value
+        save(test1, file = "test1.RData")
+        print(paste0("LENGTH VALUE VALUE BEFORE: ",length(test1)))
+        
+        test <- unlist(team_stats$value_value)
+        save(test, file = "test.RData")
+        
+        
+        print(paste0("LENGTH VALUE VALUE AFTER: ",length(test)))
         # unlist the elements (enframe converts the data into list elements)
-        mutate(value_value = unlist(value_value)) %>%
+        team_stats <- team_stats %>%
+        mutate(value_value = unlist(value_value)) 
+        
+        
+        team_stats <- team_stats %>%
         select(-name) %>%
         # transform the frame by separating the value_type column with the
         # values from the value_value column
