@@ -24,8 +24,8 @@ tab_information_player_ui <- function() {
               selectizeInput(
                 "information_player_team_selection",
                 label = "Club",
-                choices = unique(all_leagues_tm_squads$club), # the choice would be updated after the user select league
-                selected = unique(all_leagues_tm_squads$club)[1]
+                choices = unique(all_leagues_squads_tm$club), # the choice would be updated after the user select league
+                selected = unique(all_leagues_squads_tm$club)[1]
               )
               
             ),
