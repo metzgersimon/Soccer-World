@@ -116,7 +116,7 @@ tab_information_player_ui <- function() {
                                  width = "100%",
                                  height = 300
                                ) %>%
-                                 withSpinner(color = "black")
+                                 withSpinner(color = "black") # loading icon
                              )
                            ),
                            column(
