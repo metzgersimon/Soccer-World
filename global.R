@@ -23,50 +23,80 @@ con <- dbConnect(RMariaDB::MariaDB(),
 
 ####### with data base
 ### match tab data
-all_leagues_matches <- tbl(con, "all_leagues_matches") %>% data.frame()
+all_leagues_matches <-
+  tbl(con, "all_leagues_matches") %>% data.frame()
 all_leagues_spi_538 <- tbl(con, "all_leagues_spi_538") %>%
   data.frame()
+all_leagues_fixture_events <-
+  tbl(con, "all_leagues_fixture_events") %>% data.frame()
 
 ## predictions
-all_leagues_historical_predictions <- tbl(con, "all_leagues_historical_predictions") %>%
+all_leagues_historical_predictions <-
+  tbl(con, "all_leagues_historical_predictions") %>%
   data.frame() %>%
-  right_join(all_leagues_matches, by = c("fixture_id", "league_id", "league_season",
-                                         "league_round", "club_id_home", "club_id_away"))
+  right_join(
+    all_leagues_matches,
+    by = c(
+      "fixture_id",
+      "league_id",
+      "league_season",
+      "league_round",
+      "club_id_home",
+      "club_id_away"
+    )
+  )
+
 
 ### load team tab data
-all_leagues_squads_tm <- tbl(con, "all_leagues_squads_tm") %>% data.frame()
-all_leagues_market_values_over_time <- tbl(con, "all_leagues_market_values_over_time") %>%
+all_leagues_squads_tm <-
+  tbl(con, "all_leagues_squads_tm") %>% data.frame()
+all_leagues_market_values_over_time <-
+  tbl(con, "all_leagues_market_values_over_time") %>%
   data.frame()
 
 # filter the infos from 2016
-filter_all_leagues_squads_tm <- all_leagues_squads_tm %>% filter(season >=2016)
+filter_all_leagues_squads_tm <-
+  all_leagues_squads_tm %>% filter(season >= 2016)
 # merge the squads infos with the matches info for the team tab data
-all_infos_club <- inner_join(filter_all_leagues_squads_tm, unique(all_leagues_matches[,c(2,3,19)]), 
-                             by=c("club"="club_name_home", "league"="league_name"))
+all_infos_club <-
+  inner_join(
+    filter_all_leagues_squads_tm,
+    unique(all_leagues_matches[, c(2, 3, 19)]),
+    by = c("club" = "club_name_home", "league" =
+             "league_name")
+  )
 
 all_leagues_club_stats <- tbl(con, "all_leagues_club_stats") %>%
-  data.frame() 
+  data.frame()
 
-colnames_club_stats <- colnames(all_leagues_club_stats) 
+colnames_club_stats <- colnames(all_leagues_club_stats)
 
-colnames_club_stats <- str_replace_all(colnames_club_stats, pattern = "\\.", "_")
+colnames_club_stats <-
+  str_replace_all(colnames_club_stats, pattern = "\\.", "_")
 
 colnames(all_leagues_club_stats) <- colnames_club_stats
-  
-  
-all_leagues_team_transfers <- tbl(con, "all_leagues_team_transfers") %>%
+
+
+all_leagues_team_transfers <-
+  tbl(con, "all_leagues_team_transfers") %>%
   data.frame()
 
 ### load player tab data
 # all_fixture_stats <- tbl(con, "all_fixture_stats") %>% data.frame()
-all_leagues_player_stats <- tbl(con, "all_leagues_player_stats") %>% data.frame()
+all_leagues_player_stats <-
+  tbl(con, "all_leagues_player_stats") %>% data.frame()
 
-all_leagues_lineups_tm <- tbl(con, "all_leagues_lineups_tm") %>% data.frame()
-all_leagues_fixture_stats <- tbl(con, "all_leagues_fixture_stats") %>% data.frame()
+all_leagues_lineups_tm <-
+  tbl(con, "all_leagues_lineups_tm") %>% data.frame()
+all_leagues_fixture_stats <-
+  tbl(con, "all_leagues_fixture_stats") %>% data.frame()
 
-all_leagues_fifa_team_stats <- tbl(con, "all_leagues_fifa_team_stats") %>% data.frame()
-all_leagues_fifa_squads <- tbl(con, "all_leagues_fifa_squads") %>% data.frame()
-all_leagues_team_transfers <- tbl(con, "all_leagues_team_transfers") %>% data.frame()
+all_leagues_fifa_team_stats <-
+  tbl(con, "all_leagues_fifa_team_stats") %>% data.frame()
+all_leagues_fifa_squads <-
+  tbl(con, "all_leagues_fifa_squads") %>% data.frame()
+all_leagues_team_transfers <-
+  tbl(con, "all_leagues_team_transfers") %>% data.frame()
 
 # merge all the player tab data for the overview and statistics tab
 filter_player_stats <- 
