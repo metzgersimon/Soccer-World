@@ -7,12 +7,16 @@ train_xgb_historical_lineups <- function(){
   
   # drop columns we do not want
   historical_lineups_predictions <- data_lineups %>%
+    filter(fixture_date.x <= "2022-02-28") %>%
+    ungroup() %>%
     select(-c("fixture_date.x",
               "fixture_date.y", "fixture_time.x", "league_name.x",
               "team_name_home", "team_name_away",
               "fulltime_score_home.x", "fulltime_score_away.x",
-              "fulltime_score_home.y", "fulltime_score_away.y")) %>%
-    rename(goal_diff = goal_diff.x)
+              "fulltime_score_home.y", "fulltime_score_away.y",
+              "goal_diff.y","fixture_id.y")) %>%
+    rename(goal_diff = goal_diff.x,
+           fixture_id = fixture_id.x)
   
   # also drop all character columns
   historical_lineups_predictions <- 
@@ -21,23 +25,19 @@ train_xgb_historical_lineups <- function(){
   # set the seeds
   set.seed(42)
   
+  past_matches <- historical_lineups_predictions %>%
+    filter(!is.na(goal_diff))
+  
   # create a train/test split
-  train_index <-  createDataPartition(historical_lineups_predictions$goal_diff, p = .8,
+  train_index <-  createDataPartition(past_matches$goal_diff, p = .8,
                                       list = FALSE,
                                       times = 1)
   # extract the train and test data
-  train_data <- historical_lineups_predictions[train_index, ]
-  test_data <- historical_lineups_predictions[-train_index, ]
+  train_data <- past_matches[train_index, ]
+  test_data <- past_matches[-train_index, ]
   
   
-  # create the trainControl 
-  train_control <- trainControl(
-    method = "cv",
-    number = 10,
-    verboseIter = TRUE)
-  
-  
-  lab <- as.numeric(train_data[, "goal_diff"])
+  lab <- as.numeric(train_data$goal_diff)
   # create a data matrix with the training data and remove the goal_diff column
   train_data <- data.matrix(train_data[, !(colnames(train_data) %in%
                                              c("goal_diff", "fixture_id"))])
@@ -60,10 +60,10 @@ train_xgb_historical_lineups <- function(){
   xgb.plot.importance(importance_matrix[1:20])
   
   # out of sample rmse 
-  results <- predict(m1_xgb, data.matrix(test_data[, colnames(test_data) != "goal_diff"]))
+  results <- predict(m1_xgb, data.matrix(test_data[, !(colnames(test_data) %in%
+                                                         c("goal_diff", "fixture_id"))]))
   
   RMSE(results, test_data$goal_diff)
-  
   
   ####### historical predictions #######
   historical_lineups_predictions$prediction <- 
@@ -72,11 +72,12 @@ train_xgb_historical_lineups <- function(){
   
   # only take important variables
   historical_lineups_predictions <- historical_lineups_predictions %>%
-    select(league_id = league_id.x, league_season,
+    select(league_id, league_season,
            league_round, fixture_id, club_id_home, club_id_away,
            prediction)
 
-  dbWriteTable(con, "all_leagues_historical_lineups_predictions", historical_lineups_predictions)
+  # dbWriteTable(con, "all_leagues_historical_lineups_predictions", historical_lineups_predictions,
+  #              overwrite = TRUE)
 }
 
 
@@ -90,12 +91,16 @@ train_xgb_historical <- function(){
   
   # drop columns we do not want
   historical_predictions <- model_data %>%
+    filter(fixture_date.x <= "2022-02-28") %>%
+    ungroup() %>%
     select(-c("fixture_date.x",
               "fixture_date.y", "fixture_time.x", "league_name.x",
               "team_name_home", "team_name_away",
               "fulltime_score_home.x", "fulltime_score_away.x",
-              "fulltime_score_home.y", "fulltime_score_away.y")) %>%
-    rename(goal_diff = goal_diff.x)
+              "fulltime_score_home.y", "fulltime_score_away.y",
+              "goal_diff.y","fixture_id.y")) %>%
+    rename(goal_diff = goal_diff.x,
+           fixture_id = fixture_id.x)
   
   # also drop all character columns
   historical_predictions <- 
@@ -108,21 +113,16 @@ train_xgb_historical <- function(){
     filter(!is.na(goal_diff))
   
   # create a train/test split
-  train_index <-  createDataPartition(historical_predictions$goal_diff, p = .8,
+  train_index <-  createDataPartition(past_matches$goal_diff, p = .8,
                                       list = FALSE,
                                       times = 1)
   # extract the train and test data
-  train_data <- historical_predictions[train_index, ]
-  test_data <- historical_predictions[-train_index, ]
+  train_data <- past_matches[train_index, ]
+  test_data <- past_matches[-train_index, ]
   
+
   
-  # create the trainControl 
-  train_control <- trainControl(
-    method = "cv",
-    number = 10,
-    verboseIter = TRUE)
-  
-  lab <- as.numeric(train_data[, "goal_diff"])
+  lab <- as.numeric(train_data$goal_diff)
   # create a data matrix with the training data and remove the goal_diff column
   train_data <- data.matrix(train_data[, !(colnames(train_data) %in%
                                              c("goal_diff", "fixture_id"))])
@@ -150,7 +150,7 @@ train_xgb_historical <- function(){
   
   RMSE(results, test_data$goal_diff)
   
-  
+
   ####### historical predictions #######
   historical_predictions$prediction <- 
     predict(m1_xgb, data.matrix(historical_predictions[, !(colnames(historical_predictions) %in%
@@ -158,12 +158,12 @@ train_xgb_historical <- function(){
   
   # only take important variables
   historical_predictions <- historical_predictions %>%
-    select(league_id = league_id.x, league_season,
+    select(league_id, league_season,
            league_round, fixture_id, club_id_home, club_id_away,
            prediction)
   
-  dbWriteTable(con, "all_leagues_historical_predictions", historical_predictions,
-               overwrite = TRUE)
+  # dbWriteTable(con, "all_leagues_historical_predictions", historical_predictions,
+  #              overwrite = TRUE)
 }
 
 

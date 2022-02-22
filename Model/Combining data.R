@@ -97,7 +97,8 @@ get_model_data <- function(){
                                      "league_season",
                                      "fixture_date.x" = "fixture_date",
                                      "fixture_time.x" = "fixture_time",
-                                     "team_name_home", "team_name_away"))
+                                     "team_name_home", "team_name_away")) %>%
+    ungroup()
   
   return(model_data_all2)
   
@@ -114,7 +115,7 @@ get_model_data_lineups <- function(){
   
   # join the two data sets together
   lineup_model_data <- plain_model_data %>%
-    inner_join(aggregated_lineup_stats, by = "fixture_id")
+    inner_join(aggregated_lineup_stats, by = c("fixture_id.x" ="fixture_id"))
   
   # drop unnecessary columns
   
