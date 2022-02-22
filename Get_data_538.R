@@ -29,8 +29,6 @@ all_leagues_spi_538_new <-
                                                     league)))),
          # convert the date variable into an actual date
          date = ymd(date)) %>%
-  # filter for only those matches that are in the past
-  filter(date < Sys.Date()) %>%
   # reorder (and rename) all the variables we want to use
   select(league, season, date, home_team = team1, away_team = team2,
          home_team_spi = spi1, away_team_spi = spi2, home_team_win_prob = prob1,
@@ -57,9 +55,7 @@ all_leagues_spi_538_matches_new <- all_leagues_spi_538_new %>%
   # use an anti join to get all of those matches that are not in the data base
   anti_join(all_leagues_spi_538, 
             by = c("season", "date", "league",
-                   "home_team", "away_team")) %>%
-  # filter for only those that are in the past
-  filter(date < Sys.Date())
+                   "home_team", "away_team"))
 
 # only if there are new matches we do not have in the data base already
 # we write them (by appending) it to the data base
