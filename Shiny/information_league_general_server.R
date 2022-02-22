@@ -118,18 +118,18 @@ information_league_general_server <- function(input, output, session){
     number_teams_text <- paste0("Number of teams: ", number_teams)
     number_players_text <-
       paste0("Number of players: ", number_players$n)
-    avg_age_league_text <- paste0("Average age: ", avg_age_league)
+    avg_age_league_text <- paste0("Average age: ", avg_age_league, " years")
     min_avg_age_text <-
-      paste0("Joungest team: ",
+      paste0("Youngest team: ",
              min_avg_age$club_name_home ,
              " (",
-             min_avg_age$avg_age,
+             min_avg_age$avg_age, " years",
              ")")
     max_avg_age_text <-
       paste0("Oldest team: ",
              max_avg_age$club_name_home ,
              " (",
-             max_avg_age$avg_age,
+             max_avg_age$avg_age, " years",
              ")")
     avg_market_value_text <-
       paste0("Average market value: ", avg_market_value, " million")
