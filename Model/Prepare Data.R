@@ -52,10 +52,92 @@ prepare_venue_distance <- function(longitude1, latitude1, longitude2, latitude2)
 
 
 
+#### preparing club stats ##########
+# function should deal with postponed or cancelled events by adding the missing data
+prepare_club_stats <- function(){
+  
+  # get the maximal possible matchday
+  max_matchday_each_league <- all_leagues_club_stats %>%
+    filter(league_season == 2021) %>%
+    group_by(league_id) %>%
+    summarize(max_matchday = max(matchday, na.rm = TRUE))
+  
+  all_leagues_club_stats_2021 <- all_leagues_club_stats %>%
+    unique() %>%
+    filter(league_season == 2021) %>%
+    group_by(team_id) %>%
+    filter(matchday == max(matchday)) %>%
+    ungroup() %>%
+    group_by(team_id, matchday) %>%
+    distinct(team_id, matchday, .keep_all = TRUE) %>%
+    ungroup()
+  
+  new_team_stats <- NULL
+  
+  for(i in 1:nrow(all_leagues_club_stats_2021)){
+    curr_league_id <- all_leagues_club_stats_2021$league_id[i]
+    curr_matchday <- all_leagues_club_stats_2021$matchday[i]
+    
+    # filter the max matchday for the given league
+    matchday_league <- max_matchday_each_league %>% filter(league_id == curr_league_id) %>%
+      select(max_matchday) %>% 
+      pull()
+    
+    # check if there are missing matchdays
+    if(matchday_league > curr_matchday){
+      
+      matchdays_missing <- seq(curr_matchday + 1, matchday_league)
+      
+      new_matchdays_curr_team <- NULL
+      
+      copied_matchdays <- all_leagues_club_stats_2021[i, ] %>% 
+        slice(rep(1:n(), length(matchdays_missing)))
+      
+      for(matchday in 1:nrow(copied_matchdays)){
+        copied_matchdays$matchday[matchday] <- matchdays_missing[matchday]
+      }
+      
+      new_team_stats <- bind_rows(new_team_stats,
+                                  copied_matchdays)
+    }
+      
+  }
+  
+  # now append the newly gathered team stats to the previous team stats
+  all_leagues_club_stats_cleaned <- bind_rows(all_leagues_club_stats,
+                                      new_team_stats) %>%
+    # reorder the data frame
+    arrange(league_id, league_season, matchday)
+  
+  # now "create" the next matchday
+  all_leagues_club_stats_new <- all_leagues_club_stats_cleaned %>%
+    unique() %>%
+    filter(league_season == 2021) %>%
+    group_by(team_id) %>%
+    filter(matchday == max(matchday)) %>%
+    slice(c(1:n(), n())) %>%
+    unique() %>%
+    mutate(matchday = matchday + 1)
+  
+  # bind the whole club stats together
+  all_leagues_club_stats_model <- bind_rows(all_leagues_club_stats_cleaned,
+                                            all_leagues_club_stats_new) %>%
+    # reorder the data frame
+    arrange(league_id, league_season, matchday) %>%
+    group_by(league_id, league_season, team_id, matchday) %>%
+    distinct(team_id, matchday, .keep_all = TRUE) %>%
+    ungroup()
+  
+  return(all_leagues_club_stats_model)
+    
+}
+
+
+
 # function converts a data frame with 2 rows (unsuitable for the model)
 # into one row 
 convert_two_lines_into_one <- function(frame_to_convert, columns_to_drop = NULL,
-                                       join_columns = NULL){
+                                       join_columns = NULL, type = "fifa"){
   frame_to_convert <- frame_to_convert %>%
     group_by(match_group = rep(row_number(), length.out = n(), each = 2)) %>%
     ungroup() 
@@ -75,9 +157,15 @@ convert_two_lines_into_one <- function(frame_to_convert, columns_to_drop = NULL,
               match_group,
               columns_to_drop))
   
-  one_line_frame <- home_part %>%
-    inner_join(away_part, by = join_columns, suffix = c("_home", "_away"))
-  
+  if(type == "fifa"){
+    one_line_frame <- home_part %>% left_join(away_part,
+                                               by = c("fixture_id"),
+    suffix = c("_home", "_away"))
+  } else {
+    one_line_frame <- home_part %>%
+      inner_join(away_part, by = join_columns, suffix = c("_home", "_away"))
+  }
+
   return(one_line_frame)
 }
 
@@ -138,6 +226,46 @@ prepare_spi_data <- function(){
 
 
 
+prepare_match_stats <- function(){
+  all_leagues_matches_matcher <- all_leagues_matches %>%
+    filter(league_season >= 2016) %>%
+    select(league_id, league_name, league_season, league_round,
+           fixture_id, fixture_date, fixture_time)
+  
+  # prepare the all leagues fixture stats
+  all_leagues_fixture_stats_prep <- all_leagues_fixture_stats %>%
+    filter(season >= 2016,
+           !is.na(matchday)) %>%
+    # group by the league and team id
+    # group_by(league_id, season, team_id) %>%
+    # because we do not have the stats for e.g. matchday 1 at matchday 1
+    # we lag the variables we consider for prediction with a n of 1
+    # mutate(across(c(shots_on_goal:passing_accuracy),
+    # ~lag(.x, n = 1))) %>%
+    # after that we calculate a cumulative running mean with a window of 2,
+    # i.e., 2 matches
+    group_by(league_id, season, team_id) %>%
+    mutate(across(c(shots_on_goal:passing_accuracy),
+                  ~rollapply(.x, width = 2, FUN=function(x) mean(x, na.rm=TRUE), 
+                             by=1, by.column=TRUE, partial=TRUE, fill=NA, align="right")))
+  
+  
+  # join the league name from the all_leagues_matches_matcher to
+  # be able to join the fifa stats later on
+  all_leagues_fixture_stats2 <- all_leagues_matches_matcher %>% 
+    left_join(all_leagues_fixture_stats_prep,
+              by = c("league_id", 
+                     "league_season" = "season",
+                     "league_round" = "matchday",
+                     "fixture_date",
+                     "fixture_time",
+                     "fixture_id")) %>%
+    # drop relegation games
+    filter(!is.na(league_round))
+  
+  return(all_leagues_fixture_stats2)
+}
+
 
 
 ################# FIFA STATS ##########################
@@ -155,35 +283,35 @@ prepare_fifa_team_stats <- function(){
     filter(season >= 2016,
            !is.na(matchday)) %>%
     # group by the league and team id
-    group_by(league_id, team_id) %>%
+    # group_by(league_id, season, team_id) %>%
     # because we do not have the stats for e.g. matchday 1 at matchday 1
     # we lag the variables we consider for prediction with a n of 1
-    mutate(across(c(shots_on_goal:passing_accuracy),
-                  ~lag(.x, n = 1))) %>%
+    # mutate(across(c(shots_on_goal:passing_accuracy),
+                  # ~lag(.x, n = 1))) %>%
     # after that we calculate a cumulative running mean with a window of 2,
     # i.e., 2 matches
     group_by(league_id, season, team_id) %>%
     mutate(across(c(shots_on_goal:passing_accuracy),
-                  ~rollmean(.x, k = 2, fill = NA)))
+                  ~rollapply(.x, width = 2, FUN=function(x) mean(x, na.rm=TRUE), 
+                             by=1, by.column=TRUE, partial=TRUE, fill=NA, align="right")))
   
   
   # join the league name from the all_leagues_matches_matcher to
   # be able to join the fifa stats later on
-  all_leagues_fixture_stats2 <- all_leagues_fixture_stats_prep %>% 
-    distinct() %>%
-    left_join(all_leagues_matches_matcher,
+  all_leagues_fixture_stats2 <- all_leagues_matches_matcher %>% 
+    left_join(all_leagues_fixture_stats_prep,
               by = c("league_id", 
-                     "season" = "league_season",
-                     "matchday" = "league_round",
+                     "league_season" = "season",
+                     "league_round" = "matchday",
                      "fixture_date",
                      "fixture_time",
                      "fixture_id")) %>%
     # drop relegation games
-    filter(!is.na(matchday))
+    filter(!is.na(league_round))
   
   # create the min and max dates of the team stats
   min_date_team_stats <- min(all_leagues_fifa_team_stats$date)
-  max_date_team_stats <- max(all_leagues_fifa_team_stats$date)
+  max_date_team_stats <- max(all_leagues_fixture_stats2$fixture_date)
   
   # extract all clubs
   unique_clubs <- unique(all_leagues_fifa_team_stats$club)
@@ -215,7 +343,8 @@ prepare_fifa_team_stats <- function(){
     
     # bind the data together
     all_leagues_fifa_daily_team_stats <- bind_rows(all_leagues_fifa_daily_team_stats,
-                                                   daily_stats)
+                                                   daily_stats) #%>%
+      #filter(is.na(.))
     
   }
   
@@ -228,6 +357,9 @@ prepare_fifa_team_stats <- function(){
                      "date_minus1" = "date",
                      "team_name" = "club"),
               keep = TRUE)
+  
+  fifa_stats_joined <- fifa_stats_joined %>%
+    convert_two_lines_into_one(., type = "fifa")
   
   return(fifa_stats_joined)
   
@@ -250,10 +382,10 @@ get_league_ranking_overall <- function(league_ids = c(78, 79, 39, 61),
       
       # get the standing of the current season over time
       curr_season_table <- get_league_standing(league_ids[i], seasons[j]) %>%
-        group_by(club_name) %>%
-        # shift the data one matchday backwards
-        mutate(across(c(rank, cum_points, cum_goals, cum_goals_against,
-                        cum_goal_diff), ~shift(.x, n = 1))) %>%
+        # group_by(club_name) %>%
+        # # shift the data one matchday backwards
+        # mutate(across(c(rank, cum_points, cum_goals, cum_goals_against,
+        #                 cum_goal_diff), ~shift(.x, n = 1))) %>%
         # drop variables we do not need
         select(-c(points, goals, goals_against, goal_diff)) %>%
         ungroup() %>%
@@ -424,10 +556,10 @@ get_winning_pcts <- function(type = "home"){
            home_loss_pct = (home_losses / home_played) * 100,
            away_win_pct = (away_wins / away_played) * 100,
            away_draw_pct = (away_draws / away_played) * 100,
-           away_loss_pct = (away_losses / away_played) * 100) %>%
+           away_loss_pct = (away_losses / away_played) * 100) #%>%
     # lag everything
-    mutate(across(c(home_played:loss_pct),
-                  ~ lag(.x, n = 1)))
+    # mutate(across(c(home_played:loss_pct),
+    #               ~ lag(.x, n = 1)))
   
   
   if(type == "home"){

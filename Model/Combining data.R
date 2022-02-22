@@ -6,17 +6,31 @@ get_model_data <- function(){
   spi_data <- spi_data %>%
     mutate(goal_diff = fulltime_score_home - fulltime_score_away)
   
+  # fixture_stats <- prepare_match_stats() %>%
+  # 
+  # # fifa_team_stats <- prepare_fifa_team_stats() %>%
+  #   convert_two_lines_into_one(., columns_to_drop = c("team_logo"),
+  #                              join_columns = c("fixture_id", "fixture_date",
+  #                                               "league_id", "league_name",
+  #                                               "league_season", "fixture_time")) %>%
+  # #   # drop unnecessary columns
+   
+  
   fifa_team_stats <- prepare_fifa_team_stats() %>%
-    convert_two_lines_into_one(., columns_to_drop = c("team_logo",
-                                                      "league_name", "league",
-                                                      "fifa_vers", "date", "date_minus1"),
-                               join_columns = c("league_id", "season",
-                                                "matchday", "fixture_date",
-                                                "fixture_time", "fixture_id")) %>%
-    # drop unnecessary columns
-    select(-c(team_logo, league, date, date_minus1, fifa_vers, club_home, 
-              club_away)) %>%
+    select(-c(league_id_away, league_season_away, league_round_away, fixture_date_away,
+              fixture_time_away, date_minus1_home, date_home, fifa_vers_home,
+              league_home, club_home, date_minus1_away, date_away, fifa_vers_away,
+              league_away, club_away)) %>%
+    select(league_id = league_id_home, league_season = league_season_home,
+           league_name = league_name_home,
+           league_round = league_round_home, fixture_date = fixture_date_home,
+           fixture_time = fixture_time_home, everything()) %>%
     unique()
+  
+  
+  
+  
+  
   league_ids <- c(78, 79, 39, 61)
   seasons <- c(2016:2021)
   
@@ -28,37 +42,26 @@ get_model_data <- function(){
   
 
   
-  all_leagues_club_stats_lagged <- all_leagues_club_stats %>%
-    group_by(league_season, team_id) %>%
-    # because we do not have the stats for e.g. matchday 1 at matchday 1
-    # we lag the variables we consider for prediction with a n of 1
-    mutate(across(c(fixtures_played_home:cards_red_106_120_percentage),
-                  ~lag(.x, n = 1)))
+  all_leagues_club_stats_model <- prepare_club_stats()
   
-  # join the club stats to the historical match stats
-  stats_joined <- fifa_team_stats %>%
-    inner_join(all_leagues_club_stats_lagged,
-               by = c("league_id",
-                      "season" = "league_season",
-                      "matchday",
-                      "team_id_home" = "team_id")) %>%
-    inner_join(all_leagues_club_stats_lagged,
-               by = c("league_id",
-                      "season" = "league_season",
-                      "matchday",
-                      "team_id_away" = "team_id"),
-               suffix = c("_home", "_away"))
-  
+  stats_combined <- fifa_team_stats %>%
+    left_join(all_leagues_club_stats_model, by = c("league_id", "league_name",
+                                                   "league_season", "league_round" = "matchday",
+                                                   "team_id_home" = "team_id")) %>%
+    left_join(all_leagues_club_stats_model, by = c("league_id", "league_name",
+                                                     "league_season", "league_round" = "matchday",
+                                                     "team_id_away" = "team_id"),
+              suffix = c("_home", "_away"))
   
   
   model_data_home <- spi_data %>%
     select(-c(club_id_away, club_name_away, club_logo_away)) %>%
-    inner_join(all_leagues_seasons_running_tables_home, 
+    left_join(all_leagues_seasons_running_tables_home, 
                by = c("league_season" = "season",
                       "league_round" = "league_round",
                       "league_id",
                       "club_name_home" = "club_name")) %>%
-    inner_join(all_leagues_seasons_win_pct_home,
+    left_join(all_leagues_seasons_win_pct_home,
                by = c("league_season",
                       "league_id",
                       "league_round",
@@ -68,12 +71,12 @@ get_model_data <- function(){
   
   model_data_away <- spi_data %>%
     select(-c(club_id_home, club_name_home, club_logo_home)) %>%
-    inner_join(all_leagues_seasons_running_tables_away, 
+    left_join(all_leagues_seasons_running_tables_away, 
                by = c("league_season" = "season",
                       "league_round" = "league_round",
                       "league_id",
                       "club_name_away" = "club_name")) %>%
-    inner_join(all_leagues_seasons_win_pct_away,
+    left_join(all_leagues_seasons_win_pct_away,
                by = c("league_season",
                       "league_id",
                       "league_round",
@@ -92,38 +95,8 @@ get_model_data <- function(){
   
   # join the spi and match data with the stats (fifa stats, club stats, match stats)
   model_data_all2 <- model_data_all %>%
-    inner_join(stats_joined, by = c("fixture_id"))
-                                   #"league_season" = "season",
-                                   #"league_round" = "matchday",
-                                   #"club_id_home" = "team_id_home",
-                                   #"club_id_away" = "team_id_away")) #%>%
-  
-  # join the current data with the match stats
-  # model_data_all <- model_data_all %>%
-  #   left_join(historical_match_stats, by = c("fixture_id",
-  #                                            "club_id_home" = "team_id_home",
-  #                                            "club_id_away" = "team_id_away")) %>%
-    # drop unwanted columns for the model
-    # select(-c(league_country, league_logo, league_flag, venue_name, venue_city,
-    #           referee, status_long, status_short, status_elapsed, club_logo_home,
-    #           team_name_home, team_name_away,
-    #           team_logo_home, team_logo_away),
-    #        -contains(".y"))
-  
-  
-  
-  
-  # append the venue data
-  # model_data_all2 <- model_data_all %>%
-  #   left_join(venues, by = c("league_id.x" = "league_id",
-  #                            "league_season" = "season",
-  #                            "league_round" = "league_round",
-  #                            "club_id_home"))#,
-                             # "club_id_away",
-                             # "fixture_date.x" =  "fixture_date",
-                             # "fixture_time.x" = "fixture_time"))
-  
-  
+    left_join(stats_combined, by = c("fixture_id")) %>%
+    unique()
   
   return(model_data_all2)
   
