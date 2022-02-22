@@ -55,7 +55,7 @@ all_leagues_spi_538_new$away_team <- sapply(all_leagues_spi_538_new$away_team,
 # filter for only those matches that are not already in the data base
 all_leagues_spi_538_matches_new <- all_leagues_spi_538_new %>%
   # use an anti join to get all of those matches that are not in the data base
-  anti_join(all_leagues_spi_538_available_matches, 
+  anti_join(all_leagues_spi_538, 
             by = c("season", "date", "league",
                    "home_team", "away_team")) %>%
   # filter for only those that are in the past
