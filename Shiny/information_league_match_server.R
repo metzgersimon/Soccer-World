@@ -1389,7 +1389,7 @@ information_league_match_server <- function(input, output, session){
     
     valueBox(
       wins_as_away + wins_as_home,
-      "Aggregate Wins - Team 1",
+      paste0("Aggregate Wins - ", input$info_match_team1),
       icon = icon("flag"),
       color = "purple",
       width = 3
@@ -1449,7 +1449,7 @@ information_league_match_server <- function(input, output, session){
 
     valueBox(
       wins_as_home_2 + wins_as_away_2,
-      "Aggregate Wins - Team 2",
+      paste0("Aggregate Wins - ", input$info_match_team2),
       icon = icon("flag"),
       color = "orange",
       width = 3
