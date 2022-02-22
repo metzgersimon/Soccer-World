@@ -5,16 +5,19 @@ information_player_server <- function(input, output, session){
     sum(is.na(x)))
 
   # update the select input team according to the league selection
-   observeEvent(input$information_player_league_selection, {
-     updateSelectizeInput(session, 
-                       inputId = "information_player_team_selection",
-                       choices = unique(player_tab_data %>%
-                                          filter(league_name == input$information_player_league_selection) %>%
-                                          select(team_name) %>%
-                                          unlist() %>%
-                                          unname())
-                     )
-   })
+  observeEvent(input$information_player_league_selection, {
+    updateSelectizeInput(
+      session,
+      inputId = "information_player_team_selection",
+      choices = unique(
+        player_tab_data %>%
+          filter(league_name == input$information_player_league_selection) %>%
+          select(team_name) %>%
+          unlist() %>%
+          unname()
+      )
+    )
+  })
   
 
    # create an observer to display for the club selection to display
@@ -54,22 +57,28 @@ information_player_server <- function(input, output, session){
   
    # create an observer to display for the season selection to display
    # only those players that are present in the selected club
-  observeEvent(input$information_player_season_selection, {
-    updateSelectizeInput(session, 
-                      inputId = "information_player_player_selection",
-                      choices = unique(player_tab_data %>%
-                                         filter(team_name == input$information_player_team_selection &
-                                                  league_name == input$information_player_league_selection &
-                                                  league_season ==  as.numeric(
-                                                    str_split(input$information_player_season_selection,
-                                                              pattern = "/")[[1]][1])) %>%
-                                         select(player_name) %>%
-                                         unlist() %>%
-                                         unname()),
-                      selected = ""
-    )
-    
-  })
+   observeEvent(input$information_player_season_selection, {
+     updateSelectizeInput(
+       session,
+       inputId = "information_player_player_selection",
+       choices = unique(
+         player_tab_data %>%
+           filter(
+             team_name == input$information_player_team_selection &
+               league_name == input$information_player_league_selection &
+               league_season ==  as.numeric(
+                 str_split(input$information_player_season_selection,
+                           pattern = "/")[[1]][1]
+               )
+           ) %>%
+           select(player_name) %>%
+           unlist() %>%
+           unname()
+       ),
+       selected = ""
+     )
+     
+   })
   
   
   # filter the data for the selected league, club, season and the selected player

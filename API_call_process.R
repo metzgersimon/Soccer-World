@@ -44,6 +44,8 @@ if(api_calls_left >= number_calls_needed){
 # 3.15 recall the fixture information from the data base
 all_leagues_matches_today <- matches_happened_today
 
+all_leagues_matches <- tbl(con, "all_leagues_matches") %>% data.frame()
+
 if (!is.null(all_leagues_matches_today)) {
   
   # 3.2 team stats

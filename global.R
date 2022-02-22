@@ -108,3 +108,34 @@ player_tab_data <-
 
 ### load home tab data
 all_leagues_venue_information <- tbl(con, "all_leagues_venue_information") %>% data.frame()
+
+### load model tab data
+all_leagues_historical_predictions <-
+  tbl(con, "all_leagues_historical_predictions") %>%
+  data.frame() %>%
+  right_join(
+    all_leagues_matches,
+    by = c(
+      "fixture_id",
+      "league_id",
+      "league_season",
+      "league_round",
+      "club_id_home",
+      "club_id_away"
+    )
+  )
+
+all_leagues_historical_lineups_predictions <-
+  tbl(con, "all_leagues_historical_lineups_predictions") %>% data.frame() %>% right_join(
+    all_leagues_matches,
+    by = c(
+      "fixture_id",
+      "league_id",
+      "league_season",
+      "league_round",
+      "club_id_home",
+      "club_id_away"
+    )
+  )
+
+
