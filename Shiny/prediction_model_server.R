@@ -2,16 +2,16 @@
 prediction_model_server <- function(input, output, session) {
   # update the select input team according to the league selection
   observeEvent(
-    input$information_model_league_selection,
+    input$prediction_model_league_selection,
     {
       updateSelectizeInput(
         session,
-        inputId = "information_model_season_selection",
+        inputId = "prediction_model_season_selection",
         choices = c("",
                     paste0(
                       unique(
                         all_leagues_historical_predictions %>%
-                          filter(league_name == input$information_model_league_selection) %>%
+                          filter(league_name == input$prediction_model_league_selection) %>%
                           select(league_season) %>%
                           unlist() %>%
                           unname()
@@ -19,7 +19,8 @@ prediction_model_server <- function(input, output, session) {
                       ,
                       "/",
                       unique(
-                        all_leagues_historical_predictions %>% filter(league_name == input$information_model_league_selection) %>%
+                        all_leagues_historical_predictions %>% 
+                          filter(league_name == input$prediction_model_league_selection) %>%
                           select(league_season) %>%
                           unlist() %>%
                           unname()
@@ -31,16 +32,16 @@ prediction_model_server <- function(input, output, session) {
   
   # create an observer to display for the season selection to display
   # only those players that are present in the selected club
-  observeEvent(input$information_model_season_selection, {
+  observeEvent(input$prediction_model_season_selection, {
     updateSelectizeInput(
       session,
-      inputId = "information_model_matchday_selection",
+      inputId = "prediction_model_matchday_selection",
       choices = unique(
         all_leagues_historical_predictions %>%
           filter(
-            league_name == input$information_model_league_selection &
+            league_name == input$prediction_model_league_selection &
               league_season ==   as.numeric(
-                str_split(input$information_model_season_selection,
+                str_split(input$prediction_model_season_selection,
                           pattern = "/")[[1]][1]
               )
           ) %>%
@@ -53,26 +54,93 @@ prediction_model_server <- function(input, output, session) {
   })
   
   output$prediction_model_comparison <- renderPlotly({
-    spi_prediction_data <- spi_prediction_acc()
-    naive_baseline_data <- naive_baseline_acc()
+    req(input$prediction_model_bm)
+    req(input$prediction_model_league_selection)
     
-    spi_prediction_data %>%
-      inner_join(
-        naive_baseline_data,
-        by = c(
-          "league" = "league_name",
-          "season" = "league_season",
-          "date" = "fixture_date",
-          "home_team" = "club_name_home",
-          "away_team" = "club_name_away"
+    bm_selection <- input$prediction_model_bm
+    league_selection <- input$prediction_model_league_selection
+    
+    # bm_selection <- "FiveThirtyEight"
+    # league_selection <- "Bundesliga"
+    
+    # based on the lineup checkbox get the matching model accuracy
+    if(input$prediction_model_lineups){
+      model_acc <- lineup_model_acc()
+    } else {
+      model_acc <- plain_model_acc()
+    }
+
+    # select the benchmark based on the user selection
+    if(bm_selection == "FiveThirtyEight"){
+      bm_prediction_data <- spi_prediction_acc() %>%
+        rename(moving_accuracy_bm = moving_accuracy_spi)
+      
+      plot_data <- model_acc %>%
+        inner_join(
+          bm_prediction_data,
+          by = c(
+            "league_name" = "league",
+            "league_season" = "season",
+            "fixture_date" = "date",
+            "club_name_home" = "home_team",
+            "club_name_away" = "away_team"
+          )
         )
-      ) %>%
-      group_by(league) %>%
-      plot_ly(x = ~ date,
-              group = ~ league,
-              color = ~ league) %>%
-      add_lines(y = ~ moving_accuracy_spi) %>%
-      add_lines(y = ~ moving_accuracy_naive)
+      
+    } else if(bm_selection == "Always Home"){
+      bm_prediction_data <- naive_baseline_acc() %>%
+        rename(moving_accuracy_bm = moving_accuracy_naive)
+      
+      plot_data <- model_acc %>%
+        inner_join(
+          bm_prediction_data,
+          by = c(
+            "league_name",
+            "league_season",
+            "league_round",
+            "fixture_date",
+            "club_name_home",
+            "club_name_away"
+          )
+        )
+      
+    } else {
+      bm_prediction_data <- odds_acc() %>%
+        rename(moving_accuracy_bm = moving_accuracy_odds)
+      
+      plot_data <- model_acc %>%
+        inner_join(
+          bm_prediction_data,
+          by = c(
+            "league_name" = "league",
+            "league_season" = "season",
+            "league_round",
+            "fixture_date",
+            "club_name_home" = "home_team",
+            "club_name_away" = "away_team"
+          )
+        )
+    } 
+    
+    plot_data %>%
+      filter(league_name == league_selection) %>%
+      group_by(league_name) %>%
+      plot_ly(x = ~ fixture_date,
+              group = ~ league_name,
+              color = ~ league_name) %>%
+      add_lines(y = ~ moving_accuracy_model,
+                name = paste0("Model ", league_selection),
+                line = list(color = "#1b9e77")) %>%
+      add_lines(y = ~ moving_accuracy_bm,
+                name = paste0("Benchmark ", league_selection),
+                line = list(color = "#d95f02")) %>%
+      layout(font = list(color = "white"),
+             plot_bgcolor = "rgba(0, 65, 87, 10)",
+             paper_bgcolor = "rgba(0, 65, 87, 10)",
+             fig_bg_color = "rgba(0, 65, 87, 10)",
+             xaxis = list(title = "Date"),
+             yaxis = list(title = "Accuracy"),
+             title = "Accuracy over time")
   })
   
   
