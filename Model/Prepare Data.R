@@ -205,22 +205,84 @@ prepare_team_match_stats_historical <- function(){
 
 ######### 538 ###############
 prepare_spi_data <- function(){
-  spi_538_matches <- all_leagues_matches %>%
-    filter(league_season >= 2016) %>%
-    left_join(all_leagues_spi_538,
-              by = c("league_name" = "league",
-                     "league_season" = "season",
-                     "fixture_date" =  "date",
-                     "club_name_home" = "home_team",
-                     "club_name_away" = "away_team")) %>%
-    # drop variables we do not want to use as features
-    select(-c(home_team_win_prob, away_team_win_prob, draw_prob, 
-              home_team_projected_score, away_team_projected_score,
-              home_team_goals, away_team_goals)) %>%
-    mutate(across(c(home_team_expected_goals:away_team_adjusted_goals),
-                  ~lag(.x, n = 1)))
   
-  return(spi_538_matches)
+  all_leagues_matches_matcher <- all_leagues_matches %>%
+    filter(league_season >= 2016) %>%
+    select(league_id, league_name, league_season, league_round,
+           fixture_id, fixture_date, fixture_time, club_name_home, club_name_away,
+           fulltime_score_home, fulltime_score_away, club_id_home, club_id_away)
+  
+  all_leagues_matches_home <- all_leagues_matches_matcher %>%
+    mutate(team_name = club_name_home,
+           club_id = club_id_home) %>%
+    select(-c(club_name_home, club_name_away)) %>%
+    unique()
+  
+
+  all_leagues_matches_away <- all_leagues_matches_matcher %>%
+    mutate(team_name = club_name_away,
+           club_id = club_id_away) %>%
+    select(-c(club_name_home, club_name_away)) %>%
+    unique()
+  
+  all_leagues_matches_total <- bind_rows(all_leagues_matches_home,
+                                         all_leagues_matches_away)
+  
+  
+  
+  #### spi data
+  
+  
+  all_leagues_spi <- all_leagues_spi_538 %>%
+    filter(season >= 2016) 
+  
+  all_leagues_spi_home <- all_leagues_spi %>%
+    mutate(team_name = home_team) %>%
+    select(-c(home_team, away_team, contains("away"))) %>%
+    rename_with(~str_remove(.x, "home_team_")) %>%
+    unique()
+  
+  
+  all_leagues_spi_away <- all_leagues_spi %>%
+    mutate(team_name = away_team) %>%
+    select(-c(home_team, away_team,contains("home"))) %>%
+    rename_with(~str_remove(.x, "away_team_")) %>%
+    unique()
+  
+  all_leagues_spi_total <- bind_rows(all_leagues_spi_home,
+                                     all_leagues_spi_away)
+  
+  
+  spi_matched_data <- all_leagues_matches_total %>%
+    left_join(all_leagues_spi_total, by = c("league_name" = "league",   
+                                            "league_season" = "season",
+                                            "fixture_date" = "date",
+                                            "team_name")) %>%
+    arrange(league_id, league_season, league_round, fixture_date, fixture_time) %>%
+    # group by the league and team id
+    # group_by(league_id, season, team_id) %>%
+    # because we do not have the stats for e.g. matchday 1 at matchday 1
+    # we lag the variables we consider for prediction with a n of 1
+    # mutate(across(c(shots_on_goal:passing_accuracy),
+    # ~lag(.x, n = 1))) %>%
+    # after that we calculate a cumulative running mean with a window of 2,
+    # i.e., 2 matches
+    group_by(league_season, team_name) %>%
+    # drop variables we do not want to use as features
+    # select(-c(home_team_win_prob, away_team_win_prob, draw_prob, 
+    #         home_team_projected_score, away_team_projected_score,
+    #         home_team_goals, away_team_goals)) %>%
+    mutate(across(c(expected_goals:adjusted_goals),
+                  ~lag(.x, n = 1))) %>%
+    convert_two_lines_into_one(., columns_to_drop = c("league_id", "league_name",
+                                                      "league_season", "league_round", "fixture_date",
+                                                      "fixture_time"),
+      join_columns = c("fixture_id", "league_id", "league_name",
+                                                   "league_season", "league_round", "fixture_date",
+                                                   "fixture_time"))
+  
+
+  return(spi_matched_data)
 }
 
 
@@ -230,12 +292,41 @@ prepare_match_stats <- function(){
   all_leagues_matches_matcher <- all_leagues_matches %>%
     filter(league_season >= 2016) %>%
     select(league_id, league_name, league_season, league_round,
-           fixture_id, fixture_date, fixture_time)
+           fixture_id, fixture_date, fixture_time, club_id_home, club_id_away)
+  
+  all_leagues_matches_home <- all_leagues_matches_matcher %>%
+    mutate(team_id = club_id_home) %>%
+    select(-c(club_id_home, club_id_away)) %>%
+    unique()
+  
+  all_leagues_matches_away <- all_leagues_matches_matcher %>%
+    mutate(team_id = club_id_away) %>%
+    select(-c(club_id_home, club_id_away)) %>%
+    unique()
+  
+  all_leagues_matches_total <- bind_rows(all_leagues_matches_home,
+                                         all_leagues_matches_away)
+  
   
   # prepare the all leagues fixture stats
   all_leagues_fixture_stats_prep <- all_leagues_fixture_stats %>%
     filter(season >= 2016,
-           !is.na(matchday)) %>%
+           !is.na(matchday)) 
+  
+  
+  
+  all_leagues_fixture_joined <- all_leagues_matches_total %>% 
+    left_join(all_leagues_fixture_stats_prep,
+              by = c("league_id", 
+                     "league_season" = "season",
+                     "league_round" = "matchday",
+                     "fixture_date",
+                     "fixture_time",
+                     "fixture_id",
+                     "team_id"))
+  
+  all_leagues_fixture_joined <- all_leagues_fixture_joined %>%
+    arrange(league_id, league_season, fixture_date, fixture_time) %>%
     # group by the league and team id
     # group_by(league_id, season, team_id) %>%
     # because we do not have the stats for e.g. matchday 1 at matchday 1
@@ -244,26 +335,15 @@ prepare_match_stats <- function(){
     # ~lag(.x, n = 1))) %>%
     # after that we calculate a cumulative running mean with a window of 2,
     # i.e., 2 matches
-    group_by(league_id, season, team_id) %>%
+    group_by(league_season, team_id) %>%
     mutate(across(c(shots_on_goal:passing_accuracy),
-                  ~rollapply(.x, width = 2, FUN=function(x) mean(x, na.rm=TRUE), 
-                             by=1, by.column=TRUE, partial=TRUE, fill=NA, align="right")))
+                  ~lag(.x, n = 1))) %>%
+    mutate(across(c(shots_on_goal:passing_accuracy),
+                  ~rollapply(.x, width = 1, FUN=function(x) mean(x, na.rm=TRUE), 
+                             by=1, by.column=TRUE, partial=TRUE, fill=NA, align="left")))
+    
   
-  
-  # join the league name from the all_leagues_matches_matcher to
-  # be able to join the fifa stats later on
-  all_leagues_fixture_stats2 <- all_leagues_matches_matcher %>% 
-    left_join(all_leagues_fixture_stats_prep,
-              by = c("league_id", 
-                     "league_season" = "season",
-                     "league_round" = "matchday",
-                     "fixture_date",
-                     "fixture_time",
-                     "fixture_id")) %>%
-    # drop relegation games
-    filter(!is.na(league_round))
-  
-  return(all_leagues_fixture_stats2)
+  return(all_leagues_fixture_joined)
 }
 
 
@@ -271,6 +351,37 @@ prepare_match_stats <- function(){
 ################# FIFA STATS ##########################
 
 prepare_fifa_team_stats <- function(){
+  
+  all_leagues_matches_matcher <- all_leagues_matches %>%
+    filter(league_season >= 2016) %>%
+    select(league_id, league_name, league_season, league_round,
+           fixture_id, fixture_date, fixture_time, club_id_home, club_id_away)
+  
+  all_leagues_matches_home <- all_leagues_matches_matcher %>%
+    mutate(team_id = club_id_home) %>%
+    select(-c(club_id_home, club_id_away)) %>%
+    unique()
+  
+  all_leagues_matches_away <- all_leagues_matches_matcher %>%
+    mutate(team_id = club_id_away) %>%
+    select(-c(club_id_home, club_id_away)) %>%
+    unique()
+  
+  all_leagues_matches_total <- bind_rows(all_leagues_matches_home,
+                                         all_leagues_matches_away)
+  
+  
+  # prepare the all leagues fixture stats
+  all_leagues_fixture_stats_prep <- all_leagues_fixture_stats %>%
+    filter(season >= 2016,
+           !is.na(matchday)) 
+  
+  
+  
+  
+  
+  
+  
 
   # get the all_leagues_matches data set with just a few columns to join
   all_leagues_matches_matcher <- all_leagues_matches %>%
@@ -311,7 +422,7 @@ prepare_fifa_team_stats <- function(){
   
   # create the min and max dates of the team stats
   min_date_team_stats <- min(all_leagues_fifa_team_stats$date)
-  max_date_team_stats <- max(all_leagues_fixture_stats2$fixture_date)
+  max_date_team_stats <- max(all_leagues_matches_matcher$fixture_date)
   
   # extract all clubs
   unique_clubs <- unique(all_leagues_fifa_team_stats$club)
@@ -356,7 +467,10 @@ prepare_fifa_team_stats <- function(){
               by = c("league_name" = "league",
                      "date_minus1" = "date",
                      "team_name" = "club"),
-              keep = TRUE)
+              keep = TRUE) %>%
+    group_by(league_id, league_season, team_id) %>%
+    mutate(across(c(shots_on_goal:passing_accuracy),
+                  ~lag(.x, n = 1)))
   
   fifa_stats_joined <- fifa_stats_joined %>%
     convert_two_lines_into_one(., type = "fifa")
@@ -374,6 +488,27 @@ get_league_ranking_overall <- function(league_ids = c(78, 79, 39, 61),
                                        seasons = c(2016:2021), 
                                        type = "home"){
   
+  all_leagues_matches_matcher <- all_leagues_matches %>%
+    filter(league_season >= 2016) %>%
+    select(league_id, league_name, league_season, league_round,
+           fixture_id, fixture_date, fixture_time, club_id_home, club_id_away)
+  
+  all_leagues_matches_home <- all_leagues_matches_matcher %>%
+    mutate(team_id = club_id_home) %>%
+    select(-c(club_id_home, club_id_away)) %>%
+    unique()
+  
+  all_leagues_matches_away <- all_leagues_matches_matcher %>%
+    mutate(team_id = club_id_away) %>%
+    select(-c(club_id_home, club_id_away)) %>%
+    unique()
+  
+  all_leagues_matches_total <- bind_rows(all_leagues_matches_home,
+                                         all_leagues_matches_away)
+  
+  all_leagues_matches_total <- all_leagues_matches_total %>%
+    arrange(league_id, league_season, fixture_date, fixture_time) 
+
   all_leagues_running_table <- NULL
   
   for(i in 1:length(league_ids)){
@@ -411,8 +546,16 @@ get_league_ranking_overall <- function(league_ids = c(78, 79, 39, 61),
   
   # reorder the data frame
   all_leagues_running_table <- all_leagues_running_table %>%
-    select(league_id, season, league_round, everything())
-
+    select(league_id, season, league_round, club_id, everything())
+  
+  all_leagues_running_table <- all_leagues_matches_total %>%
+    left_join(all_leagues_running_table,
+              by = c("league_id", "league_season" = "season",
+                     "league_round", "team_id" = "club_id")) %>%
+    group_by(league_id, league_season, team_id) %>%
+    mutate(across(c(cum_points:rank),
+                  ~lag(.x, n = 1)))
+    
   
   # based on whether home or away is given we rename the features
   # accordingly
@@ -441,12 +584,32 @@ get_league_ranking_overall <- function(league_ids = c(78, 79, 39, 61),
 # home or away 
 get_winning_pcts <- function(type = "home"){
   # filter all the matches in all leagues for the selected league and season
-  # league_season_matches <- all_leagues_matches %>%
-  #   filter(league_id == league,
-  #          league_season == season)
+
+  all_leagues_matches_matcher <- all_leagues_matches %>%
+    filter(league_season >= 2016) %>%
+    select(league_id, league_name, league_season, league_round,
+           fixture_id, fixture_date, fixture_time, club_id_home, club_id_away)
+  
+  all_leagues_matches_home <- all_leagues_matches_matcher %>%
+    mutate(team_id = club_id_home) %>%
+    select(-c(club_id_home, club_id_away)) %>%
+    unique()
+  
+  all_leagues_matches_away <- all_leagues_matches_matcher %>%
+    mutate(team_id = club_id_away) %>%
+    select(-c(club_id_home, club_id_away)) %>%
+    unique()
+  
+  all_leagues_matches_total <- bind_rows(all_leagues_matches_home,
+                                         all_leagues_matches_away)
+  
+  all_leagues_matches_total <- all_leagues_matches_total %>%
+    arrange(league_id, league_season, fixture_date, fixture_time) 
+  
+  
+  
   leagues_matches <- all_leagues_matches %>%
-    filter(fixture_date < Sys.Date(),
-           league_season >= 2016)
+    filter(league_season >= 2016)
   
   # get the winning/draw/lose percentages for the team playing at home
   home_table <- leagues_matches %>%
@@ -556,10 +719,10 @@ get_winning_pcts <- function(type = "home"){
            home_loss_pct = (home_losses / home_played) * 100,
            away_win_pct = (away_wins / away_played) * 100,
            away_draw_pct = (away_draws / away_played) * 100,
-           away_loss_pct = (away_losses / away_played) * 100) #%>%
+           away_loss_pct = (away_losses / away_played) * 100) %>%
     # lag everything
-    # mutate(across(c(home_played:loss_pct),
-    #               ~ lag(.x, n = 1)))
+    mutate(across(c(home_played:loss_pct),
+                  ~ lag(.x, n = 1)))
   
   
   if(type == "home"){

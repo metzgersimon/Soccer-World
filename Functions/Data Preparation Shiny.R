@@ -17,13 +17,15 @@ get_league_standing <- function(league_ID, season, matchday = NULL){
   home_table <- league_season_matches %>%
     select(league_round, club_name = club_name_home,
            points = home_points, goals = fulltime_score_home, 
-           goals_against = fulltime_score_away)
+           goals_against = fulltime_score_away,
+           club_id = club_id_home)
   
   # create the table for the away ranking
   away_table <- league_season_matches %>%
     select(league_round, club_name = club_name_away,
            points = away_points, goals = fulltime_score_away, 
-           goals_against = fulltime_score_home)
+           goals_against = fulltime_score_home,
+           club_id = club_id_away)
   
   
   # create the table for the overall ranking

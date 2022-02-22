@@ -259,7 +259,7 @@ club_name_mapping <- function(club_name){
     return("Brighton & Hove Albion")
   } else if(str_detect(club_name, ".*fulham.*")){
     return("FC Fulham")
-  } else if(str_detect(club_name, ".*wolves.*")){
+  } else if(str_detect(club_name, ".*wolves.*|.*wolverhampton.*")){
     return("Wolverhampton Wanderers")
   } else if(str_detect(club_name, ".*cardiff.*")){
     return("Cardiff City")
