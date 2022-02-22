@@ -1,8 +1,6 @@
 # subserver for the match-tab in the information menu item
 information_league_match_server <- function(input, output, session){
   
-  #all_leagues_fixture_stats <- all_fixture_stats %>% left_join(all_leagues_matches, by = c("fixture_id"="fixture_id","league_id"="league_id"))
-  
   # if the league is selected we want to update the season selection and the team 
   # selection
   observeEvent(input$info_match_league, {
@@ -81,7 +79,7 @@ information_league_match_server <- function(input, output, session){
                                            unname())))
   })
   
-  
+
   # reactive function (is executed every time something changes)
   # that returns the data frame which is needed for the match statistics
   # plot
@@ -263,7 +261,7 @@ information_league_match_server <- function(input, output, session){
     
   })
   
-  
+  ############### match stats tab begins ######################
   # creates the plot for the match statistic for a selected match
   output$info_match_match_stats <- renderPlotly({
     # wait until the input of the matches_reactive function is given
@@ -543,7 +541,8 @@ information_league_match_server <- function(input, output, session){
     return(list(lineups, date_info))
            
   })
-  
+ 
+  ############### overview tab begins ######################
   output$info_match_match_date <- renderText({
     req(lineups_reactive)
     
@@ -950,7 +949,7 @@ information_league_match_server <- function(input, output, session){
   })
   
   
-  
+  ############### lineup tab begins ######################
   # creates the table for the home match lineups for a selected match
   output$info_match_match_lineups_home <- renderReactable({
     # wait until the input of the lineups_reactive function is given

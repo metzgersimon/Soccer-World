@@ -35,6 +35,9 @@ all_leagues_spi_538 <- tbl(con, "all_leagues_spi_538") %>%
 all_leagues_fixture_events <-
   tbl(con, "all_leagues_fixture_events") %>% data.frame()
 
+# load fixture lineup
+all_leagues_fixture_lineups <-
+  tbl(con, "all_leagues_fixture_lineups") %>% data.frame()
 
 ### load team tab data
 # load squads infos
