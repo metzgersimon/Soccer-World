@@ -47,7 +47,7 @@ prediction_model_server <- function(input, output, session) {
           ) %>%
           select(league_round) %>%
           unlist() %>%
-          unname()
+          unname() %>% na.omit()
       ),
       selected = ""
     )
@@ -154,12 +154,12 @@ prediction_model_server <- function(input, output, session) {
     if (input$prediction_model_lineups == FALSE) {
       result <- all_leagues_historical_predictions %>%
         filter(
-          league_name == input$information_model_league_selection,
+          league_name == input$prediction_model_league_selection,
           league_season == as.numeric(
-            str_split(input$information_model_season_selection,
+            str_split(input$prediction_model_season_selection,
                       pattern = "/")[[1]][1]
           ),
-          league_round == input$information_model_matchday_selection
+          league_round == input$prediction_model_matchday_selection
         ) %>%
         mutate(
           game_score = paste0(fulltime_score_home, ":",
@@ -220,24 +220,24 @@ prediction_model_server <- function(input, output, session) {
       prediction_with_lineup <-
         all_leagues_historical_lineups_predictions %>%
         filter(
-          league_name == input$information_model_league_selection,
+          league_name == input$prediction_model_league_selection,
           league_season == as.numeric(
-            str_split(input$information_model_season_selection,
+            str_split(input$prediction_model_season_selection,
                       pattern = "/")[[1]][1]
           ),
-          league_round == input$information_model_matchday_selection
+          league_round == input$prediction_model_matchday_selection
         )  %>%
         mutate(prediction = round(prediction, 2)) %>% select(prediction) %>% rename("prediction_withlineup" =
                                                                                       "prediction")
       
       result <- all_leagues_historical_predictions %>%
         filter(
-          league_name == input$information_model_league_selection,
+          league_name == input$prediction_model_league_selection,
           league_season == as.numeric(
-            str_split(input$information_model_season_selection,
+            str_split(input$prediction_model_season_selection,
                       pattern = "/")[[1]][1]
           ),
-          league_round == input$information_model_matchday_selection
+          league_round == input$prediction_model_matchday_selection
         ) %>%
         mutate(
           game_score = paste0(fulltime_score_home, ":",
