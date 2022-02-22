@@ -84,15 +84,20 @@ get_model_data <- function(){
   model_data_all <- inner_join(model_data_home, model_data_away,
                                by = c("fixture_id.x", "fixture_date.x",
                                       "league_id", "league_name.x",
-                                      "league_season", "league_round"))
+                                      "league_season", "league_round")) %>%
+    unique()
   
   
   
   # join the spi and match data with the stats (fifa stats, club stats, match stats)
   model_data_all2 <- model_data_all %>%
-    left_join(stats_combined, by = c("fixture_id")) %>%
-    unique() %>%
-    mutate(across())
+    left_join(stats_combined, by = c("fixture_id.x" = "fixture_id",
+                                     "league_id",
+                                     "league_round",
+                                     "league_season",
+                                     "fixture_date.x" = "fixture_date",
+                                     "fixture_time.x" = "fixture_time",
+                                     "team_name_home", "team_name_away"))
   
   return(model_data_all2)
   

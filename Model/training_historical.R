@@ -7,16 +7,12 @@ train_xgb_historical_lineups <- function(){
   
   # drop columns we do not want
   historical_lineups_predictions <- data_lineups %>%
-    select(-c("fixture_date.x", "league_name.x.x",
+    select(-c("fixture_date.x",
               "fixture_date.y", "fixture_time.x", "league_name.x",
-              "venue_id", "club_name_home", "club_name_away",
-              "status_elapsed", "season", "matchday",
-              "team_id_home", "team_id_away",
-              "club_name" ,"halftime_score_home","halftime_score_away", 
+              "team_name_home", "team_name_away",
               "fulltime_score_home.x", "fulltime_score_away.x",
-              "home_points", "away_points",
-              "home_team_goal_diff", "away_team_goal_diff",
-              "fulltime_score_home.y", "fulltime_score_away.y"))
+              "fulltime_score_home.y", "fulltime_score_away.y")) %>%
+    rename(goal_diff = goal_diff.x)
   
   # also drop all character columns
   historical_lineups_predictions <- 
@@ -94,16 +90,12 @@ train_xgb_historical <- function(){
   
   # drop columns we do not want
   historical_predictions <- model_data %>%
-    select(-c("fixture_date.x", "league_name.x.x",
+    select(-c("fixture_date.x",
               "fixture_date.y", "fixture_time.x", "league_name.x",
-              "venue_id", "club_name_home", "club_name_away",
-              "status_elapsed", "season", "matchday",
-              "team_id_home", "team_id_away",
-              "club_name" ,"halftime_score_home","halftime_score_away", 
+              "team_name_home", "team_name_away",
               "fulltime_score_home.x", "fulltime_score_away.x",
-              "home_points", "away_points",
-              "home_team_goal_diff", "away_team_goal_diff",
-              "fulltime_score_home.y", "fulltime_score_away.y"))
+              "fulltime_score_home.y", "fulltime_score_away.y")) %>%
+    rename(goal_diff = goal_diff.x)
   
   # also drop all character columns
   historical_predictions <- 
@@ -111,6 +103,9 @@ train_xgb_historical <- function(){
   
   # set the seeds
   set.seed(42)
+  
+  past_matches <- historical_predictions %>%
+    filter(!is.na(goal_diff))
   
   # create a train/test split
   train_index <-  createDataPartition(historical_predictions$goal_diff, p = .8,

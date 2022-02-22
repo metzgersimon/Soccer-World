@@ -2,16 +2,12 @@ train_xgb <- function(){
   model_data <- get_model_data()
   
   model_data <- model_data %>%
-    select(-c("fixture_date.x", "league_name.x.x",
+    select(-c("fixture_date.x",
               "fixture_date.y", "fixture_time.x", "league_name.x",
-              "venue_id", "club_name_home", "club_name_away",
-              "status_elapsed", "season", "matchday",
-              "team_id_home", "team_id_away",
-              "club_name" ,"halftime_score_home","halftime_score_away", 
+              "team_name_home", "team_name_away",
               "fulltime_score_home.x", "fulltime_score_away.x",
-              "home_points", "away_points",
-              "home_team_goal_diff", "away_team_goal_diff",
-              "fulltime_score_home.y", "fulltime_score_away.y"))
+              "fulltime_score_home.y", "fulltime_score_away.y")) %>%
+    rename(goal_diff = goal_diff.x)
   
   model_data <- model_data[, !sapply(model_data, is.character)]
   

@@ -228,7 +228,7 @@ prepare_spi_data <- function(){
   all_leagues_matches_total <- bind_rows(all_leagues_matches_home,
                                          all_leagues_matches_away)
   
-  
+
   
   #### spi data
   
@@ -267,7 +267,7 @@ prepare_spi_data <- function(){
     # ~lag(.x, n = 1))) %>%
     # after that we calculate a cumulative running mean with a window of 2,
     # i.e., 2 matches
-    group_by(league_season, team_name) %>%
+    group_by(league_season, club_id) %>%
     # drop variables we do not want to use as features
     # select(-c(home_team_win_prob, away_team_win_prob, draw_prob, 
     #         home_team_projected_score, away_team_projected_score,
