@@ -3,12 +3,12 @@
 tab_home_ui <- function() {
   tabItem(tabName = "home",
           # create a title
-          titlePanel("Welcome to the Soccer World!"),
+          titlePanel("Welcome to the Soccer World!"),br(),
           # first row with input selection and the map of league clubs
           fluidRow(
             column(
               width = 3,
-              align = "left",
+              align = "center",
               pickerInput(
                 "leagues",
                 "Select a league:",
@@ -17,7 +17,7 @@ tab_home_ui <- function() {
                             "Premier League",
                             "Ligue 1"),
                 selected = "Bundesliga"
-              ),
+              ),br(),br(),
               tableOutput("home_league_flag") # league flag
             ),
             column(
