@@ -146,11 +146,10 @@ prediction_model_server <- function(input, output, session) {
   
   
   output$prediction_model_historical_results <- renderReactable({
-    req(input$information_model_league_selection)
-    req(input$information_model_season_selection)
-    req(input$information_model_matchday_selection)
-    req(input$prediction_model_type)
-    
+    req(input$prediction_model_league_selection)
+    req(input$prediction_model_season_selection)
+    req(input$prediction_model_matchday_selection)
+
     if (input$prediction_model_lineups == FALSE) {
       result <- all_leagues_historical_predictions %>%
         filter(
