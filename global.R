@@ -70,6 +70,8 @@ colnames_club_stats <-
 
 colnames(all_leagues_club_stats) <- colnames_club_stats
 
+# fill the na value
+all_leagues_club_stats[all_leagues_club_stats ==-999 | all_leagues_club_stats ==-999.00] <- NA
 
 ### load player tab data
 # load player statistics

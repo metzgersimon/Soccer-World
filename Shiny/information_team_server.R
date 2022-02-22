@@ -519,8 +519,6 @@ information_team_server <- function(input, output, session) {
       pattern = "/")[[1]][1]
     )
 
-    # selected_club <- "FC Bayern Munich"
-    # selected_season <- 2021
     
     if (input$info_team_league_selection == "Bundesliga") {
       league_id <- 78
@@ -573,39 +571,6 @@ information_team_server <- function(input, output, session) {
                   club_name_away = colDef(name = "Away Club",
                                         align = "center")
                 ))
-    
-    # fixture_test <- paste(as.character(next_match$fixture_date),
-    #                       "\n",
-    #                       next_match$fixture_time,
-    #                       "\n\n")
-    # 
-    # fixture_test2 <- paste(next_match$venue_name,
-    #                       "\n",
-    #                       next_match$venue_city)
-    # 
-    # fixture_time <- next_match$fixture_time
-    # venue_name <- next_match$venue_name
-    # venue_city <- next_match$venue_city
-    
-    
-    # set the NA format in a kable table to an empty string
-    # options(knitr.kable.NA = "")
-    # 
-    # # create a kable table with the data
-    # next_match %>%
-    #   select(-c(fixture_date,
-    #             fixture_time,
-    #             venue_name,
-    #             venue_city,
-    #             league_round)) %>% 
-    #   as.matrix() %>%
-    #   kableExtra::kable("html", row.names = FALSE, col.names = NULL
-    #   ) %>%
-    #   #kable_minimal()
-    #   kable_styling(full_width = F, ) %>%
-    #   add_header_above(., c(setNames(2, fixture_test)))
-    
-      
    
   })
   
@@ -676,16 +641,12 @@ information_team_server <- function(input, output, session) {
         ))
   })
 
-  
-  
   ###################### stats begins
- 
-  output$total_played <- renderValueBox({
-     stats_select <- reactive ({
-       req(input$info_team_league_selection)
-       req(input$info_team_club_selection)
-       req(input$info_team_season_selection)
-       
+  stats_select <- reactive ({
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     all_leagues_club_stats %>%
       filter(
         league_name == input$info_team_league_selection,
@@ -695,38 +656,30 @@ information_team_server <- function(input, output, session) {
                     pattern = "/")[[1]][1]
         )
       ) %>% filter(matchday == max(matchday, na.rm = TRUE))
-  })
-  
+  }) 
+ 
+  output$total_played <- renderValueBox({
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
+    
     valueBox(
-      value =  stats_select() %>% select(fixtures_played_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      value =  stats_select() %>% select(fixtures_played_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric()%>% unique() %>% .[1],
       "Total Plays",
       color = "purple",
       icon = icon("hourglass-half"),
       width = 3
     )
     
-    
   })
   
   output$total_wins <- renderValueBox({
-    stats_select <- reactive ({
-      req(input$info_team_league_selection)
-      req(input$info_team_club_selection)
-      req(input$info_team_season_selection)
-      
-      all_leagues_club_stats %>%
-        filter(
-          league_name == input$info_team_league_selection,
-          team_name == input$info_team_club_selection,
-          league_season == as.numeric(
-            str_split(input$info_team_season_selection,
-                      pattern = "/")[[1]][1]
-          )
-        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
-    })
+    req(input$info_team_league_selection)
+    req(input$info_team_club_selection)
+    req(input$info_team_season_selection)
     
     valueBox(
-      value = stats_select() %>% select(fixtures_wins_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      value = stats_select() %>% select(fixtures_wins_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric()%>% unique() %>% .[1],
       "Total Wins",
       color = "orange",
       icon = icon("flag"),
@@ -739,20 +692,8 @@ information_team_server <- function(input, output, session) {
     req(input$info_team_club_selection)
     req(input$info_team_season_selection)
     
-    stats_select <- reactive ({
-      all_leagues_club_stats %>%
-        filter(
-          league_name == input$info_team_league_selection,
-          team_name == input$info_team_club_selection,
-          league_season == as.numeric(
-            str_split(input$info_team_season_selection,
-                      pattern = "/")[[1]][1]
-          )
-        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
-    })
-    
     valueBox(
-      value = stats_select() %>% select(fixtures_draws_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      value = stats_select() %>% select(fixtures_draws_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric()%>% unique() %>% .[1],
       "Total Draws",
       color = "green",
       icon = icon("equals"),
@@ -764,20 +705,8 @@ information_team_server <- function(input, output, session) {
     req(input$info_team_club_selection)
     req(input$info_team_season_selection) 
     
-    stats_select <- reactive ({
-      all_leagues_club_stats %>%
-        filter(
-          league_name == input$info_team_league_selection,
-          team_name == input$info_team_club_selection,
-          league_season == as.numeric(
-            str_split(input$info_team_season_selection,
-                      pattern = "/")[[1]][1]
-          )
-        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
-    })
-    
     valueBox(
-      value = stats_select() %>% select(fixtures_loses_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      value = stats_select() %>% select(fixtures_loses_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric() %>% unique() %>% .[1],
       "Total Loses",
       color = "teal",
       icon = icon("bomb"),
@@ -789,19 +718,8 @@ information_team_server <- function(input, output, session) {
     req(input$info_team_club_selection)
     req(input$info_team_season_selection)
     
-    stats_select <- 
-      all_leagues_club_stats %>%
-        filter(
-          league_name == input$info_team_league_selection,
-          team_name == input$info_team_club_selection,
-          league_season == as.numeric(
-            str_split(input$info_team_season_selection,
-                      pattern = "/")[[1]][1]
-          )
-        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
-    
     valueBox(
-      value = stats_select %>% select(goals_for_total_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      value = stats_select() %>% select(goals_for_total_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric() %>% unique() %>% .[1],
       "Total For Goals",
       color = "green",
       icon = icon("award"),
@@ -813,23 +731,8 @@ information_team_server <- function(input, output, session) {
     req(input$info_team_club_selection)
     req(input$info_team_season_selection)
     
-    stats_select <- reactive ({   
-      req(input$info_team_league_selection)
-    req(input$info_team_club_selection)
-    req(input$info_team_season_selection)
-      all_leagues_club_stats %>%
-        filter(
-          league_name == input$info_team_league_selection,
-          team_name == input$info_team_club_selection,
-          league_season == as.numeric(
-            str_split(input$info_team_season_selection,
-                      pattern = "/")[[1]][1]
-          )
-        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
-    })
-    
     valueBox(
-      value = stats_select() %>% select(goals_against_total_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      value = stats_select() %>% select(goals_against_total_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric()%>% unique() %>% .[1],
       "Total Against Goals",
       color = "yellow",
       icon = icon("futbol"),
@@ -840,21 +743,9 @@ information_team_server <- function(input, output, session) {
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
     req(input$info_team_season_selection)
-    
-    stats_select <- reactive ({
-      all_leagues_club_stats %>%
-        filter(
-          league_name == input$info_team_league_selection,
-          team_name == input$info_team_club_selection,
-          league_season == as.numeric(
-            str_split(input$info_team_season_selection,
-                      pattern = "/")[[1]][1]
-          )
-        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
-    })
-    
+   
     valueBox(
-      value = stats_select() %>% select(failed_to_score_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      value = stats_select() %>% select(failed_to_score_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric()%>% unique() %>% .[1],
       "Total Failed to Score",
       color = "blue",
       icon = icon("ban"),
@@ -865,21 +756,9 @@ information_team_server <- function(input, output, session) {
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
     req(input$info_team_season_selection)
-    
-    stats_select <- reactive ({
-      all_leagues_club_stats %>%
-        filter(
-          league_name == input$info_team_league_selection,
-          team_name == input$info_team_club_selection,
-          league_season == as.numeric(
-            str_split(input$info_team_season_selection,
-                      pattern = "/")[[1]][1]
-          )
-        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
-    })
-    
+   
     valueBox(
-      value = stats_select() %>% select(penalty_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric(),
+      value = stats_select() %>% select(penalty_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric()%>% unique() %>% .[1],
       "Total Penalty",
       color = "orange",
       icon = icon("exclamation"),
@@ -893,20 +772,8 @@ information_team_server <- function(input, output, session) {
     req(input$info_team_club_selection)
     req(input$info_team_season_selection)
     
-    stats_select <- reactive ({
-      all_leagues_club_stats %>%
-        filter(
-          league_name == input$info_team_league_selection,
-          team_name == input$info_team_club_selection,
-          league_season == as.numeric(
-            str_split(input$info_team_season_selection,
-                      pattern = "/")[[1]][1]
-          )
-        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
-    })
-    
    data <-
-     stats_select()  %>% select(biggest_streak_wins:biggest_streak_loses)
+     stats_select()  %>% select(biggest_streak_wins:biggest_streak_loses) %>% unique() %>% .[1,]
     
 
     data %>%  
@@ -948,20 +815,8 @@ information_team_server <- function(input, output, session) {
     req(input$info_team_club_selection)
     req(input$info_team_season_selection)
     
-    stats_select <- reactive ({
-      all_leagues_club_stats %>%
-        filter(
-          league_name == input$info_team_league_selection,
-          team_name == input$info_team_club_selection,
-          league_season == as.numeric(
-            str_split(input$info_team_season_selection,
-                      pattern = "/")[[1]][1]
-          )
-        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
-    })
-    
     data <-
-      stats_select()  %>% select(contains("home_diff"), clean_sheet_home)
+      stats_select()  %>% select(contains("home_diff"), clean_sheet_home) %>% unique()%>% .[1,]
     
     
     data %>%  
@@ -1002,21 +857,21 @@ information_team_server <- function(input, output, session) {
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
     req(input$info_team_season_selection)
-    
-    stats_select <- reactive ({
-      all_leagues_club_stats %>%
-        filter(
-          league_name == input$info_team_league_selection,
-          team_name == input$info_team_club_selection,
-          league_season == as.numeric(
-            str_split(input$info_team_season_selection,
-                      pattern = "/")[[1]][1]
-          )
-        ) %>% filter(matchday == max(matchday, na.rm = TRUE))
-    })
+    # 
+    # stats_select <- reactive ({
+    #   all_leagues_club_stats %>%
+    #     filter(
+    #       league_name == input$info_team_league_selection,
+    #       team_name == input$info_team_club_selection,
+    #       league_season == as.numeric(
+    #         str_split(input$info_team_season_selection,
+    #                   pattern = "/")[[1]][1]
+    #       )
+    #     ) %>% filter(matchday == max(matchday, na.rm = TRUE))
+    # })
     
     data <-
-      stats_select()  %>% select(contains("away_diff"), clean_sheet_away)
+      stats_select()  %>% select(contains("away_diff"), clean_sheet_away) %>% unique()%>% .[1,]
     
     
     data %>%  
