@@ -58,7 +58,7 @@ information_league_general_server <- function(input, output, session){
     league_infos <- overview_data() %>%
       filter(
         league_name == input$information_league_league_selection &
-          league_season == as.numeric(
+          season == as.numeric(
             str_split(input$information_league_season_selection,
                       pattern = "/")[[1]][1]
           )
