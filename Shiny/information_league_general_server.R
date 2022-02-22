@@ -1,8 +1,8 @@
 # subserver for the league-tab in the information menu item
 information_league_general_server <- function(input, output, session){
   
-  # create an observer to display for the season selection
-  # only those clubs that are present in the selected league
+  # create an observer to display for the league selection
+  # only those seasons that are present in the selected league
    observeEvent(input$information_league_league_selection, {
      updateSelectizeInput(session, 
                           inputId = "information_league_season_selection",
@@ -25,21 +25,8 @@ information_league_general_server <- function(input, output, session){
      )
      
    })
-  
-  # create an observer for the multiple seasons option
-  # if the checkbox multiple seasons is not selected, there is only
-  # one select field to select the season
-  # otherwise, the user can select a range of seasons
-  # observeEvent(input$information_league_multiple_seasons, {
-  #   if(input$information_league_multiple_seasons){
-  #     # if multiple selected, show the field
-  #     shinyjs::show(id = "information_league_season_selection_end")
-  #   } else {
-  #     # otherwise, hide the field (default is not selected)
-  #     shinyjs::hide(id = "information_league_season_selection_end")
-  #   }
-  # })
-  
+ 
+  ################# overview tab begins 
   # create the output for the table on the overview page
   overview_data <- reactive({
     req(input$info_team_league_selection)
@@ -48,10 +35,10 @@ information_league_general_server <- function(input, output, session){
     overview_filtered <-
       all_leagues_matches %>% left_join(all_leagues_squads_tm, by = c("club_name_home" =
                                                                         "club"))
-    
   })
   
   output$info_league_overview_table <- function() {
+    # require selected league and season 
     req(input$information_league_league_selection)
     req(input$information_league_season_selection)
     
@@ -136,23 +123,28 @@ information_league_general_server <- function(input, output, session){
       paste0("Joungest team: ",
              min_avg_age$club_name_home ,
              " (",
-             min_avg_age$avg_age, ")")
+             min_avg_age$avg_age,
+             ")")
     max_avg_age_text <-
       paste0("Oldest team: ",
              max_avg_age$club_name_home ,
              " (",
-             max_avg_age$avg_age, ")")
+             max_avg_age$avg_age,
+             ")")
     avg_market_value_text <-
       paste0("Average market value: ", avg_market_value, " million")
     most_valuable_player_text <-
       paste0(
         "Most valuable Player: ",
         most_valuable_player$player_name,
-        " ","- ",
+        " ",
+        "- ",
         most_valuable_player$club_name_home ,
         " (",
-        most_valuable_player$player_market_value_in_million_euro," million)"
+        most_valuable_player$player_market_value_in_million_euro,
+        " million)"
       )
+    
     
     # put all the information together into a data frame
     # with 3 columns
@@ -166,26 +158,21 @@ information_league_general_server <- function(input, output, session){
         avg_market_value_text,
         most_valuable_player_text
       ),
-     # ncol = 3,
+      # ncol = 3,
       byrow = TRUE
     ))
     
     # set the NA format in a kable table to an empty string
     options(knitr.kable.NA = "")
     
-     league_info_frame %>%
-        kableExtra::kable("html", row.names = FALSE, col.names = NULL) %>%
-        #kable_minimal()
-        kable_styling(full_width = F) #%>%
-        # deparse() possible to extract string of variable name
-        # but needs to be cleaned
-        # set the name of the league as header
-        #add_header_above(c("Bundesliga" = 3), bold = TRUE,
-        #                 font_size = 20)
+    # set kable table layout
+    league_info_frame %>%
+      kableExtra::kable("html", row.names = FALSE, col.names = NULL) %>%
+      kable_styling(full_width = F) 
     
   }
 
-  
+  # create the league logo output
   output$info_league_league_logo <- renderUI({
     # we need the user to select a club first
     req(input$information_league_league_selection)
@@ -203,6 +190,7 @@ information_league_general_server <- function(input, output, session){
     tags$img(src = league_logo)
   })
 
+  # create the league country logo
   output$info_league_country_logo <- renderUI({
     # we need the user to select a club first
     req(input$information_league_league_selection)
@@ -220,42 +208,52 @@ information_league_general_server <- function(input, output, session){
     tags$img(src = country_logo ,width = "80%")
   })
   
-  ################ season specific #################
+  
+  ################ tab season specific begins#################
   # update matchday
   observeEvent(input$information_league_season_selection, {
     data <- all_leagues_matches %>%
-      filter(league_name == input$information_league_league_selection & league_season == 
-               as.numeric(str_split(
-                 input$information_league_season_selection,
-                 pattern = "/")[[1]][1]
-               )&
-               !is.na(status_elapsed)) %>%
+      filter(
+        league_name == input$information_league_league_selection &
+          league_season ==
+          as.numeric(
+            str_split(input$information_league_season_selection,
+                      pattern = "/")[[1]][1]
+          ) &
+          !is.na(status_elapsed)
+      ) %>%
       select(league_round) %>%
       unlist() %>%
       unname() %>%
       unique()
     
-    updateSelectizeInput(session, 
-                         inputId = "information_league_matchday_selection",
-                         choices = data,
-                         selected = max(data,na.rm = TRUE) ### IMMER MAX MATCHDAY AUSWÄHLEN ###
-                         # BEI PAAR SAISONS FUNKTIONIER MAX NICHT, PASST FORMAT NICHT?
-                         # CLUB NOCH ALS LISTE VORHANDEN
+    updateSelectizeInput(
+      session,
+      inputId = "information_league_matchday_selection",
+      choices = data,
+      selected = max(data, na.rm = TRUE) 
     )
     
   })
   
+  
+  # create a output of the fixture results table
   output$information_league_matchday_fixtures <- renderReactable({
     all_leagues_matches %>%
-      filter(league_name == input$information_league_league_selection & league_season == 
-               as.numeric(str_split(
-                 input$information_league_season_selection,
-                 pattern = "/")[[1]][1]
-               ) &
-             league_round == as.numeric(input$information_league_matchday_selection)) %>%
-      mutate(game_score = paste0(fulltime_score_home, ":", 
+      filter(
+        league_name == input$information_league_league_selection &
+          league_season ==
+          as.numeric(
+            str_split(input$information_league_season_selection,
+                      pattern = "/")[[1]][1]
+          ) &
+          league_round == as.numeric(input$information_league_matchday_selection)
+      ) %>%
+      mutate(game_score = paste0(fulltime_score_home, ":",
                                  fulltime_score_away)) %>%
-      select(fixture_date, fixture_time, club_name_home,
+      select(fixture_date,
+             fixture_time,
+             club_name_home,
              game_score,
              club_name_away) %>%
       arrange(fixture_date, fixture_time) %>%
@@ -267,7 +265,7 @@ information_league_general_server <- function(input, output, session){
         sortable = TRUE,
         searchable = TRUE,
         highlight = TRUE,
-        borderless = TRUE, 
+        borderless = TRUE,
         # set the theme for the table
         theme = reactableTheme(
           borderColor = "#000000",
@@ -277,42 +275,48 @@ information_league_general_server <- function(input, output, session){
           cellPadding = "8px 12px",
           style = list(color = "white"),
           searchInputStyle = list(width = "100%")
-        ), 
+        ),
         # modify the layout and names of the columns
         columns = list(
           fixture_date = colDef(name = "Date",
-                             align = "left"),
+                                align = "left"),
           fixture_time = colDef(name = "Time",
                                 align = "center"),
           club_name_home = colDef(name = "Club",
-                               align = "center"),
+                                  align = "center"),
           game_score = colDef(name = "Result",
                               align = "center"),
           club_name_away = colDef(name = "Club",
                                   align = "center")
           
-        ))
+        )
+      )
     
   })
   
   
   # create a plot for the market value over time
-  # for each club
+  # for each club and each leagues
   output$market_value_over_time <- renderPlotly({
-    market_values <- all_leagues_market_values_over_time %>% 
-       filter(league==input$information_league_league_selection) %>%
+    market_values <- all_leagues_market_values_over_time %>%
+      filter(league == input$information_league_league_selection) %>%
       # create actual plot for the market value over time by club
-      plot_ly(x = ~date, y = ~value_then_mil_euro, color = ~club,
-              colors = colors) %>%
+      plot_ly(
+        x = ~ date,
+        y = ~ value_then_mil_euro,
+        color = ~ club,
+        colors = colors
+      ) %>%
       add_lines() %>%
       layout(
         title = list(text = "Team market value over time", y = 0.95, x = 0.5),
-            yaxis = list(title = "Market Value"),
-             xaxis = list(title = "Year"),
-             font = list(color = "white"),
-             plot_bgcolor = "rgba(0, 65, 87, 10)",
-             paper_bgcolor = "rgba(0, 65, 87, 10)",
-             fig_bg_color = "rgba(0, 65, 87, 10)")
+        yaxis = list(title = "Market Value"),
+        xaxis = list(title = "Year"),
+        font = list(color = "white"),
+        plot_bgcolor = "rgba(0, 65, 87, 10)",
+        paper_bgcolor = "rgba(0, 65, 87, 10)",
+        fig_bg_color = "rgba(0, 65, 87, 10)"
+      )
     
     market_values
   })
