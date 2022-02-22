@@ -34,7 +34,7 @@ home_server <- function(input, output, session) {
           "</br><b>Venue Name</b>: ",
           venue_name
         )
-      ) %>%  
+      ) %>%  # filter the selected leagues and the latest clubs info  
       filter(league == input$leagues, season==max(season,na.rm = TRUE))
     
     # make the icon to be the team flag
@@ -50,24 +50,15 @@ home_server <- function(input, output, session) {
     leaflet(venues_with_coordinates_home) %>%
       addProviderTiles(providers$Esri.WorldTopoMap) %>% clearMarkerClusters() %>%
       addMarkers(
-        ~ longitude,
+        ~ longitude, # add the location 
         ~ latitude,
-        label = ~ team_name,
-        icon = flagIcon,
+        label = ~ team_name,      
+        icon = flagIcon,          # add the icon 
         labelOptions = labelOptions(textsize = "12px"),
-        popup = ~ popup_text
+        popup = ~ popup_text    # add popup text
       )
     
   })
-  
-  #observe({
-  # leafletProxy("map", data = venues_with_coordinates_home) %>%
-  #   clearShapes() %>%
-  #   addMarkers(~longitude, ~latitude,
-  #              label = ~team_name,
-  #              labelOptions = labelOptions(textsize = "12px"),
-  #              popup = ~popup_text)
-  # })
   
   # output for the club logo
   output$home_league_flag <- renderUI({

@@ -26,7 +26,7 @@ information_league_general_server <- function(input, output, session){
      
    })
  
-  ################# overview tab begins 
+  ################# overview tab begins ######################
   # create the output for the table on the overview page
   overview_data <- reactive({
     req(input$info_team_league_selection)
@@ -225,13 +225,13 @@ information_league_general_server <- function(input, output, session){
       select(league_round) %>%
       unlist() %>%
       unname() %>%
-      unique() %>% na.omit()
+      unique() %>% na.omit()  # remove the na value
     
     updateSelectizeInput(
       session,
       inputId = "information_league_matchday_selection",
       choices = data,
-      selected = max(data, na.rm = TRUE) 
+      selected = max(data, na.rm = TRUE)   # default is the max matchday
     )
     
   })
@@ -248,8 +248,9 @@ information_league_general_server <- function(input, output, session){
                       pattern = "/")[[1]][1]
           ) &
           league_round == as.numeric(input$information_league_matchday_selection)
-      ) %>%
-      mutate(game_score = paste0(fulltime_score_home, ":",
+      ) %>% 
+      # create a column to present the results intuitively
+      mutate(game_score = paste0(fulltime_score_home, ":",  
                                  fulltime_score_away)) %>%
       select(fixture_date,
              fixture_time,
@@ -294,7 +295,7 @@ information_league_general_server <- function(input, output, session){
     
   })
   
-  
+  ##################### tab over time ################# 
   # create a plot for the market value over time
   # for each club and each leagues
   output$market_value_over_time <- renderPlotly({
