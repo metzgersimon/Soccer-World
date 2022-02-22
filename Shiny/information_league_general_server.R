@@ -225,7 +225,7 @@ information_league_general_server <- function(input, output, session){
       select(league_round) %>%
       unlist() %>%
       unname() %>%
-      unique()
+      unique() %>% na.omit()
     
     updateSelectizeInput(
       session,
