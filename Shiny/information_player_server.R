@@ -951,72 +951,72 @@ information_player_server <- function(input, output, session){
   
 ##################### transfer infos of players 
   # create a table for all transfers the player had so far during his career
-  output$info_player_transfers <- renderReactable({
-    # require the selected player
-    req(input$information_player_player_selection)
-    req(input$information_player_team_selection)
-    
-    # some player name has only one word, we should distinguish the name length to avoid the warning
-    if (str_count(input$information_player_player_selection, ' ') >= 1) {
-      last_name <-
-        str_split(input$information_player_player_selection, " ")[[1]][-1]
-    } else if (str_count(input$information_player_player_selection, ' ') == 0) {
-      # name with only one word
-      last_name <-
-        input$information_player_player_selection
-    }
-    
-    # get the transfer infos for the selected player and team
-    all_leagues_team_transfers  %>%
-      filter(  # filter the selected player and the selected team so that we have correct data
-        player_name %like% last_name,
-        from_team_name == input$information_player_team_selection |
-          to_team_name == input$information_player_team_selection
-      ) %>%
-      select(
-        transfer_date,
-        player_name,
-        transfer_type,
-        from_team_name,
-        to_team_name,
-        transfer_sum_mil_euro
-      ) %>%
-      distinct() %>%
-      arrange(desc(transfer_date)) %>%
-      reactable(
-        defaultColDef = colDef(
-          align = "center",
-          minWidth = 150,
-          headerStyle = list(background = "darkblue")
-        ),
-        striped = TRUE,
-        highlight = TRUE,
-        borderless = TRUE,
-        # set the theme for the table
-        theme = reactableTheme(
-          borderColor = "#000000",
-          color = "#000000",
-          backgroundColor = "#004157",
-          highlightColor = "#2f829e",
-          cellPadding = "8px 12px",
-          style = list(color = "white")
-        ),
-        # modify the layout and names of the columns
-        columns = list(
-          transfer_date = colDef(name = "Date",
-                                 align = "left"),
-          player_name = colDef(name = "Player",
-                               align = "center"),
-          transfer_type = colDef(name = "Type",
-                                 align = "center"),
-          transfer_sum_mil_euro = colDef(name = "Money (million)",
-                                         align = "center"),
-          from_team_name = colDef(name = "From Team",
-                                  align = "center"),
-          to_team_name = colDef(name = "To Team",
-                                align = "center")
-        )
-      )
-  })
+  # output$info_player_transfers <- renderReactable({
+  #   # require the selected player
+  #   req(input$information_player_player_selection)
+  #   req(input$information_player_team_selection)
+  #   
+  #   # some player name has only one word, we should distinguish the name length to avoid the warning
+  #   if (str_count(input$information_player_player_selection, ' ') >= 1) {
+  #     last_name <-
+  #       str_split(input$information_player_player_selection, " ")[[1]][-1]
+  #   } else if (str_count(input$information_player_player_selection, ' ') == 0) {
+  #     # name with only one word
+  #     last_name <-
+  #       input$information_player_player_selection
+  #   }
+  #   
+  #   # get the transfer infos for the selected player and team
+  #   all_leagues_team_transfers  %>%
+  #     filter(  # filter the selected player and the selected team so that we have correct data
+  #       player_name %like% last_name,
+  #       from_team_name == input$information_player_team_selection |
+  #         to_team_name == input$information_player_team_selection
+  #     ) %>%
+  #     select(
+  #       transfer_date,
+  #       player_name,
+  #       transfer_type,
+  #       from_team_name,
+  #       to_team_name,
+  #       transfer_sum_mil_euro
+  #     ) %>%
+  #     distinct() %>%
+  #     arrange(desc(transfer_date)) %>%
+  #     reactable(
+  #       defaultColDef = colDef(
+  #         align = "center",
+  #         minWidth = 150,
+  #         headerStyle = list(background = "darkblue")
+  #       ),
+  #       striped = TRUE,
+  #       highlight = TRUE,
+  #       borderless = TRUE,
+  #       # set the theme for the table
+  #       theme = reactableTheme(
+  #         borderColor = "#000000",
+  #         color = "#000000",
+  #         backgroundColor = "#004157",
+  #         highlightColor = "#2f829e",
+  #         cellPadding = "8px 12px",
+  #         style = list(color = "white")
+  #       ),
+  #       # modify the layout and names of the columns
+  #       columns = list(
+  #         transfer_date = colDef(name = "Date",
+  #                                align = "left"),
+  #         player_name = colDef(name = "Player",
+  #                              align = "center"),
+  #         transfer_type = colDef(name = "Type",
+  #                                align = "center"),
+  #         transfer_sum_mil_euro = colDef(name = "Money (million)",
+  #                                        align = "center"),
+  #         from_team_name = colDef(name = "From Team",
+  #                                 align = "center"),
+  #         to_team_name = colDef(name = "To Team",
+  #                               align = "center")
+  #       )
+  #     )
+  # })
   
 }

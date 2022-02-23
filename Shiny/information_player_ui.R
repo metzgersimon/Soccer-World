@@ -24,8 +24,8 @@ tab_information_player_ui <- function() {
               selectizeInput(
                 "information_player_team_selection",
                 label = "Club",
-                choices = unique(all_leagues_squads_tm$club), # the choice would be updated after the user select league
-                selected = unique(all_leagues_squads_tm$club)[1]
+                choices = sort(unique(all_leagues_squads_tm$club)), # the choice would be updated after the user select league
+                selected = sort(unique(all_leagues_squads_tm$club))[1]
               )
               
             ),
@@ -252,15 +252,15 @@ tab_information_player_ui <- function() {
                            )
                          ))
                        )
-                     )),  
-            tabPanel("Transfers", # tab for the transfer infos of player
-                     fluidRow(column(
-                       width = 10,
-                       offset = 1,
-                       align = "center",
-                       div(style = "margin-top: 20px;", #"border: solid 2px #FFFFFF; margin-top: 20px;",
-                           reactableOutput("info_player_transfers"))
-                     )))
+                     ))  
+            # tabPanel("Transfers", # tab for the transfer infos of player
+            #          fluidRow(column(
+            #            width = 10,
+            #            offset = 1,
+            #            align = "center",
+            #            div(style = "margin-top: 20px;", #"border: solid 2px #FFFFFF; margin-top: 20px;",
+            #                reactableOutput("info_player_transfers"))
+            #          )))
             
           )
           
