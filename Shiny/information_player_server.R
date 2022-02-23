@@ -469,6 +469,8 @@ information_player_server <- function(input, output, session){
         duels_total
       ) 
     
+    colnames(data) <- c("total goals" , "success dribbles" , "total shots" , "total tackles" , "committed fouls", "total passes" , "total duels")
+    
     # To use the fmsb package, I have to add 2 lines to the dataframe: the max and min of each topic to show on the plot!
     data <-
       rbind(rep(max(data, na.rm = TRUE), 10) , rep(0, 10) , data)

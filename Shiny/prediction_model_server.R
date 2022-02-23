@@ -227,7 +227,7 @@ prediction_model_server <- function(input, output, session) {
           ),
           league_round == input$prediction_model_matchday_selection
         )  %>%
-        mutate(prediction = round(prediction, 2)) %>% select(prediction) %>% rename("prediction_withlineup" =
+        mutate(prediction = round(prediction, 0)) %>% select(prediction) %>% rename("prediction_withlineup" =
                                                                                       "prediction")
       
       result <- all_leagues_historical_predictions %>%
@@ -243,7 +243,7 @@ prediction_model_server <- function(input, output, session) {
           game_score = paste0(fulltime_score_home, ":",
                               fulltime_score_away),
           actual_difference = fulltime_score_home - fulltime_score_away,
-          prediction = round(prediction, 2)
+          prediction = round(prediction, 0)
         ) %>%
         select(
           fixture_date,

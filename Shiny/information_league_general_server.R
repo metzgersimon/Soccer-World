@@ -230,7 +230,7 @@ information_league_general_server <- function(input, output, session){
 
     # create the text blocks for the table
     #country_text <- paste0("Country: ", country)
-    number_teams_text <- paste0("Number of teams: ", number_teams)
+    # number_teams_text <- paste0("Number of teams: ", number_teams)
     number_players_text <-
       paste0("Number of players: ", number_players$n)
     avg_age_league_text <- paste0("Average age: ", avg_age_league, " years")
@@ -265,7 +265,7 @@ information_league_general_server <- function(input, output, session){
     # with 3 columns
     league_info_frame <- data.frame(matrix(
       c(
-        number_teams_text,
+        # number_teams_text,
         number_players_text,
         avg_age_league_text,
         min_avg_age_text,
