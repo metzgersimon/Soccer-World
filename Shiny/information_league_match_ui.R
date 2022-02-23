@@ -94,15 +94,13 @@ tab_information_league_match_ui <- function(){
               fluidRow(
                 column(width = 6,
                        align = "center",
-                       div(style = paste0("margin-top: 20px;",
-                                          "background-color: #567895;"),
+                       div(style = "margin-top: 20px;",
                            textOutput("info_match_match_formation_home")
                        )
                 ),
                 column(width = 6,
                        align = "center",
-                       div(style = paste0("margin-top: 20px;",
-                                          "background-color: #567895;"),
+                       div(style = "margin-top: 20px;",
                            textOutput("info_match_match_formation_away")
                        )
                 )
@@ -182,7 +180,7 @@ tab_information_league_match_ui <- function(){
               fluidRow( # head to head tab 
                 column(width = 12,
                        align = "center",
-                       div(style = "border: solid 2px #000000; margin-top: 20px;",
+                       div(style = "margin-top: 20px;",
                            reactableOutput("info_league_match_h2h") %>%
                              withSpinner(color = "blue")
                        )

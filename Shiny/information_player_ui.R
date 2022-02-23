@@ -103,7 +103,7 @@ tab_information_player_ui <- function() {
                      tabsetPanel(
                        type = "pills",
                        tabPanel(
-                         div("General", style = "color: LightSkyBlue"),
+                         div("General", style = "color: LightSteelBlue"),
                          # with radarplot to see the player summary stats  
                          fluidRow(
                            column(
@@ -205,7 +205,7 @@ tab_information_player_ui <- function() {
                          )
                        ),
                        tabPanel( 
-                         div("Details", style = "color: LightSkyBlue;"),
+                         div("Details", style = "color: LightSteelBlue;"),
                          # more detailed infos for the player stats
                          fluidRow(
                            br(),
@@ -241,7 +241,7 @@ tab_information_player_ui <- function() {
                          )
                        ),
                        tabPanel( # tab for the fifa player rating
-                         div("FIFA Player Rating", style = "color: LightSkyBlue;"),
+                         div("FIFA Player Rating", style = "color: LightSteelBlue;"),
                          fluidRow(br(), column(
                            width = 12,
                            align = "center",

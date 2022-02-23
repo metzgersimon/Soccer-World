@@ -86,7 +86,7 @@ information_team_server <- function(input, output, session) {
         round(digits = 0),
       "Average age",
       icon = icon("user"),
-      color = "purple",
+      color = "light-blue",
       width = 3
     )
   })
@@ -109,7 +109,7 @@ information_team_server <- function(input, output, session) {
         round(digits = 2),
       "Average height",
       icon = icon("arrow-up"),
-      color = "orange",
+      color = "purple",
       width = 3
     )
   })
@@ -129,7 +129,7 @@ information_team_server <- function(input, output, session) {
         nrow(),
       "Squad size",
       icon = icon("flag"),
-      color = "green",
+      color = "navy",
       width = 3
     )
   })
@@ -168,7 +168,7 @@ information_team_server <- function(input, output, session) {
         unique() %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric()  ,
       "Venue capacity",
       icon = icon("sistrix"),
-      color = "teal",
+      color = "blue",
       width = 3
     )
   })
@@ -186,7 +186,7 @@ information_team_server <- function(input, output, session) {
         count() %>% pull(),
       "Players number",
       icon = icon("fax"),
-      color = "green",
+      color = "navy",
       width = 3
     )
   })
@@ -204,7 +204,7 @@ information_team_server <- function(input, output, session) {
         count() %>% pull(),
       "Right foot players ",
       icon = icon("arrow-right"),
-      color = "yellow",
+      color = "blue",
       width = 3
     )
   })
@@ -222,7 +222,7 @@ information_team_server <- function(input, output, session) {
         count() %>% pull(),
       "Left foot players",
       icon = icon("arrow-left"),
-      color = "blue",
+      color = "light-blue",
       width = 3
     )
   })
@@ -241,7 +241,7 @@ information_team_server <- function(input, output, session) {
         count() %>% pull(),
       "German players",
       icon = icon("eye"),
-      color = "orange",
+      color = "purple",
       width = 3
     )
   })
@@ -499,7 +499,7 @@ information_team_server <- function(input, output, session) {
     valueBox(
       value = stats_select() %>% select(fixtures_wins_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric()%>% unique() %>% .[1],
       "Total Wins",
-      color = "orange",
+      color = "light-blue",
       icon = icon("flag"),
       width = 3
     )
@@ -514,7 +514,7 @@ information_team_server <- function(input, output, session) {
     valueBox(
       value = stats_select() %>% select(fixtures_draws_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric()%>% unique() %>% .[1],
       "Total Draws",
-      color = "green",
+      color = "blue",
       icon = icon("equals"),
       width = 3)
   })
@@ -528,7 +528,7 @@ information_team_server <- function(input, output, session) {
     valueBox(
       value = stats_select() %>% select(fixtures_loses_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric() %>% unique() %>% .[1],
       "Total Loses",
-      color = "teal",
+      color = "navy",
       icon = icon("bomb"),
       width = 3)
   })
@@ -542,7 +542,7 @@ information_team_server <- function(input, output, session) {
     valueBox(
       value = stats_select() %>% select(goals_for_total_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric() %>% unique() %>% .[1],
       "Total For Goals",
-      color = "green",
+      color = "light-blue",
       icon = icon("award"),
       width = 3)
   })
@@ -556,7 +556,7 @@ information_team_server <- function(input, output, session) {
     valueBox(
       value = stats_select() %>% select(goals_against_total_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric()%>% unique() %>% .[1],
       "Total Against Goals",
-      color = "yellow",
+      color = "blue",
       icon = icon("futbol"),
       width = 3)
   })
@@ -570,7 +570,7 @@ information_team_server <- function(input, output, session) {
     valueBox(
       value = stats_select() %>% select(failed_to_score_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric()%>% unique() %>% .[1],
       "Total Failed to Score",
-      color = "blue",
+      color = "purple",
       icon = icon("ban"),
       width = 3)
   })
@@ -584,7 +584,7 @@ information_team_server <- function(input, output, session) {
     valueBox(
       value = stats_select() %>% select(penalty_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric()%>% unique() %>% .[1],
       "Total Penalty",
-      color = "orange",
+      color = "navy",
       icon = icon("exclamation"),
       width = 3)
   })
@@ -1024,7 +1024,7 @@ information_team_server <- function(input, output, session) {
   output$info_team_market_value_over_time <- renderPlotly({
     market_values <- market_value_reactive() %>%
       plot_ly(x = ~date, y = ~value_then_mil_euro) %>%
-      add_lines() %>%
+      add_lines(color="#CE8B65") %>%
       layout(title = list(text = "Market value over time", y = 0.95, x = 0.5),
              yaxis = list(title = "Market Value (million euro)"),
              xaxis = list(title = "Year"),
