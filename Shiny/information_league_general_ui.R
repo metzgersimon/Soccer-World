@@ -36,30 +36,26 @@ tab_information_league_general_ui <- function(){
             tabPanel("Overview",
                      fluidRow(
                        br(),
-                       box(
+                       column(
                          width = 2,
-                         title = "League Logo",
-                         solidHeader = TRUE,
-                         status = "primary",
+                         align = "center",
                          div(style = "margin-top: 20px;",
                              htmlOutput("info_league_league_logo", height = 300))
-                       ),
-                       box(
-                         width = 4,
-                         title = "League Overview",
-                         solidHeader = TRUE,
-                         status = "primary",
-                         div(style = "margin-top: 20px;",
-                             htmlOutput("info_league_overview"))
-                       ),
-                       box(
-                         width = 6,
-                         title = "League country",
-                         solidHeader = TRUE,
+                       ), column(
+                         width = 5,
+                         align = "center",
                          status = "primary",
                          div(style = "margin-top: 20px;",
                              htmlOutput("info_league_league_country", width = "40%"))
+                       ),
+                       column(
+                         width = 5,
+                         align = "center",
+                         status = "primary",
+                         div(style = "margin-top: 20px;",
+                             htmlOutput("info_league_overview_table"))
                        )
+                    
                      )),
                      # fluidRow(
                      #   column(

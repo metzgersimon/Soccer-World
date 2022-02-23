@@ -39,8 +39,8 @@ ui <- dashboardPage(
       menuItem("About", tabName = "about", icon = icon("address-book"))
     )),
   dashboardBody(
-    tags$head(# change the front for the tab
-      tags$style("*{font-family: Century Gothic;}")),
+    # tags$head(# change the front for the tab
+    #   tags$style("*{font-family: Century Gothic;}")),
     # set the theme for the ui
     shinyDashboardThemes(theme = "grey_dark"),
     # use the shinyjs package to improve the user experience

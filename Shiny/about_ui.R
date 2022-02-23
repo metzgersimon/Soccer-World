@@ -6,7 +6,7 @@ tab_about_ui <- function() {
                                div(
                                  style = paste0(
                                    #  "border: solid 1px #000000;",
-                                   "margin-top: 20px; font-family: Century Gothic"
+                                   "margin-top: 20px;"
                                  ),
                                  # first paragraph for the project infos and goals
                                  h2(em("Project Information and Goal")),
