@@ -148,10 +148,7 @@ prediction_model_server <- function(input, output, session) {
   
   output$prediction_model_historical_results <- renderReactable({
     req(input$prediction_model_league_selection)
-    req(input$prediction_model_season_selection)
-    req(input$prediction_model_matchday_selection)
-    req(input$prediction_model_bm)
-    
+
     if (input$prediction_model_lineups == FALSE) {
       result <- all_leagues_historical_predictions %>%
         filter(
@@ -188,6 +185,9 @@ prediction_model_server <- function(input, output, session) {
           striped = TRUE,
           highlight = TRUE,
           borderless = TRUE,
+          defaultPageSize = 30,
+          showPageInfo = FALSE,
+          showPagination = FALSE,
           # set the theme for the table
           theme = reactableTheme(
             borderColor = "#000000",
@@ -266,6 +266,9 @@ prediction_model_server <- function(input, output, session) {
           striped = TRUE,
           highlight = TRUE,
           borderless = TRUE,
+          defaultPageSize = 30,
+          showPageInfo = FALSE,
+          showPagination = FALSE,
           # set the theme for the table
           theme = reactableTheme(
             borderColor = "#000000",
@@ -298,5 +301,139 @@ prediction_model_server <- function(input, output, session) {
         )
     }
   })
+  
+  
+  
+  output$prediction_model_future_results <- renderReactable({
+    req(input$prediction_model_league_selection)
+
+    if (input$prediction_model_lineups == FALSE) {
+      result <- all_leagues_historical_predictions %>%
+        filter(
+          league_name == input$prediction_model_league_selection,
+          fixture_date >= Sys.Date(),
+          is.na(prediction) == FALSE
+        ) %>%
+        mutate(
+          prediction = round(prediction, 0)
+        ) %>%
+        select(
+          fixture_date,
+          club_name_home,
+          club_name_away,
+          prediction
+        )
+      
+      result %>%
+        reactable(
+          defaultColDef = colDef(
+            align = "center",
+            minWidth = 150,
+            headerStyle = list(background = "darkblue")
+          ),
+          # searchable = TRUE,
+          striped = TRUE,
+          highlight = TRUE,
+          borderless = TRUE,
+          pagination = FALSE,
+          defaultPageSize = 30,
+          showPageInfo = FALSE,
+          showPagination = FALSE,
+          # set the theme for the table
+          theme = reactableTheme(
+            borderColor = "#000000",
+            color = "#000000",
+            backgroundColor = "#004157",
+            highlightColor = "#2f829e",
+            cellPadding = "8px 12px",
+            style = list(color = "white")
+            # searchInputStyle = list(width = "100%",
+            #                         color = "black")
+          )
+          ,
+          # modify the layout and names of the columns
+          columns = list(
+            fixture_date = colDef(name = "Date",
+                                  align = "left"),
+            club_name_home = colDef(name = "Home team",
+                                    align = "center"),
+            club_name_away = colDef(name = "Away team",
+                                    align = "center"),
+            prediction = colDef(name = "Predicted Goal Difference",
+                                align = "center")
+            
+          )
+        )
+    } else if (input$prediction_model_lineups == TRUE) {
+      prediction_with_lineup <-
+        all_leagues_historical_lineups_predictions %>%
+        filter(
+          league_name == input$prediction_model_league_selection,
+          fixture_date >= Sys.Date(),
+          is.na(prediction) == FALSE
+        )  %>%
+        mutate(prediction = round(prediction, 0)) %>% select(prediction) %>% rename("prediction_withlineup" =
+                                                                                      "prediction")
+      
+      result <- all_leagues_historical_predictions %>%
+        filter(
+          league_name == input$prediction_model_league_selection,
+          fixture_date >= Sys.Date(),
+          is.na(prediction) == FALSE
+        ) %>%
+        mutate(
+          prediction = round(prediction, 0)
+        ) %>%
+        select(
+          fixture_date,
+          club_name_home,
+          club_name_away,
+          prediction
+        )
+      
+      result %>% cbind(prediction_with_lineup) %>%
+        reactable(
+          defaultColDef = colDef(
+            align = "center",
+            minWidth = 150,
+            headerStyle = list(background = "darkblue")
+          ),
+          # searchable = TRUE,
+          striped = TRUE,
+          highlight = TRUE,
+          borderless = TRUE,
+          defaultPageSize = 30,
+          showPageInfo = FALSE,
+          showPagination = FALSE,
+          # set the theme for the table
+          theme = reactableTheme(
+            borderColor = "#000000",
+            color = "#000000",
+            backgroundColor = "#004157",
+            highlightColor = "#2f829e",
+            cellPadding = "8px 12px",
+            style = list(color = "white")
+            # searchInputStyle = list(width = "100%",
+            #                         color = "black")
+          )
+          ,
+          # modify the layout and names of the columns
+          columns = list(
+            fixture_date = colDef(name = "Date",
+                                  align = "left"),
+            club_name_home = colDef(name = "Home club",
+                                    align = "center"),
+            club_name_away = colDef(name = "Away club",
+                                    align = "center"),
+            prediction = colDef(name = "Prediction without lineup",
+                                align = "center"),
+            prediction_withlineup = colDef(name = "Prediction with lineup",
+                                           align = "center")
+          )
+        )
+    }
+  })
+  
+  
   
 }
