@@ -1,6 +1,10 @@
 setwd("/srv/shiny-server/Soccer-Prediction-App")
 source("global.R")
 source("Get_data_API.R")
+source("Model/xgb_weekly.R")
+source("Model/Prepare Data.R")
+source("Model/Combining data.R")
+
 
 # setup a connection to the database
 con <- dbConnect(RMariaDB::MariaDB(), 
