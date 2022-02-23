@@ -28,7 +28,27 @@ for (id in current$fixture_id) {
   new_lineups <- rbind(new_lineups, get_fixture_lineups(id))
 }
 
+# write to database
 dbWriteTable(con, "all_leagues_fixture_lineups", new_lineups,
+             overwrite = FALSE, append = TRUE)
+
+
+# reload most recent frame
+all_leagues_fixture_lineups <-
+  tbl(con, "all_leagues_fixture_lineups") %>% data.frame()
+
+agg <- NULL
+for (i in 1:length(new_lineups$fixture_id)) {
+  
+  ptm <- proc.time()
+  temp <- prepare_lineup_data_subset(new_lineups$fixture_id[i], all_leagues_fixture_lineups)
+  agg <- rbind(agg, temp)
+  print(proc.time() - ptm)
+  
+}
+
+# write new data to all_leagues_lineups_agg
+dbWriteTable(con, "all_leagues_lineups_agg", agg, 
              overwrite = FALSE, append = TRUE)
 
 Sys.sleep(10)
