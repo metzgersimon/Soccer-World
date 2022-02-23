@@ -391,6 +391,8 @@ information_league_match_server <- function(input, output, session){
     # league <- "Bundesliga"
     # number_of_rounds <- 34
     
+    
+    
     season_half_selection <- input$info_match_season_half
     season_selection <- input$info_match_season
     
@@ -410,8 +412,7 @@ information_league_match_server <- function(input, output, session){
              club_name_home %in% c(input$info_match_team1, input$info_match_team2),
              club_name_away %in% c(input$info_match_team1, input$info_match_team2)) %>%
       data.frame()
-    
-    
+
     # extract the number of matchdays
     number_of_rounds <- all_leagues_matches %>%
       filter(league_name == input$info_match_league,
@@ -436,73 +437,6 @@ information_league_match_server <- function(input, output, session){
         filter(league_round > rounds_segment)
     }
     
-    
-    # created empty variables to store the data
-#    selected_match_data <- NULL
-    # and to track the loop behavior
-#    loop_ended <- FALSE
-    
-    # iterate over all selected matchdays
-#    for(matchday in important_matchdays){
-      # for(i in 1:length(current_season_lineups)){
-      # select the matchday for the given iteration
-#      curr_matchday <- current_season_lineups[[matchday]]
-      # curr_match_infos <- current_season_lineups[[i]]
-      
-#      curr_match <- curr_match_infos[[1]]
-      
-#      curr_match_infos <- curr_match_infos[-1]
-      
-      # iterate over all matches available in the matchday
-      # for(j in 1:length(curr_matchday)){
-      # for(j in 1:length(curr_match)){
-      # select the current match
-      # curr_match <- curr_matchday[[j]]
-#      team_1 <- curr_match[[1]]
-#      team_1$team_info[[1]]$team_name <- sapply(team_1$team_info[[1]]$team_name,
-#                                                club_name_mapping)
-#      team_2 <- curr_match[[2]] 
-#      team_2$team_info[[1]]$team_name <- sapply(team_2$team_info[[1]]$team_name,
-#                                                club_name_mapping)
-      # check if the teams given via the user input match
-      # with the current given team names in the iteration
-      # if(input$info_match_team1 %in% curr_match$team_names &
-      #    input$info_match_team2 %in% curr_match$team_names){
-      
- #     if(input$info_match_team1 %in% c(team_1$team_info[[1]]$team_name,
- #                                      team_2$team_info[[1]]$team_name) &
- #        input$info_match_team2 %in% c(team_1$team_info[[1]]$team_name,
- #                                      team_2$team_info[[1]]$team_name)){
-        
-        
-        # if(team1 %in% c(team_1$team_info[[1]]$team_name[[1]],
-        #                team_2$team_info[[1]]$team_name[[1]]) &
-        #    team2 %in% c(team_1$team_info[[1]]$team_name[[1]],
-        #                 team_2$team_info[[1]]$team_name[[1]])){
-        
-        # if so, get the match data because it is the right match
-#        selected_match_data <- list(team_1, team_2, curr_match_infos)
-        # set the variable to TRUE
-#        loop_ended <- TRUE
-        # and break the inner loop
-#        break
-        # }
-#      }
-      # if the variable is set to TRUE (right match found),
-      # we want also to break the outer loop
-#      if(loop_ended){break}
-#    }
-    
-    # if the data is empty, i.e., the match is not in the played matches
-    # we want to show a error message to inform the user that something went wrong
-#    if(length(selected_match_data) == 0){
-#      shinyalert(title = "Error: no data avilable for your selection!",
-#                 text = paste0("Probably the match for the selected teams is not ",
-#                               "yet played in the given season half."),
-#                 type = "error"
-#      )
-#      return(selected_match_data)
-#    }
 
     # if there is no data available, throw an error
     if(length(match_lineups) == 0) {
@@ -837,17 +771,7 @@ information_league_match_server <- function(input, output, session){
     starting_lineups_home <- starting_lineups_home %>%
       separate(col = player_grid, into = c("row_pos", "col_pos"),
                sep = ":")
-    
-    # save(starting_lineups_home, file = "test.RData")
-    # fixture_id <- 587177
-    # lineup_example_2021 <- get_fixture_lineups(fixture_id)
-    # lineup <- lineup_example_2021[[1]]$starting_players[[1]]
-    # home_lineup <- #lineup %>%
-    #   home_lineup %>%
-    # separate(col = player_grid, into = c("row_pos", "col_pos"),
-    #          sep = ":")
-    
-    # plot_ly()
+
     
     plot_ly(starting_lineups_home,
             x = ~col_pos,
@@ -859,13 +783,7 @@ information_league_match_server <- function(input, output, session){
                           color = "black")) %>%
       # add_markers(size = 15) %>%
       add_text(textpostion = "inner") %>%
-      layout(#images = list(
-        # source = base64enc::dataURI(file = "www/soccer_field.png"),
-        # x = 0,
-        # y = 1,
-        # sizex = 10,
-        # sizey = 1.05,
-        # layer = "below"),
+      layout(
         xaxis = list(title = "",
                      showticklabels = FALSE,
                      showgrid = FALSE,
@@ -913,21 +831,13 @@ information_league_match_server <- function(input, output, session){
     plot_ly(starting_lineups_away,
             x = ~col_pos,
             y = ~row_pos,
-            #size = 4,
             marker = list(size = 25,
                           color = "black"),
             text = ~player_number,
             hoverinfo = "text",
             hovertext = ~paste0(player_name)) %>%
-      # add_trace() %>%
       add_text(textpostion = "inner") %>%
-      layout(#images = list(
-        # source = base64enc::dataURI(file = "www/soccer_field.png"),
-        # x = 0,
-        # y = 1,
-        # sizex = 10,
-        # sizey = 1.05,
-        # layer = "below"),
+      layout(
         xaxis = list(title = "",
                      showticklabels = FALSE,
                      showgrid = FALSE,
@@ -953,8 +863,8 @@ information_league_match_server <- function(input, output, session){
     # get the third element of the lineups reactive function
     # which contains the starting formations
     lineups_data <- lineups_reactive()[[1]]
-    # lineups_data2 <- lineups_data[[1]]
-    team_name <- lineups_data$team_name %>% unique()
+    # lineups_data2 <- lineup_info [[1]]
+    team_name <- lineups_data[[1]]$team_name %>% unique()
     
     team_name
   })
@@ -964,9 +874,9 @@ information_league_match_server <- function(input, output, session){
     
     # get the third element of the lineups reactive function
     # which contains the starting formations
-    lineups_data <- lineups_reactive()[[2]]
+    lineups_data <- lineups_reactive()[[1]]
     # lineups_data2 <- lineups_data[[2]]
-    team_name <- lineups_data$team_name %>% unique()
+    team_name <- lineups_data[[2]]$team_name %>% unique()
     
     team_name
   })
@@ -986,12 +896,8 @@ information_league_match_server <- function(input, output, session){
     
     # get the data
     lineups <- lineups_reactive()[[1]]
-    # lineups <- list(starting_lineups_home,
-    #                 starting_lineups_away,
-    #                 selected_match_data[[3]],
-    #                 selected_match_data)
     
-    # if there is no data, do nothing (plot remains empty)
+    # if there is no data, do nothing (table remains empty)
     if(length(lineups) == 0){
       return()
     }
@@ -999,42 +905,45 @@ information_league_match_server <- function(input, output, session){
     # extract the data for the home lineups
     starting_lineups_home <- lineups[[1]]
     
-    # player infos
+    season_selection <- as.numeric(str_split(input$info_match_season,
+                                             pattern = "/")[[1]][1])
+    
+    # 
+    # team1 <- "FC Bayern Munich"
+    # team2 <- "FC Augsburg"
+    # season_selection <- 2017
+    # league <- "Bundesliga"
+    # season_half <- "First half"
+    
+    # filter for the player infos of the lineups in the historical stats
     starting_lineups_home_player_infos <- all_leagues_player_stats %>%
       filter(player_id %in% starting_lineups_home$player_id,
              league_name == input$info_match_league,
-             league_season == input$info_match_season)#,
-             # club_name_home %in% c(input$info_match_team1,
-             #                       input$info_match_team2),
-             # club_name_away %in% c(input$info_match_team1,
-             #                       input$info_match_team2))
+             league_season == season_selection)
     
-    starting_lineups_home_player_infos <- all_leagues_player_stats %>%
-      filter(player_id %in% starting_lineups_home$player_id,
-             league_name == "Bundesliga",
-             league_season == 2016)#,
-    # club_name_home %in% c("FC Bayern Munich",
-    #                       "SV Darmstadt 98"),
-    # club_name_away %in% c("FC Bayern Munich",
-    #                       "SV Darmstadt 98"))
+    # starting_lineups_home_player_infos <- all_leagues_player_stats %>%
+    #   filter(player_id %in% starting_lineups_home$player_id,
+    #          league_name == league,
+    #          league_season == season_selection)
     
     # aggregate the data for each player in the starting lineup
     home_player_infos_agg <- starting_lineups_home_player_infos %>%
-      group_by(player_id, player_name, games_position, games_number) %>%
+      group_by(player_id, games_number) %>%
       summarize(across(c(games_minutes, games_rating, goals_total, shots_total, passes_total,
                          passes_accuracy, duels_total, duels_won),
                        ~ mean(.x, na.rm = TRUE))) %>%
       ungroup() %>%
-      select(-player_id) %>%
-      unique()
+      unique() %>%
+      inner_join(starting_lineups_home, by = "player_id") %>%
+      # drop columns we do not want to display
+      # and reorder the frame
+      select(player_name, player_number, games_minutes:duels_won)
     
-    # convert the position into a factor
-    home_player_infos_agg$games_position <- factor(home_player_infos_agg$games_position,
-                                                   levels = c("G", "D", "M", "F"))
+    
+    
 
-    # reorder the data set based on this factor
+    # do some preparation steps
     home_player_infos_agg <- home_player_infos_agg %>%
-      arrange(games_position) %>%
       # round the values
       mutate(# create a variable for the successful duels
         successful_duels = (duels_won / duels_total) * 100,
@@ -1042,29 +951,26 @@ information_league_match_server <- function(input, output, session){
                ~ round(.x, digits = 0)),
         # divide the passing accuracy/duel quota by 100 to present them as percentages
         passes_accuracy = passes_accuracy / 100,
-        successful_duels = successful_duels / 100,
-        # rename the positions
-        games_position = ifelse(games_position == "G",
-                                "Goal", 
-                                ifelse(games_position == "D",
-                                       "Defense", 
-                                       ifelse(games_position == "M",
-                                              "Midfield",
-                                              ifelse(games_position == "F",
-                                                     "Attack",
-                                                     games_position))))) %>%
+        successful_duels = successful_duels / 100) %>%
       # drop columns
-      select(-c(duels_total, duels_won))
+      select(-c(duels_total, duels_won, passes_total))
+    
+    
+    
+    # if there is not for every player a statistic (possibly due to transfer)
+    # show a error message to inform the user that something went wrong
+    if(nrow(home_player_infos_agg) < 11){
+      shinyalert(title = "Error: Data about players missing",
+                 text = paste0("There is data about at least one player missing.",
+                               "This is possible due to transfers from another league."),
+                 type = "error"
+      )
+    }
     
     # create the actual reactable (drop the team names)
     reactable(home_player_infos_agg,
               defaultPageSize = 11,
               # # set general options for the table
-              # # such as the possibility to filter or sort the table
-              # # but also insert a search field
-              # sortable = TRUE,
-              # filterable = TRUE,
-              # searchable = TRUE,
               highlight = TRUE,
               borderless = TRUE, 
               # set the theme for the table
@@ -1080,11 +986,10 @@ information_league_match_server <- function(input, output, session){
               # modify the layout and names of the columns
               columns = list(
                 player_name = colDef(name = "Player",
+                                     minWidth = 125,
                                      align = "left"),
-                games_number = colDef(name = "Number",
+                player_number = colDef(name = "Number",
                                       align = "center"),
-                games_position = colDef(name = "Position",
-                                     align = "center"),
                 games_minutes = colDef(name = "Minutes",
                                      align = "center"),
                 games_rating = colDef(name = "Rating",
@@ -1093,8 +998,6 @@ information_league_match_server <- function(input, output, session){
                                         align = "center"),
                 shots_total = colDef(name = "Shots",
                                         align = "center"),
-                passes_total = colDef(name = "Passes",
-                                       align = "center"),
                 passes_accuracy = colDef(name = "Pass Accuracy",
                                       align = "center",
                                       format = colFormat(percent = TRUE)),
@@ -1129,42 +1032,31 @@ information_league_match_server <- function(input, output, session){
     # extract the data for the away lineups
     starting_lineups_away <- lineups[[2]]
     
+    season_selection <- as.numeric(str_split(input$info_match_season,
+                                             pattern = "/")[[1]][1])
+    
     # player infos
     starting_lineups_away_player_infos <- all_leagues_player_stats %>%
       filter(player_id %in% starting_lineups_away$player_id,
              league_name == input$info_match_league,
-             league_season == input$info_match_season)#,
-    # club_name_home %in% c(input$info_match_team1,
-    #                       input$info_match_team2),
-    # club_name_away %in% c(input$info_match_team1,
-    #                       input$info_match_team2))
-    
-    # starting_lineups_away_player_infos <- all_leagues_player_stats %>%
-    #   filter(player_id %in% starting_lineups_away$player_id,
-    #          league_name == "Bundesliga",
-    #          league_season == 2016)#,
-    # club_name_home %in% c("FC Bayern Munich",
-    #                       "SV Darmstadt 98"),
-    # club_name_away %in% c("FC Bayern Munich",
-    #                       "SV Darmstadt 98"))
+             league_season == season_selection)
     
     # aggregate the data for each player in the starting lineup
     away_player_infos_agg <- starting_lineups_away_player_infos %>%
-      group_by(player_id, player_name, games_position, games_number) %>%
+      group_by(player_id, games_number) %>%
       summarize(across(c(games_minutes, games_rating, goals_total, shots_total, passes_total,
                          passes_accuracy, duels_total, duels_won),
                        ~ mean(.x, na.rm = TRUE))) %>%
       ungroup() %>%
-      select(-player_id) %>%
-      unique()
+      unique() %>%
+      inner_join(starting_lineups_away, by = "player_id") %>%
+      # drop columns we do not want to display
+      # and reorder the frame
+      select(player_name, player_number, games_minutes:duels_won)
+
     
-    # convert the position into a factor
-    away_player_infos_agg$games_position <- factor(away_player_infos_agg$games_position,
-                                                   levels = c("G", "D", "M", "F"))
-    
-    # reorder the data set based on this factor
+    # do some final mutations
     away_player_infos_agg <- away_player_infos_agg %>%
-      arrange(games_position) %>%
       # round the values
       mutate(# create a variable for the successful duels
         successful_duels = (duels_won / duels_total) * 100,
@@ -1172,19 +1064,20 @@ information_league_match_server <- function(input, output, session){
                ~ round(.x, digits = 0)),
         # divide the passing accuracy/duel quota by 100 to present them as percentages
         passes_accuracy = passes_accuracy / 100,
-        successful_duels = successful_duels / 100,
-        # rename the positions
-        games_position = ifelse(games_position == "G",
-                                "Goal", 
-                                ifelse(games_position == "D",
-                                       "Defense", 
-                                       ifelse(games_position == "M",
-                                              "Midfield",
-                                              ifelse(games_position == "F",
-                                                     "Attack",
-                                                     games_position))))) %>%
+        successful_duels = successful_duels / 100) %>%
       # drop columns
-      select(-c(duels_total, duels_won))
+      select(-c(duels_total, duels_won, passes_total))
+    
+    
+    # if there is not for every player a statistic (possibly due to transfer)
+    # show a error message to inform the user that something went wrong
+    if(nrow(away_player_infos_agg) < 11){
+      shinyalert(title = "Error: Data about players missing",
+                 text = paste0("There is data about at least one player missing.",
+                               "This is possible due to transfers from another league."),
+                 type = "error"
+      )
+    }
     
     # create the actual reactable (drop the team names)
     reactable(away_player_infos_agg,
@@ -1210,11 +1103,10 @@ information_league_match_server <- function(input, output, session){
               # modify the layout and names of the columns
               columns = list(
                 player_name = colDef(name = "Player",
+                                     minWidth = 125,
                                      align = "left"),
-                games_number = colDef(name = "Number",
+                player_number = colDef(name = "Number",
                                       align = "center"),
-                games_position = colDef(name = "Position",
-                                        align = "center"),
                 games_minutes = colDef(name = "Minutes",
                                        align = "center"),
                 games_rating = colDef(name = "Rating",
@@ -1223,8 +1115,6 @@ information_league_match_server <- function(input, output, session){
                                      align = "center"),
                 shots_total = colDef(name = "Shots",
                                      align = "center"),
-                passes_total = colDef(name = "Passes",
-                                      align = "center"),
                 passes_accuracy = colDef(name = "Pass Accuracy",
                                          align = "center",
                                          format = colFormat(percent = TRUE)),
@@ -1235,102 +1125,7 @@ information_league_match_server <- function(input, output, session){
     )
   })
   
-  
-  # # creates the table for the home substitute lineups for a selected match
-  # output$info_match_match_lineups_home <- renderReactable({
-  #   # wait until the input of the lineups_reactive function is given
-  #   req(lineups_reactive())
-  #   
-  #   # get the data
-  #   lineups <- lineups_reactive()
-  #   
-  #   # if there is no data, do nothing (plot remains empty)
-  #   if(length(lineups) == 0){
-  #     return()
-  #   }
-  #   
-  #   # extract the data for the home lineups
-  #   starting_lineups_home <- lineups[[1]]
-  #   
-  #   # create the actual reactable (drop the team names)
-  #   reactable(starting_lineups_home[, -3],
-  #             defaultPageSize = 11,
-  #             # # set general options for the table
-  #             # # such as the possibility to filter or sort the table
-  #             # # but also insert a search field
-  #             # sortable = TRUE,
-  #             # filterable = TRUE,
-  #             # searchable = TRUE,
-  #             highlight = TRUE,
-  #             borderless = TRUE, 
-  #             # set the theme for the table
-  #             theme = reactableTheme(
-  #               borderColor = "#000000",
-  #               color = "#000000",
-  #               backgroundColor = "#004157",
-  #               highlightColor = "#2f829e",
-  #               cellPadding = "8px 12px",
-  #               style = list(color = "white"),
-  #               searchInputStyle = list(width = "100%")
-  #             ), 
-  #             # modify the layout and names of the columns
-  #             columns = list(
-  #               player_name = colDef(name = "Player",
-  #                                    align = "left"),
-  #               player_position = colDef(name = "Position",
-  #                                        align = "center"))
-  #   )
-  #   
-  # })
-  # 
-  # 
-  # # creates the table for the away substitute lineups for a selected match
-  # output$info_match_match_lineups_away <- renderReactable({
-  #   # wait until the input of the lineups_reactive function is given
-  #   req(lineups_reactive())
-  #   
-  #   # get the data
-  #   lineups <- lineups_reactive()
-  #   
-  #   # if there is no data, do nothing (plot remains empty)
-  #   if(length(lineups) == 0){
-  #     return()
-  #   }
-  #   
-  #   # extract the data for the away lineups
-  #   starting_lineups_away <- lineups[[2]]
-  #   
-  #   # create the actual reactable (drop the team names)
-  #   reactable(starting_lineups_away[, -3],
-  #             defaultPageSize = 11,
-  #             # # set general options for the table
-  #             # # such as the possibility to filter or sort the table
-  #             # # but also insert a search field
-  #             # sortable = TRUE,
-  #             # filterable = TRUE,
-  #             # searchable = TRUE,
-  #             highlight = TRUE,
-  #             borderless = TRUE, 
-  #             # set the theme for the table
-  #             theme = reactableTheme(
-  #               borderColor = "#000000",
-  #               color = "#000000",
-  #               backgroundColor = "#004157",
-  #               highlightColor = "#2f829e",
-  #               cellPadding = "8px 12px",
-  #               style = list(color = "white"),
-  #               searchInputStyle = list(width = "100%")
-  #             ), 
-  #             # modify the layout and names of the columns
-  #             columns = list(
-  #               player_name = colDef(name = "Player",
-  #                                    align = "left"),
-  #               player_position = colDef(name = "Position",
-  #                                        align = "center"))
-  #   )
-  #   
-  #   
-  # })
+
   
   ######################## head to heads begins
   output$Aggregate_wins_1 <- renderValueBox({
