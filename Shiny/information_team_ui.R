@@ -268,7 +268,7 @@ tab_information_team_ui <- function(){
               tabsetPanel(
                 type = "pills",
                 tabPanel(
-                  div("Market value", style = "color: LightSkyBlue"), # market value over time 
+                  div("Market value", style = "color: LightSteelBlue"), # market value over time 
                   fluidRow(
                     column(width = 12,
                            align = "center",
@@ -280,7 +280,7 @@ tab_information_team_ui <- function(){
                     )
                   ),
                 tabPanel(
-                  div("FIFA Rating", style = "color: LightSkyBlue"), # fifa rating over time
+                  div("FIFA Rating", style = "color: LightSteelBlue"), # fifa rating over time
                     fluidRow(
                       column(width = 12,
                              align = "center",
@@ -292,7 +292,7 @@ tab_information_team_ui <- function(){
                     )
                   ),
                 tabPanel(
-                  div("Transfers", style = "color: LightSkyBlue"), # transfer over time
+                  div("Transfers", style = "color: LightSteelBlue"), # transfer over time
                   fluidRow(
                     column(width = 12,
                            align = "center",
