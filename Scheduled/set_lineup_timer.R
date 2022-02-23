@@ -32,7 +32,7 @@ slots <- timeslots %>%
 for (sl in slots[[1]]) {
   # add the right syntax for skript
   cron_add(
-           command = "Rscript /home/ubuntu/project/Soccer-Prediction-App/Scheduled/lineup_cron.R", 
+           command = "Rscript /srv/shiny-server/Soccer-Prediction-App/Scheduled/lineup_cron.R", 
            frequency = sl, 
            ask = FALSE,
            user = "ubuntu",
