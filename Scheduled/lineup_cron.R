@@ -31,15 +31,22 @@ for (id in current$fixture_id) {
 dbWriteTable(con, "all_leagues_fixture_lineups", new_lineups,
              overwrite = FALSE, append = TRUE)
 
+Sys.sleep(10)
+
 source("global.R")
 
 # load the model here 
+predicted_matches <- train_xgb_lin()
 
-# then get the full lineup model data 
+# connect to database
+con <- dbConnect(RMariaDB::MariaDB(), 
+                 host='127.0.0.1',
+                 dbname='Soccer_Prediction_Data',
+                 username='root',
+                 password='my-secret-pw')
 
-# then filter fixture ids only in new_lineups
 
-# write predictions to all_leagues_historical_lineups_predictions
-new_lineups
+dbWriteTable(con, "all_leagues_lineups_predictions", predicted_matches,
+             overwrite = FALSE, append = TRUE)
 
 dbDisconnect(con)
