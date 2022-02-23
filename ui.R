@@ -4,6 +4,7 @@ ui <- dashboardPage(
   dashboardSidebar(# create a sidebarmenu with menu items and subitems (subpages)
     sidebarMenu(
       menuItem("Home", tabName = "home", icon = icon("home")),
+      menuItem("Wiki", tabName = "Wiki", icon = icon("address-book")),
       menuItem(
         "Information",
         tabName = "information",
@@ -49,6 +50,7 @@ ui <- dashboardPage(
     # call the sub-uis for the several pages
     tabItems(
       tab_home_ui(),
+      tab_wiki_ui(),
       tab_information_league_general_ui(),
       tab_information_league_match_ui(),
       tab_information_team_ui(),

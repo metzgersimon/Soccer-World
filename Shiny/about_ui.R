@@ -39,6 +39,28 @@ tab_about_ui <- function() {
                                    "6. ",
                                    a(href = "https://www.oddsportal.com/", "Oddsportal"),
                                    ": provides informations of odds and odds comparison of different leagues."
+                                 ),br(),
+                                 h2(em("Image Credits")), # image credits
+                                 p(
+                                   "1. ",
+                                   a(href = "https://dashboard.api-football.com/", "Football API"),
+                                   ": provides venue image, player photos, league logo and club logo.",
+                                   br(),
+                                   "2. ",
+                                   a(href = "https://de.cleanpng.com/png-m8uxqm/", "Football Icon"),
+                                   ": provides event icon of football in match tab.",
+                                   br(),
+                                   "3. ",
+                                   a(href = "https://de.cleanpng.com/png-wysgn7/", "Red Cards Icon"),
+                                   ": provides event icon of red cards in match tab.",
+                                   br(),
+                                   "4. ",
+                                   a(href = "https://de.cleanpng.com/png-6s8rcs/", "Yellow Cards Icon"),
+                                   ": provides event icon of yellow cards in match tab.",
+                                   br(),
+                                   "5. ",
+                                   a(href = "https://de.cleanpng.com/png-rcv77t/", "Change Icon"),
+                                   ": provides event icon of change in match tab."
                                  ),
                                  br(),
                                  h2(em("Method")), 
