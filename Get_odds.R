@@ -75,6 +75,6 @@ con <- dbConnect(RMariaDB::MariaDB(),
                  username='dev',
                  password='worldpw')
 
-#dbWriteTable(con, "all_leagues_odds_live", odds_today, 
-#             overwrite = FALSE, append = TRUE)
+dbWriteTable(con, "all_leagues_odds_live", odds_today, 
+             overwrite = FALSE, append = TRUE)
 
