@@ -1,7 +1,9 @@
 ########## fit and predict weekly model ############
 setwd("/srv/shiny-server/Soccer-Prediction-App")
 source("global.R")
-source("/Model/xgb_weekly.R")
+source("Model/xgb_weekly.R")
+source("Model/Prepare Data.R")
+source("Model/Combining data.R")
 
 # setup a connection to the database
 con <- dbConnect(RMariaDB::MariaDB(), 
@@ -14,12 +16,9 @@ con <- dbConnect(RMariaDB::MariaDB(),
 # get the already available data 
 all_leagues_historical_predictions <- tbl(con, "all_leagues_historical_predictions") %>% data.frame()
 
-something <- train_xgb()
+future_predictions <- train_xgb()
 
-
- 
-
-new <- something %>%
+new <- future_predictions %>%
   filter(!(fixture_id %in% all_leagues_historical_predictions$fixture_id))
 
 if(nrow(new) != 0) {
@@ -28,10 +27,6 @@ if(nrow(new) != 0) {
                overwrite = FALSE, append = TRUE)
   
 }
-
-
-
-
 
 
 
