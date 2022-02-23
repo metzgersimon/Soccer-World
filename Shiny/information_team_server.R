@@ -364,15 +364,15 @@ information_team_server <- function(input, output, session) {
                 striped = TRUE,
                 highlight = TRUE,
                 # set the theme for the table
-                theme = reactableTheme(
-                  borderColor = "#000000",
-                  color = "#000000",
-                  backgroundColor = "#004157",
-                  highlightColor = "#2f829e",
-                  cellPadding = "8px 12px",
-                  style = list(color = "white"),
-                 # searchInputStyle = list(width = "100%")
-                ), 
+      theme = reactableTheme(
+        borderColor = "#BFC9D1",
+        color = "#BFC9D1",
+        backgroundColor = "#567895",
+        highlightColor = "#CE8B65",
+        cellPadding = "8px 12px",
+        style = list(color = "white"),
+        searchInputStyle = list(width = "100%")
+      ), 
                 # modify the layout and names of the columns
                 columns = list(
                   fixture_date = colDef(name = "Date",
@@ -432,16 +432,15 @@ information_team_server <- function(input, output, session) {
         borderless = TRUE,
         striped = TRUE,
         # set the theme for the table
-        theme = reactableTheme(
-          borderColor = "#000000",
-          color = "#000000",
-          backgroundColor = "#004157",
-          highlightColor = "#2f829e",
-          cellPadding = "8px 12px",
-          style = list(color = "white"),
-          searchInputStyle = list(width = "100%",
-                                  color = "black")
-        ), 
+      theme = reactableTheme(
+        borderColor = "#BFC9D1",
+        color = "#BFC9D1",
+        backgroundColor = "#567895",
+        highlightColor = "#CE8B65",
+        cellPadding = "8px 12px",
+        style = list(color = "white"),
+        searchInputStyle = list(width = "100%")
+      ), 
         # modify the layout and names of the columns
         columns = list(
           fixture_date = colDef(name = "Date",
@@ -617,12 +616,13 @@ information_team_server <- function(input, output, session) {
         showPagination = FALSE,
         # set the theme for the table
         theme = reactableTheme(
-          borderColor = "#000000",
-          color = "#000000",
-          backgroundColor = "#004157",
-          highlightColor = "#2f829e",
+          borderColor = "#BFC9D1",
+          color = "#BFC9D1",
+          backgroundColor = "#567895",
+          highlightColor = "#CE8B65",
           cellPadding = "8px 12px",
-          style = list(color = "white")
+          style = list(color = "white"),
+          searchInputStyle = list(width = "100%")
         ) ,       columns = list(
           biggest_streak_wins = colDef(name = "wins",
                                   align = "left"),
@@ -661,12 +661,13 @@ information_team_server <- function(input, output, session) {
         showPagination = FALSE,
         # set the theme for the table
         theme = reactableTheme(
-          borderColor = "#000000",
-          color = "#000000",
-          backgroundColor = "#004157",
-          highlightColor = "#2f829e",
+          borderColor = "#BFC9D1",
+          color = "#BFC9D1",
+          backgroundColor = "#567895",
+          highlightColor = "#CE8B65",
           cellPadding = "8px 12px",
-          style = list(color = "white")
+          style = list(color = "white"),
+          searchInputStyle = list(width = "100%")
         ) ,       columns = list(
           biggest_wins_home_diff  = colDef(name = "wins",
                                        align = "left"),
@@ -705,12 +706,13 @@ information_team_server <- function(input, output, session) {
         showPagination = FALSE,
         # set the theme for the table
         theme = reactableTheme(
-          borderColor = "#000000",
-          color = "#000000",
-          backgroundColor = "#004157",
-          highlightColor = "#2f829e",
+          borderColor = "#BFC9D1",
+          color = "#BFC9D1",
+          backgroundColor = "#567895",
+          highlightColor = "#CE8B65",
           cellPadding = "8px 12px",
           style = list(color = "white"),
+          searchInputStyle = list(width = "100%")
         ) ,       columns = list(
           biggest_wins_away_diff   = colDef(name = "wins",
                                            align = "left"),
@@ -755,17 +757,17 @@ information_team_server <- function(input, output, session) {
         x = ~ matchday,
         y = ~ value,
         color =  ~ variable,
-        type = "scatter",
-        visible = "legendonly"
+        type = "scatter"
+        # visible = "legendonly"
       ) %>%
       layout(
         title = list(text = "stats as home team over matchday", y = 0.95, x = 0.5),
         yaxis = list(title = "Value"),
         xaxis = list(title = "Matchday"),
         font = list(color = "white"),
-        plot_bgcolor = "rgba(0, 65, 87, 10)",
-        paper_bgcolor = "rgba(0, 65, 87, 10)",
-        fig_bg_color = "rgba(0, 65, 87, 10)"
+        plot_bgcolor = "#567895",
+        paper_bgcolor = "#567895",
+        fig_bg_color = "#567895"
       )
     
     ts_home
@@ -802,17 +804,17 @@ information_team_server <- function(input, output, session) {
         x = ~ matchday,
         y = ~ value,
         color =  ~ variable,
-        type = "scatter",
-        visible = "legendonly"
+        type = "scatter"
+        # visible = "legendonly"
       ) %>%
       layout(
         title = list(text = "stats as away team over matchday", y = 0.95, x = 0.5),
         yaxis = list(title = "Value"),
         xaxis = list(title = "Matchday"),
         font = list(color = "white"),
-        plot_bgcolor = "rgba(0, 65, 87, 10)",
-        paper_bgcolor = "rgba(0, 65, 87, 10)",
-        fig_bg_color = "rgba(0, 65, 87, 10)"
+        plot_bgcolor = "#567895",
+        paper_bgcolor = "#567895",
+        fig_bg_color = "#567895"
       )
     
     ts_away
@@ -882,14 +884,13 @@ information_team_server <- function(input, output, session) {
               borderless = TRUE, 
               # set the theme for the table
               theme = reactableTheme(
-                borderColor = "#000000",
-                color = "#000000",
-                backgroundColor = "#004157",
-                highlightColor = "#2f829e",
+                borderColor = "#BFC9D1",
+                color = "#BFC9D1",
+                backgroundColor = "#567895",
+                highlightColor = "#CE8B65",
                 cellPadding = "8px 12px",
                 style = list(color = "white"),
-                searchInputStyle = list(width = "100%",
-                                        color = "black")
+                searchInputStyle = list(width = "100%")
               )
     )
     
@@ -919,14 +920,13 @@ information_team_server <- function(input, output, session) {
               borderless = TRUE, 
               # set the theme for the table
               theme = reactableTheme(
-                borderColor = "#000000",
-                color = "#000000",
-                backgroundColor = "#004157",
-                highlightColor = "#2f829e",
+                borderColor = "#BFC9D1",
+                color = "#BFC9D1",
+                backgroundColor = "#567895",
+                highlightColor = "#CE8B65",
                 cellPadding = "8px 12px",
                 style = list(color = "white"),
-                searchInputStyle = list(width = "100%",
-                                        color = "black")
+                searchInputStyle = list(width = "100%")
               )
     )
     
@@ -956,14 +956,13 @@ information_team_server <- function(input, output, session) {
               borderless = TRUE, 
               # set the theme for the table
               theme = reactableTheme(
-                borderColor = "#000000",
-                color = "#000000",
-                backgroundColor = "#004157",
-                highlightColor = "#2f829e",
+                borderColor = "#BFC9D1",
+                color = "#BFC9D1",
+                backgroundColor = "#567895",
+                highlightColor = "#CE8B65",
                 cellPadding = "8px 12px",
                 style = list(color = "white"),
-                searchInputStyle = list(width = "100%",
-                                        color = "black")
+                searchInputStyle = list(width = "100%")
               )
     )
     
@@ -993,15 +992,14 @@ information_team_server <- function(input, output, session) {
               borderless = TRUE, 
               # set the theme for the table
               theme = reactableTheme(
-                borderColor = "#000000",
-                color = "#000000",
-                backgroundColor = "#004157",
-                highlightColor = "#2f829e",
+                borderColor = "#BFC9D1",
+                color = "#BFC9D1",
+                backgroundColor = "#567895",
+                highlightColor = "#CE8B65",
                 cellPadding = "8px 12px",
                 style = list(color = "white"),
-                searchInputStyle = list(width = "100%",
-                                        color = "black")
-                )
+                searchInputStyle = list(width = "100%")
+              )
               )
       
   })
@@ -1031,9 +1029,9 @@ information_team_server <- function(input, output, session) {
              yaxis = list(title = "Market Value (million euro)"),
              xaxis = list(title = "Year"),
              font = list(color = "white"),
-             plot_bgcolor = "rgba(0, 65, 87, 10)",
-             paper_bgcolor = "rgba(0, 65, 87, 10)",
-             fig_bg_color = "rgba(0, 65, 87, 10)")
+             plot_bgcolor = "#567895",
+             paper_bgcolor = "#567895",
+             fig_bg_color = "#567895")
     
     market_values
   })
@@ -1079,9 +1077,9 @@ information_team_server <- function(input, output, session) {
         yaxis = list(title = "Rating"),
         xaxis = list(title = "Year"),
         font = list(color = "white"),
-        plot_bgcolor = "rgba(0, 65, 87, 10)",
-        paper_bgcolor = "rgba(0, 65, 87, 10)",
-        fig_bg_color = "rgba(0, 65, 87, 10)"
+        plot_bgcolor = "#567895",
+        paper_bgcolor = "#567895",
+        fig_bg_color = "#567895"
       )
     
     fifa_rating
@@ -1110,14 +1108,13 @@ information_team_server <- function(input, output, session) {
         borderless = TRUE, 
         # set the theme for the table
         theme = reactableTheme(
-          borderColor = "#000000",
-          color = "#000000",
-          backgroundColor = "#004157",
-          highlightColor = "#2f829e",
+          borderColor = "#BFC9D1",
+          color = "#BFC9D1",
+          backgroundColor = "#567895",
+          highlightColor = "#CE8B65",
           cellPadding = "8px 12px",
           style = list(color = "white"),
-          searchInputStyle = list(width = "100%",
-                                  color = "black")
+          searchInputStyle = list(width = "100%")
         ), 
         # modify the layout and names of the columns
         columns = list(

@@ -61,7 +61,7 @@ tab_information_league_general_ui <- function(){
          
             # create an season specific page for the league to show information
             # for the matchdays, statistics for a selected season, etc.
-            tabPanel("Season specific",
+            tabPanel("Season specific", br(),
                      fluidRow(column(
                        width = 3,
                        align = "center",
@@ -75,7 +75,7 @@ tab_information_league_general_ui <- function(){
                      tabsetPanel(
                        type = "pills",
                        tabPanel(
-                         div("Matches", style = "color: LightSkyBlue"),
+                         div("Matches", style = "color: LightSteelBlue"),
                              fluidRow(column(width = 12,
                                              align = "center",
                                              reactableOutput("information_league_matchday_fixtures")%>%
@@ -83,7 +83,7 @@ tab_information_league_general_ui <- function(){
                          
                        ),
                        tabPanel(
-                         div("Table", style = "color: LightSkyBlue"),
+                         div("Table", style = "color: LightSteelBlue"),
                              fluidRow(column(
                                width = 12,
                                align = "center",
@@ -96,7 +96,7 @@ tab_information_league_general_ui <- function(){
                      ),
                     
             # this tab shows market value over time of teams in the selected leagues
-            tabPanel("Over time",
+            tabPanel("Market value over time",
                      fluidRow(column(
                        width = 12,
                        align = "center",

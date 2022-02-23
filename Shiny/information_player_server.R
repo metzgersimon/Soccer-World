@@ -535,16 +535,14 @@ information_player_server <- function(input, output, session){
         borderless = TRUE,
         # set the theme for the table
         theme = reactableTheme(
-          borderColor = "#000000",
-          color = "#000000",
-          backgroundColor = "#004157",
-          highlightColor = "#2f829e",
+          borderColor = "#BFC9D1",
+          color = "#BFC9D1",
+          backgroundColor = "#567895",
+          highlightColor = "#CE8B65",
           cellPadding = "8px 12px",
           style = list(color = "white"),
-          searchInputStyle = list(width = "100%",
-                                  color = "black")
-        )
-        ,
+          searchInputStyle = list(width = "100%")
+        ),
         # modify the layout and names of the columns
         columns = list(
           fixture_date = colDef(name = "Date",
@@ -591,14 +589,13 @@ information_player_server <- function(input, output, session){
         borderless = TRUE,
         # set the theme for the table
         theme = reactableTheme(
-          borderColor = "#000000",
-          color = "#000000",
-          backgroundColor = "#004157",
-          highlightColor = "#2f829e",
+          borderColor = "#BFC9D1",
+          color = "#BFC9D1",
+          backgroundColor = "#567895",
+          highlightColor = "#CE8B65",
           cellPadding = "8px 12px",
           style = list(color = "white"),
-          searchInputStyle = list(width = "100%",
-                                  color = "black")
+          searchInputStyle = list(width = "100%")
         )
         ,
         # modify the layout and names of the columns
@@ -640,14 +637,13 @@ information_player_server <- function(input, output, session){
         borderless = TRUE,
         # set the theme for the table
         theme = reactableTheme(
-          borderColor = "#000000",
-          color = "#000000",
-          backgroundColor = "#004157",
-          highlightColor = "#2f829e",
+          borderColor = "#BFC9D1",
+          color = "#BFC9D1",
+          backgroundColor = "#567895",
+          highlightColor = "#CE8B65",
           cellPadding = "8px 12px",
           style = list(color = "white"),
-          searchInputStyle = list(width = "100%",
-                                  color = "black")
+          searchInputStyle = list(width = "100%")
         )
         ,
         # modify the layout and names of the columns
@@ -683,14 +679,13 @@ information_player_server <- function(input, output, session){
         borderless = TRUE,
         # set the theme for the table
         theme = reactableTheme(
-          borderColor = "#000000",
-          color = "#000000",
-          backgroundColor = "#004157",
-          highlightColor = "#2f829e",
+          borderColor = "#BFC9D1",
+          color = "#BFC9D1",
+          backgroundColor = "#567895",
+          highlightColor = "#CE8B65",
           cellPadding = "8px 12px",
           style = list(color = "white"),
-          searchInputStyle = list(width = "100%",
-                                  color = "black")
+          searchInputStyle = list(width = "100%")
         )
         ,
         # modify the layout and names of the columns
@@ -729,14 +724,13 @@ information_player_server <- function(input, output, session){
         borderless = TRUE,
         # set the theme for the table
         theme = reactableTheme(
-          borderColor = "#000000",
-          color = "#000000",
-          backgroundColor = "#004157",
-          highlightColor = "#2f829e",
+          borderColor = "#BFC9D1",
+          color = "#BFC9D1",
+          backgroundColor = "#567895",
+          highlightColor = "#CE8B65",
           cellPadding = "8px 12px",
           style = list(color = "white"),
-          searchInputStyle = list(width = "100%",
-                                  color = "black")
+          searchInputStyle = list(width = "100%")
         )
         ,
         # modify the layout and names of the columns
@@ -777,14 +771,13 @@ information_player_server <- function(input, output, session){
         borderless = TRUE,
         # set the theme for the table
         theme = reactableTheme(
-          borderColor = "#000000",
-          color = "#000000",
-          backgroundColor = "#004157",
-          highlightColor = "#2f829e",
+          borderColor = "#BFC9D1",
+          color = "#BFC9D1",
+          backgroundColor = "#567895",
+          highlightColor = "#CE8B65",
           cellPadding = "8px 12px",
           style = list(color = "white"),
-          searchInputStyle = list(width = "100%",
-                                  color = "black")
+          searchInputStyle = list(width = "100%")
         )
         ,
         # modify the layout and names of the columns
@@ -830,14 +823,13 @@ information_player_server <- function(input, output, session){
         borderless = TRUE,
         # set the theme for the table
         theme = reactableTheme(
-          borderColor = "#000000",
-          color = "#000000",
-          backgroundColor = "#004157",
-          highlightColor = "#2f829e",
+          borderColor = "#BFC9D1",
+          color = "#BFC9D1",
+          backgroundColor = "#567895",
+          highlightColor = "#CE8B65",
           cellPadding = "8px 12px",
           style = list(color = "white"),
-          searchInputStyle = list(width = "100%",
-                                  color = "black")
+          searchInputStyle = list(width = "100%")
         )
         ,
         # modify the layout and names of the columns
@@ -885,14 +877,13 @@ information_player_server <- function(input, output, session){
         borderless = TRUE,
         # set the theme for the table
         theme = reactableTheme(
-          borderColor = "#000000",
-          color = "#000000",
-          backgroundColor = "#004157",
-          highlightColor = "#2f829e",
+          borderColor = "#BFC9D1",
+          color = "#BFC9D1",
+          backgroundColor = "#567895",
+          highlightColor = "#CE8B65",
           cellPadding = "8px 12px",
           style = list(color = "white"),
-          searchInputStyle = list(width = "100%",
-                                  color = "black")
+          searchInputStyle = list(width = "100%")
         )
         ,
         # modify the layout and names of the columns
@@ -943,9 +934,9 @@ information_player_server <- function(input, output, session){
         yaxis = list(title = c("Rating", "Market value")),
         xaxis = list(title = "Year"),
         font = list(color = "white"),
-        plot_bgcolor = "rgba(0, 65, 87, 10)",
-        paper_bgcolor = "rgba(0, 65, 87, 10)",
-        fig_bg_color = "rgba(0, 65, 87, 10)"
+        plot_bgcolor = "#567895",
+        paper_bgcolor = "#567895",
+        fig_bg_color = "#567895"
       )
     
     fifa_player_rating
