@@ -494,7 +494,7 @@ information_player_server <- function(input, output, session){
       #custom labels
       vlcex = 0.8
     )
-  }, height = 300, bg = "#567895") # set the height and background color
+  }, height = 300, bg = "#F4F4F4") # set the height and background color
 
   
 # create stats tables for different type of stats 
