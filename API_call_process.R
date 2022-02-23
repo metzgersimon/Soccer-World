@@ -74,6 +74,18 @@ if (!is.null(all_leagues_matches_today)) {
   if(api_calls_left >= number_calls_needed){
     player_stats_today <- get_new_player_stats_API(con)
   }
+  
+  # 3.4 match events
+  # check how many calls we still have
+  api_calls_left <- get_api_calls_left()
+  
+  # check how many calls we would need
+  number_calls_needed <- compute_necessary_calls(number_matches_today = nrow(all_leagues_matches_today),
+                                                 endpoint = "fixture_events")
+  
+  if(api_calls_left >= number_calls_needed){
+    get_new_fixture_events_API(con)
+  }
 
 }
 
