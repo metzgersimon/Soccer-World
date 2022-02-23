@@ -969,7 +969,7 @@ information_league_match_server <- function(input, output, session){
     
     # create the actual reactable (drop the team names)
     reactable(home_player_infos_agg,
-              defaultPageSize = 11,
+              defaultPageSize = 20,
               # # set general options for the table
               highlight = TRUE,
               borderless = TRUE, 
@@ -1081,7 +1081,7 @@ information_league_match_server <- function(input, output, session){
     
     # create the actual reactable (drop the team names)
     reactable(away_player_infos_agg,
-              defaultPageSize = 11,
+              defaultPageSize = 20,
               # # set general options for the table
               # # such as the possibility to filter or sort the table
               # # but also insert a search field
@@ -1144,11 +1144,11 @@ information_league_match_server <- function(input, output, session){
              league_season <= as.numeric(
                str_split(input$info_match_season,
                          pattern = "/")[[1]][1]),
-             fixture_date < Sys.Date()) %>%
+             fixture_date < Sys.Date(), is.na(fulltime_score_home)==FALSE, is.na(fulltime_score_away)==FALSE) %>%
       # add a variable for the result
       mutate(result_fixture = fulltime_score_home-fulltime_score_away) %>%
       # arrange them based on the date
-      count(result_fixture>0)  
+      count(result_fixture>0, na.rm=TRUE)  
 
     # if the wins_as_home has no TRUE row it means team had no wins 
     if (nrow(wins_as_home[wins_as_home$`result_fixture > 0` == TRUE, ])==0) {
@@ -1168,7 +1168,7 @@ information_league_match_server <- function(input, output, session){
              league_season <= as.numeric(
                str_split(input$info_match_season,
                          pattern = "/")[[1]][1]),
-             fixture_date < Sys.Date()) %>%
+             fixture_date < Sys.Date(), is.na(fulltime_score_home)==FALSE, is.na(fulltime_score_away)==FALSE) %>%
       # add a variable for the result
       mutate(result_fixture = fulltime_score_home-fulltime_score_away) %>%
       # arrange them based on the date
@@ -1207,7 +1207,7 @@ information_league_match_server <- function(input, output, session){
              league_season <= as.numeric(
                str_split(input$info_match_season,
                          pattern = "/")[[1]][1]),
-             fixture_date < Sys.Date()) %>%
+             fixture_date < Sys.Date(), is.na(fulltime_score_home)==FALSE, is.na(fulltime_score_away)==FALSE) %>%
       # add a variable for the result
       mutate(result_fixture = fulltime_score_home-fulltime_score_away) %>%
       # arrange them based on the date
@@ -1230,7 +1230,7 @@ information_league_match_server <- function(input, output, session){
              league_season <= as.numeric(
                str_split(input$info_match_season,
                          pattern = "/")[[1]][1]),
-             fixture_date < Sys.Date()) %>%
+             fixture_date < Sys.Date(), is.na(fulltime_score_home)==FALSE, is.na(fulltime_score_away)==FALSE) %>%
       mutate(result_fixture = fulltime_score_home-fulltime_score_away) %>%
       count(result_fixture<0)  # count the wins 
     
