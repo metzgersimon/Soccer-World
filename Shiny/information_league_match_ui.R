@@ -111,19 +111,25 @@ tab_information_league_match_ui <- function(){
                 )
               ),
               fluidRow(
-                column(width = 6,
-                       align = "center",
-                       div(style = paste0("border: solid 1px #000000;",
-                                          "margin-top: 20px;"),
-                           plotlyOutput("info_match_match_lineups_overview_home")
-                       )
+                column(
+                  width = 6,
+                  align = "center",
+                  div(
+                    style = paste0("border: solid 1px #000000;",
+                                   "margin-top: 20px;"),
+                    plotlyOutput("info_match_match_lineups_overview_home") %>%
+                      withSpinner(color = "blue")
+                  )
                 ),
-                column(width = 6,
-                       align = "center",
-                       div(style = paste0("border: solid 1px #000000;",
-                                          "margin-top: 20px;"),
-                           plotlyOutput("info_match_match_lineups_overview_away")
-                       )
+                column(
+                  width = 6,
+                  align = "center",
+                  div(
+                    style = paste0("border: solid 1px #000000;",
+                                   "margin-top: 20px;"),
+                    plotlyOutput("info_match_match_lineups_overview_away") %>%
+                      withSpinner(color = "blue")
+                  )
                 )
               )
             ),

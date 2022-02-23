@@ -112,7 +112,8 @@ tab_information_team_ui <- function(){
                                         "font-weight: bold;"
                                       )
                                     ),
-                                    reactableOutput("info_team_next_match")
+                                    reactableOutput("info_team_next_match")%>%
+                                      withSpinner(color = "blue")
                                   )
                                 )),
                                 fluidRow(column(
@@ -134,7 +135,8 @@ tab_information_team_ui <- function(){
                                         "font-weight: bold;"
                                       )
                                     ),
-                                    reactableOutput("info_team_season")
+                                    reactableOutput("info_team_season")%>%
+                                      withSpinner(color = "blue")
                                   )
                                 ))),
                        tabPanel(div("Statistics", style = "color: LightSkyBlue"),
@@ -175,21 +177,21 @@ tab_information_team_ui <- function(){
                                       solidHeader = TRUE,
                                       collapsible = TRUE,
                                       reactableOutput("info_team_stats") %>%
-                                        withSpinner(color = "black")    
+                                        withSpinner(color = "blue")    
                                   ), # box for the biggest difference as home team
                                   box(title = "As home team - biggest difference", 
                                       status = "primary", width = 4,
                                       solidHeader = TRUE,
                                       collapsible = TRUE,
                                       reactableOutput("info_team_home") %>%
-                                        withSpinner(color = "black")    
+                                        withSpinner(color = "blue")    
                                   ),  # box for the biggest difference as away team
                                   box(title = "As away team - biggest difference", 
                                       status = "primary", width = 4,
                                       solidHeader = TRUE,
                                       collapsible = TRUE,
                                       reactableOutput("info_team_away") %>%
-                                        withSpinner(color = "black")    
+                                        withSpinner(color = "blue")    
                                   )
                                 ),
                                 fluidRow(
@@ -199,12 +201,12 @@ tab_information_team_ui <- function(){
                                     tabPanel(
                                       status = "primary",
                                       title = "stats as home team",
-                                      withSpinner(plotlyOutput("ts_home_stats", height = "250px"))
+                                      withSpinner(plotlyOutput("ts_home_stats", height = "250px"),color = "blue")
                                     ),
                                     tabPanel( # time series infos as away team
                                       status = "success",
                                       title = "stats as away team",
-                                      withSpinner(plotlyOutput("ts_away_stats", height = "250px"))
+                                      withSpinner(plotlyOutput("ts_away_stats", height = "250px"),color = "blue")
                                     )
                                   )
                                   # plots - end 
@@ -224,7 +226,8 @@ tab_information_team_ui <- function(){
                                                              "margin-top: 10px;",
                                                              "font-size: 18px;",
                                                              "font-weight: bold;")),
-                                  reactableOutput("info_team_squad_attack")
+                                  reactableOutput("info_team_squad_attack")%>%
+                                    withSpinner(color = "blue")
                                   )
                               )),
                      fluidRow(# Midfield table
@@ -239,7 +242,8 @@ tab_information_team_ui <- function(){
                                                                "margin-top: 10px;",
                                                                "font-size: 18px;",
                                                                "font-weight: bold;")),
-                                  reactableOutput("info_team_squad_midfield")
+                                  reactableOutput("info_team_squad_midfield")%>%
+                                    withSpinner(color = "blue")
                                   )
                               )
                        ),
@@ -254,7 +258,8 @@ tab_information_team_ui <- function(){
                                                               "margin-top: 10px;",
                                                               "font-size: 18px;",
                                                               "font-weight: bold;")),
-                                  reactableOutput("info_team_squad_defense")
+                                  reactableOutput("info_team_squad_defense")%>%
+                                    withSpinner(color = "blue")
                               )
                        )),
                     fluidRow( # Goal table
@@ -268,7 +273,8 @@ tab_information_team_ui <- function(){
                                                            "margin-top: 10px;",
                                                            "font-size: 18px;",
                                                            "font-weight: bold;")),
-                                  reactableOutput("info_team_squad_goalkeepers")
+                                  reactableOutput("info_team_squad_goalkeepers")%>%
+                                    withSpinner(color = "blue")
                                   )
                               )
                        )
