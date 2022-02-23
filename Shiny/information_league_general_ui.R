@@ -53,34 +53,12 @@ tab_information_league_general_ui <- function(){
                          align = "center",
                          status = "primary",
                          div(style = "margin-top: 20px;",
-                             htmlOutput("info_league_overview_table"))
+                             htmlOutput("info_league_overview_table")%>%
+                               withSpinner(color = "blue"))
                        )
                     
                      )),
-                     # fluidRow(
-                     #   column(
-                     #     width = 6,
-                     #     align = "center",
-                     #     div(
-                     #       style = "margin-top: 20px;",
-                     #       br(),
-                     #       #"border: solid 2px #FFFFFF; margin-top: 20px;",
-                     #       tableOutput("info_league_overview_table"),
-                     #       br(),
-                     #       htmlOutput(
-                     #         "info_league_league_logo",
-                     #         width = "200%",
-                     #         height = 300
-                     #       )
-                     #     )
-                     #   ),
-                     #   column(
-                     #     width = 6,
-                     #     align = "left",
-                     #     div(style = "margin-top: 20px;", #"border: solid 2px #FFFFFF; margin-top: 20px;",
-                     #         htmlOutput("info_league_country_logo", width = "100%"))
-                     #   )
-                     # )),
+         
             # create an season specific page for the league to show information
             # for the matchdays, statistics for a selected season, etc.
             tabPanel("Season specific",
@@ -100,7 +78,8 @@ tab_information_league_general_ui <- function(){
                          div("Matches", style = "color: LightSkyBlue"),
                              fluidRow(column(width = 12,
                                              align = "center",
-                                             reactableOutput("information_league_matchday_fixtures")))
+                                             reactableOutput("information_league_matchday_fixtures")%>%
+                                               withSpinner(color = "blue")))
                          
                        ),
                        tabPanel(
@@ -108,7 +87,8 @@ tab_information_league_general_ui <- function(){
                              fluidRow(column(
                                width = 12,
                                align = "center",
-                               reactableOutput("information_league_matchday_table"))
+                               reactableOutput("information_league_matchday_table")%>%
+                                 withSpinner(color = "blue"))
                          )
                          
                        )

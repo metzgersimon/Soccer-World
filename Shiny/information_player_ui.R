@@ -77,7 +77,8 @@ tab_information_player_ui <- function() {
                   solidHeader = TRUE,
                   status = "primary",
                   div(style = "margin-top: 20px;",
-                      htmlOutput("info_player_overview"))
+                      htmlOutput("info_player_overview")%>%
+                        withSpinner(color = "blue"))
                 ),
                 box(
                   width = 4,
@@ -116,7 +117,7 @@ tab_information_player_ui <- function() {
                                  width = "100%",
                                  height = 300
                                ) %>%
-                                 withSpinner(color = "black") # loading icon
+                                 withSpinner(color = "blue") # loading icon
                              )
                            ),
                            column(
@@ -158,7 +159,7 @@ tab_information_player_ui <- function() {
                              solidHeader = TRUE,
                              collapsible = TRUE,
                              reactableOutput("info_player_stats_general_games") %>%
-                               withSpinner(color = "black")
+                               withSpinner(color = "blue")
                              
                            )
                          ),
@@ -170,7 +171,7 @@ tab_information_player_ui <- function() {
                              solidHeader = TRUE,
                              collapsible = TRUE,
                              reactableOutput("info_player_stats_general_goals") %>%
-                               withSpinner(color = "black")
+                               withSpinner(color = "blue")
                            ),
                            box(
                              title = "Shots Infos",
@@ -179,7 +180,7 @@ tab_information_player_ui <- function() {
                              solidHeader = TRUE,
                              collapsible = TRUE,
                              reactableOutput("info_player_stats_general_shots") %>%
-                               withSpinner(color = "black")
+                               withSpinner(color = "blue")
                            )
                          ),
                          fluidRow(
@@ -190,7 +191,7 @@ tab_information_player_ui <- function() {
                              solidHeader = TRUE,
                              collapsible = TRUE,
                              reactableOutput("info_player_stats_general_passes") %>%
-                               withSpinner(color = "black")
+                               withSpinner(color = "blue")
                            ),
                            box(
                              title = "Duel Infos",
@@ -199,7 +200,7 @@ tab_information_player_ui <- function() {
                              solidHeader = TRUE,
                              collapsible = TRUE,
                              reactableOutput("info_player_stats_general_duel") %>%
-                               withSpinner(color = "black")
+                               withSpinner(color = "blue")
                            )
                          )
                        ),
@@ -215,7 +216,7 @@ tab_information_player_ui <- function() {
                              solidHeader = TRUE,
                              collapsible = TRUE,
                              reactableOutput("info_player_stats_general_dribbles") %>%
-                               withSpinner(color = "black")
+                               withSpinner(color = "blue")
                            ),
                            box(
                              title = "Penalty and Cards",
@@ -224,7 +225,7 @@ tab_information_player_ui <- function() {
                              solidHeader = TRUE,
                              collapsible = TRUE,
                              reactableOutput("info_player_stats_general_cards") %>%
-                               withSpinner(color = "black")
+                               withSpinner(color = "blue")
                            )
                          ),
                          fluidRow(
@@ -235,7 +236,7 @@ tab_information_player_ui <- function() {
                              solidHeader = TRUE,
                              collapsible = TRUE,
                              reactableOutput("info_player_stats_general_offsides") %>%
-                               withSpinner(color = "black")
+                               withSpinner(color = "blue")
                            )
                          )
                        ),
@@ -248,7 +249,7 @@ tab_information_player_ui <- function() {
                              style = "margin-top: 20px;",
                              #"border: solid 2px #FFFFFF; margin-top: 20px;",
                              plotlyOutput("info_player_stats_rating") %>%
-                               withSpinner(color = "white")
+                               withSpinner(color = "blue")
                            )
                          ))
                        )
