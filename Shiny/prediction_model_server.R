@@ -141,7 +141,7 @@ prediction_model_server <- function(input, output, session) {
              fig_bg_color = "rgba(0, 65, 87, 10)",
              xaxis = list(title = "Date"),
              yaxis = list(title = "Accuracy"),
-             title = "Accuracy over time")
+             title = list(text = "Accuracy over time", y = 0.95, x = 0.5))
   })
   
   
