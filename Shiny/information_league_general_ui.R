@@ -71,8 +71,27 @@ tab_information_league_general_ui <- function(){
                          selected = ""
                        )
                      )),
-                     
-                     fluidRow(reactableOutput("information_league_matchday_fixtures"))),
+                     tabsetPanel(
+                       type = "pills",
+                       tabPanel(
+                         div("Matches", style = "color: LightSkyBlue"),
+                             fluidRow(column(width = 12,
+                                             align = "center",
+                                             reactableOutput("information_league_matchday_fixtures")))
+                         
+                       ),
+                       tabPanel(
+                         div("Table", style = "color: LightSkyBlue"),
+                             fluidRow(column(
+                               width = 12,
+                               align = "center",
+                               reactableOutput("information_league_matchday_table"))
+                         )
+                         
+                       )
+                     )
+                     ),
+                    
             # this tab shows market value over time of teams in the selected leagues
             tabPanel("Over time",
                      fluidRow(column(
