@@ -31,6 +31,9 @@ all_leagues_matches <-
 all_leagues_spi_538 <- tbl(con, "all_leagues_spi_538") %>%
   data.frame()
 
+# load odds data 
+buli_all_seasons_odds <- tbl(con, "all_leagues_odds") %>% data.frame()
+
 # load fixture infos
 all_leagues_fixture_events <-
   tbl(con, "all_leagues_fixture_events") %>% data.frame()
