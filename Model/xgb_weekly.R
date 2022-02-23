@@ -1,13 +1,16 @@
 train_xgb <- function(){
-  model_data <- get_model_data()
+  model_data_full <- get_model_data()
   
-  model_data <- model_data %>%
+  model_data <- model_data_full %>%
+    filter(fixture_date.x <= Sys.Date()) %>% 
     select(-c("fixture_date.x",
               "fixture_date.y", "fixture_time.x", "league_name.x",
               "team_name_home", "team_name_away",
               "fulltime_score_home.x", "fulltime_score_away.x",
-              "fulltime_score_home.y", "fulltime_score_away.y")) %>%
-    rename(goal_diff = goal_diff.x)
+              "fulltime_score_home.y", "fulltime_score_away.y",
+              "goal_diff.y")) %>%
+    rename(goal_diff = goal_diff.x) %>%
+    filter(!is.na(goal_diff))
   
   model_data <- model_data[, !sapply(model_data, is.character)]
   
@@ -19,7 +22,7 @@ train_xgb <- function(){
   train_data <- model_data[train_index, ]
   test_data <- model_data[-train_index, ]
   
-  lab <- as.numeric(train_data[, "goal_diff"])
+  lab <- as.numeric(train_data[, "goal_diff"] %>% unlist())
   train_data <- data.matrix(train_data[, !(colnames(train_data) %in%
                                              c("goal_diff", "fixture_id"))])
   
@@ -50,32 +53,35 @@ train_xgb <- function(){
   
   
   ####### historical predictions #######
-  future_predictions <- model_data
+  model_data_10 <- model_data_full %>% 
+    filter(fixture_date.x >= Sys.Date(),
+           fixture_date.x <= (Sys.Date()+10)) %>% 
+    select(-c("fixture_date.x",
+              "fixture_date.y", "fixture_time.x", "league_name.x",
+              "team_name_home", "team_name_away",
+              "fulltime_score_home.x", "fulltime_score_away.x",
+              "fulltime_score_home.y", "fulltime_score_away.y",
+              "goal_diff.y")) %>%
+    rename(goal_diff = goal_diff.x)
+  
+  model_data_p <- model_data_10[, !sapply(model_data_10, is.character)]
+  
+  future_predictions <- model_data_10
   future_predictions$prediction <- 
-    predict(m1_xgb, data.matrix(future_predictions[, !(colnames(future_predictions) %in%
+    predict(m1_xgb, data.matrix(model_data_p[, !(colnames(model_data_p) %in%
                                                              c("goal_diff", "fixture_id"))]))
   
   # only take important variables
   future_predictions <- future_predictions %>%
-    select(league_id = league_id.x, league_season,
-           league_round, fixture_id, club_id_home, club_id_away,
+    select(league_id, league_season,
+           league_round, fixture_id = fixture_id.x, club_id_home, club_id_away,
            prediction)
   
-  
-  # choose cutoff points based on traing data
-  tar <- sign(lab)
-  ex <- predict(m1_xgb, data.matrix(train_data))
-  why <- data.frame(tar, ex)
-  
-  # from the previos decision tree we estimate the cutoff points 0.63 and -0.58
-  cutoff <- rpart(tar ~ ex, data = why, method = "class")
-  rpart.plot::rpart.plot(cutoff)
-  rpart.plot(cutoff)
-  
-  
+  # performance metrics for manual debugging
   tttt <- sum(sign(results) == sign(test_data$goal_diff)) / length(results)
   tt <- predict(cutoff , newdata = data.frame(ex = results), type = "class")
   ttt <- sum(as.numeric(as.character(tt)) == sign(test_data$goal_diff)) / length(results)
+  
   
   return(future_predictions)
 }
