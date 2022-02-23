@@ -479,8 +479,8 @@ information_player_server <- function(input, output, session){
       axistype = 1 ,
       
       #custom polygon
-      pcol = "Teal" ,
-      pfcol = "Teal",
+      pcol = "teal" ,
+      pfcol = "teal",
       plwd = 4 ,
       
       #custom the grid
@@ -794,7 +794,7 @@ information_player_server <- function(input, output, session){
                                  align = "center"),
           tackles_blocks = colDef(name = "Blocks tackles",
                                   align = "center"),
-          tackles_interceptions = colDef(name = "Interceptions",
+          tackles_interception = colDef(name = "Interceptions",
                                          align = "center")
           
         )
