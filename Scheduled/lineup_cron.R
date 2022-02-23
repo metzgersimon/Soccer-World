@@ -1,5 +1,5 @@
 setwd("/srv/shiny-server/Soccer-Prediction-App")
-source("Setup.R")
+source("global.R")
 source("Get_data_API.R")
 
 # setup a connection to the database
