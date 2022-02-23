@@ -35,29 +35,52 @@ tab_information_league_general_ui <- function(){
             # value
             tabPanel("Overview",
                      fluidRow(
+                       br(),
                        column(
-                         width = 6,
+                         width = 2,
                          align = "center",
-                         div(
-                           style = "margin-top: 20px;",
-                           br(),
-                           #"border: solid 2px #FFFFFF; margin-top: 20px;",
-                           tableOutput("info_league_overview_table"),
-                           br(),
-                           htmlOutput(
-                             "info_league_league_logo",
-                             width = "200%",
-                             height = 300
-                           )
-                         )
+                         div(style = "margin-top: 20px;",
+                             htmlOutput("info_league_league_logo", height = 300))
+                       ), column(
+                         width = 5,
+                         align = "center",
+                         status = "primary",
+                         div(style = "margin-top: 20px;",
+                             htmlOutput("info_league_league_country", width = "40%"))
                        ),
                        column(
-                         width = 6,
-                         align = "left",
-                         div(style = "margin-top: 20px;", #"border: solid 2px #FFFFFF; margin-top: 20px;",
-                             htmlOutput("info_league_country_logo", width = "100%"))
+                         width = 5,
+                         align = "center",
+                         status = "primary",
+                         div(style = "margin-top: 20px;",
+                             htmlOutput("info_league_overview_table"))
                        )
+                    
                      )),
+                     # fluidRow(
+                     #   column(
+                     #     width = 6,
+                     #     align = "center",
+                     #     div(
+                     #       style = "margin-top: 20px;",
+                     #       br(),
+                     #       #"border: solid 2px #FFFFFF; margin-top: 20px;",
+                     #       tableOutput("info_league_overview_table"),
+                     #       br(),
+                     #       htmlOutput(
+                     #         "info_league_league_logo",
+                     #         width = "200%",
+                     #         height = 300
+                     #       )
+                     #     )
+                     #   ),
+                     #   column(
+                     #     width = 6,
+                     #     align = "left",
+                     #     div(style = "margin-top: 20px;", #"border: solid 2px #FFFFFF; margin-top: 20px;",
+                     #         htmlOutput("info_league_country_logo", width = "100%"))
+                     #   )
+                     # )),
             # create an season specific page for the league to show information
             # for the matchdays, statistics for a selected season, etc.
             tabPanel("Season specific",

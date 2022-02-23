@@ -26,6 +26,7 @@ information_player_server <- function(input, output, session){
      updateSelectizeInput(
        session,
        inputId = "information_player_season_selection",
+       # want to have the season format like this XXXX/XXXX
        choices = c("",
                    paste0(
                      unique(
@@ -80,8 +81,9 @@ information_player_server <- function(input, output, session){
      
    })
   
-  
+   ############# Overview tab begins #####################
   # filter the data for the selected league, club, season and the selected player
+  # reactive is more efficient
   player_infos <- reactive({
     player_tab_data %>%
       filter(
@@ -98,7 +100,7 @@ information_player_server <- function(input, output, session){
   })
   
   
-############# create the output for the table on the overview page
+  # create the output for the table on the overview page 
   output$info_player_overview <- renderUI({
     # there has to be a player, team, league, season selected
     req(input$information_player_player_selection)
@@ -141,7 +143,7 @@ information_player_server <- function(input, output, session){
     
   })
   
-  # output for the player logo
+  # output for the player image
   output$info_player_player_img <- renderUI({
     # we need the user to select a player first
     req(input$information_player_player_selection)
@@ -190,7 +192,7 @@ information_player_server <- function(input, output, session){
     tags$img(src = club_image)
   })
   
-############### valuebox for the fast facts
+# valuebox for the fast facts of players
   filter_player_data <- reactive({
     # there has to be a player selected
     req(input$information_player_player_selection)
@@ -445,7 +447,7 @@ information_player_server <- function(input, output, session){
     )
   })
   
-################### statistics tab of player tab
+################### statistics tab of player tab ###################
   # radarplot for the summary of selected player stats in selected season
   output$info_player_stats_radarplot <- renderPlot({
     # we need the user to select a player first
@@ -491,11 +493,11 @@ information_player_server <- function(input, output, session){
       #custom labels
       vlcex = 0.8
     )
-  }, height = 300, bg = "LightSteelBlue") # set the height and background color
+  }, height = 300, bg = "Grey") # set the height and background color
 
   
 # create stats tables for different type of stats 
-# firstly filter the data of seleted leagua, season and player
+# firstly filter the data of seleted league, season and player
   player_stats <- reactive({
     all_leagues_player_stats %>%
       filter(
@@ -949,74 +951,74 @@ information_player_server <- function(input, output, session){
     fifa_player_rating
   })
   
-##################### transfer infos of players 
+##################### transfer infos of players ####################
   # create a table for all transfers the player had so far during his career
-  output$info_player_transfers <- renderReactable({
-    # require the selected player
-    req(input$information_player_player_selection)
-    req(input$information_player_team_selection)
-    
-    # some player name has only one word, we should distinguish the name length to avoid the warning
-    if (str_count(input$information_player_player_selection, ' ') >= 1) {
-      last_name <-
-        str_split(input$information_player_player_selection, " ")[[1]][-1]
-    } else if (str_count(input$information_player_player_selection, ' ') == 0) {
-      # name with only one word
-      last_name <-
-        input$information_player_player_selection
-    }
-    
-    # get the transfer infos for the selected player and team
-    all_leagues_team_transfers  %>%
-      filter(  # filter the selected player and the selected team so that we have correct data
-        player_name %like% last_name,
-        from_team_name == input$information_player_team_selection |
-          to_team_name == input$information_player_team_selection
-      ) %>%
-      select(
-        transfer_date,
-        player_name,
-        transfer_type,
-        from_team_name,
-        to_team_name,
-        transfer_sum_mil_euro
-      ) %>%
-      distinct() %>%
-      arrange(desc(transfer_date)) %>%
-      reactable(
-        defaultColDef = colDef(
-          align = "center",
-          minWidth = 150,
-          headerStyle = list(background = "darkblue")
-        ),
-        striped = TRUE,
-        highlight = TRUE,
-        borderless = TRUE,
-        # set the theme for the table
-        theme = reactableTheme(
-          borderColor = "#000000",
-          color = "#000000",
-          backgroundColor = "#004157",
-          highlightColor = "#2f829e",
-          cellPadding = "8px 12px",
-          style = list(color = "white")
-        ),
-        # modify the layout and names of the columns
-        columns = list(
-          transfer_date = colDef(name = "Date",
-                                 align = "left"),
-          player_name = colDef(name = "Player",
-                               align = "center"),
-          transfer_type = colDef(name = "Type",
-                                 align = "center"),
-          transfer_sum_mil_euro = colDef(name = "Money (million)",
-                                         align = "center"),
-          from_team_name = colDef(name = "From Team",
-                                  align = "center"),
-          to_team_name = colDef(name = "To Team",
-                                align = "center")
-        )
-      )
-  })
+  # output$info_player_transfers <- renderReactable({
+  #   # require the selected player
+  #   req(input$information_player_player_selection)
+  #   req(input$information_player_team_selection)
+  #   
+  #   # some player name has only one word, we should distinguish the name length to avoid the warning
+  #   if (str_count(input$information_player_player_selection, ' ') >= 1) {
+  #     last_name <-
+  #       str_split(input$information_player_player_selection, " ")[[1]][-1]
+  #   } else if (str_count(input$information_player_player_selection, ' ') == 0) {
+  #     # name with only one word
+  #     last_name <-
+  #       input$information_player_player_selection
+  #   }
+  #   
+  #   # get the transfer infos for the selected player and team
+  #   all_leagues_team_transfers  %>%
+  #     filter(  # filter the selected player and the selected team so that we have correct data
+  #       player_name %like% last_name,
+  #       from_team_name == input$information_player_team_selection |
+  #         to_team_name == input$information_player_team_selection
+  #     ) %>%
+  #     select(
+  #       transfer_date,
+  #       player_name,
+  #       transfer_type,
+  #       from_team_name,
+  #       to_team_name,
+  #       transfer_sum_mil_euro
+  #     ) %>%
+  #     distinct() %>%
+  #     arrange(desc(transfer_date)) %>%
+  #     reactable(
+  #       defaultColDef = colDef(
+  #         align = "center",
+  #         minWidth = 150,
+  #         headerStyle = list(background = "darkblue")
+  #       ),
+  #       striped = TRUE,
+  #       highlight = TRUE,
+  #       borderless = TRUE,
+  #       # set the theme for the table
+  #       theme = reactableTheme(
+  #         borderColor = "#000000",
+  #         color = "#000000",
+  #         backgroundColor = "#004157",
+  #         highlightColor = "#2f829e",
+  #         cellPadding = "8px 12px",
+  #         style = list(color = "white")
+  #       ),
+  #       # modify the layout and names of the columns
+  #       columns = list(
+  #         transfer_date = colDef(name = "Date",
+  #                                align = "left"),
+  #         player_name = colDef(name = "Player",
+  #                              align = "center"),
+  #         transfer_type = colDef(name = "Type",
+  #                                align = "center"),
+  #         transfer_sum_mil_euro = colDef(name = "Money (million)",
+  #                                        align = "center"),
+  #         from_team_name = colDef(name = "From Team",
+  #                                 align = "center"),
+  #         to_team_name = colDef(name = "To Team",
+  #                               align = "center")
+  #       )
+  #     )
+  # })
   
 }
