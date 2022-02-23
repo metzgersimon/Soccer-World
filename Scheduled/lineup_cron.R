@@ -2,13 +2,12 @@ setwd("/srv/shiny-server/Soccer-Prediction-App")
 source("Setup.R")
 source("Get_data_API.R")
 
-# connect to database
+# setup a connection to the database
 con <- dbConnect(RMariaDB::MariaDB(), 
                  host='127.0.0.1',
-                 dbname='Soccer_Prediction_Data',
-                 username='root',
-                 password='my-secret-pw')
-
+                 dbname='soccerworld',
+                 username='dev',
+                 password='worldpw')
 # load the timetable
 timeslots <- dbReadTable(con, "timeslots")
 
@@ -58,12 +57,12 @@ source("global.R")
 # load the model here 
 predicted_matches <- train_xgb_lin()
 
-# connect to database
+# setup a connection to the database
 con <- dbConnect(RMariaDB::MariaDB(), 
                  host='127.0.0.1',
-                 dbname='Soccer_Prediction_Data',
-                 username='root',
-                 password='my-secret-pw')
+                 dbname='soccerworld',
+                 username='dev',
+                 password='worldpw')
 
 
 dbWriteTable(con, "all_leagues_lineups_predictions", predicted_matches,
