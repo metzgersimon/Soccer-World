@@ -144,7 +144,7 @@ tab_information_league_match_ui <- function(){
                        )
                      )
             ),
-            tabPanel("Lineups",
+            tabPanel("Aggregated Lineup Statistics",
                      fluidRow(
                        column(width = 6,
                               align = "center",
@@ -174,23 +174,7 @@ tab_information_league_match_ui <- function(){
                                     withSpinner(color = "blue")
                               )
                        )
-                     )#,
-                     # fluidRow(
-                     #   column(width = 6,
-                     #          align = "center",
-                     #          div(style = "border: solid 2px #000000; margin-top: 20px;",
-                     #              reactableOutput("info_match_match_substitutes_home") %>%
-                     #                withSpinner(color = "blue")
-                     #          )
-                     #   ),
-                     #   column(width = 6,
-                     #          align = "center",
-                     #          div(style = "border: solid 2px #000000; margin-top: 20px;",
-                     #              reactableOutput("info_match_match_substitutes_away") %>%
-                     #                withSpinner(color = "blue")
-                     #          )
-                     #   )
-                     # )
+                     )
             ),
             tabPanel(
               "Head to head",
