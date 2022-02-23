@@ -92,21 +92,19 @@ tab_information_team_ui <- function(){
             # such as form, previous matches, future matches, etc.
             tabPanel("Match & Stats",
                      tabsetPanel(type = "pills",
-                       tabPanel(div("Matches", style = "color: LightSkyBlue"),
+                       tabPanel(div("Matches", style = "color: LightSteelBlue"),
                                 fluidRow(column(
                                   width = 12,
                                   align = "center",
                                   div(
                                     style = paste0(
-                                      "border: solid 1px #000000;",
                                       "margin-top: 20px;",
-                                      "background-color: #004157;"
+                                      "background-color: #E2DFD8;"
                                     ),
                                     p(
                                       "Upcoming Match", # present the upcoming match
                                       style = paste0(
-                                        "background-color: #004157;",
-                                        "color: white;",
+                                        "background-color: #E2DFD8;",
                                         "margin-top: 10px;",
                                         "font-size: 18px;",
                                         "font-weight: bold;"
@@ -121,15 +119,13 @@ tab_information_team_ui <- function(){
                                   align = "center",
                                   div(
                                     style = paste0( 
-                                      "border: solid 1px #000000;",
                                       "margin-top: 20px;",
-                                      "background-color: #004157;"
+                                      "background-color: #E2DFD8;"
                                     ),
                                     p(
                                       "Past Matches", # display the past matches
                                       style = paste0(
-                                        "background-color: #004157;",
-                                        "color: white;",
+                                        "background-color: #E2DFD8;",
                                         "margin-top: 10px;",
                                         "font-size: 18px;",
                                         "font-weight: bold;"
@@ -139,7 +135,7 @@ tab_information_team_ui <- function(){
                                       withSpinner(color = "blue")
                                   )
                                 ))),
-                       tabPanel(div("Statistics", style = "color: LightSkyBlue"),
+                       tabPanel(div("Statistics", style = "color: LightSteelBlue"),
                                 fluidRow(
                                   # Frontpage - boxes - start 
                                   # insert four value boxes for the infos of team
@@ -218,11 +214,8 @@ tab_information_team_ui <- function(){
                      fluidRow( # attack table
                        column(width = 12,
                               align = "center",
-                              div(style = paste0("border: solid 1px #000000;",
-                                                 "margin-top: 20px;",
-                                                 "background-color: #004157;"),
-                                  p("Attack", style = paste0("background-color: #004157;",
-                                                             "color: white;",
+                              div(style = "margin-top: 20px;",
+                                  p("Attack", style = paste0("background-color: #F4F4F4;",
                                                              "margin-top: 10px;",
                                                              "font-size: 18px;",
                                                              "font-weight: bold;")),
@@ -233,12 +226,8 @@ tab_information_team_ui <- function(){
                      fluidRow(# Midfield table
                        column(width = 12,
                               align = "center",
-                              div(style = paste0("border: solid 1px #000000;",
-                                                 "margin-top: 20px;",
-                                                 "background-color: #004157;"
-                                                 ),
-                                  p("Midfield", style = paste0("background-color: #004157;",
-                                                               "color: white;",
+                              div(style =  "margin-top: 20px;", 
+                                  p("Midfield", style = paste0("background-color: #F4F4F4;",
                                                                "margin-top: 10px;",
                                                                "font-size: 18px;",
                                                                "font-weight: bold;")),
@@ -250,11 +239,8 @@ tab_information_team_ui <- function(){
                      fluidRow( # Defense table
                        column(width = 12,
                               align = "center",
-                              div(style = paste0("border: solid 1px #000000;",
-                                                 "margin-top: 20px;",
-                                                 "background-color: #004157;"),
-                                  p("Defense", style = paste0("background-color: #004157;",
-                                                              "color: white;",
+                              div(style = "margin-top: 20px;",
+                                  p("Defense", style = paste0("background-color: #F4F4F4;",
                                                               "margin-top: 10px;",
                                                               "font-size: 18px;",
                                                               "font-weight: bold;")),
@@ -265,11 +251,9 @@ tab_information_team_ui <- function(){
                     fluidRow( # Goal table
                        column(width = 12,
                               align = "center",
-                              div(style = paste0("border: solid 1px #000000;",
-                                                 "margin-top: 20px;",
-                                                 "background-color: #004157;"),
-                                  p("Goal", style = paste0("background-color: #004157;",
-                                                           "color: white;",
+                              div(style = paste0("margin-top: 20px;",
+                                                 "background-color: #F4F4F4;"),
+                                  p("Goal", style = paste0("background-color: #F4F4F4;",
                                                            "margin-top: 10px;",
                                                            "font-size: 18px;",
                                                            "font-weight: bold;")),
@@ -288,8 +272,7 @@ tab_information_team_ui <- function(){
                   fluidRow(
                     column(width = 12,
                            align = "center",
-                           div(style = paste0("border: solid 1px #000000;",
-                                              "margin-top: 20px;"),
+                           div(style = "margin-top: 20px;",
                                plotlyOutput("info_team_market_value_over_time") %>%
                                  withSpinner(color = "blue")
                                )
@@ -301,8 +284,7 @@ tab_information_team_ui <- function(){
                     fluidRow(
                       column(width = 12,
                              align = "center",
-                             div(style = paste0("border: solid 1px #000000;",
-                                                "margin-top: 20px;"),
+                             div(style = "margin-top: 20px;",
                                  plotlyOutput("info_team_fifa_rating_over_time") %>%
                                    withSpinner(color = "blue")
                              )
@@ -314,8 +296,7 @@ tab_information_team_ui <- function(){
                   fluidRow(
                     column(width = 12,
                            align = "center",
-                           div(style = paste0("border: solid 1px #000000;",
-                                              "margin-top: 20px;"),
+                           div(style = "margin-top: 20px;",
                                reactableOutput("info_team_transfers_over_time") %>%
                                  withSpinner(color = "blue")
                                )

@@ -101,7 +101,7 @@ tab_information_league_general_ui <- function(){
                        width = 12,
                        align = "center",
                        div(
-                         style = "border: solid 2px #000000; margin-top: 20px;",
+                         style = "margin-top: 20px;",
                          plotlyOutput("market_value_over_time") %>%
                            withSpinner(color = "blue") # change load icon
                        )
