@@ -479,9 +479,9 @@ information_player_server <- function(input, output, session){
       axistype = 1 ,
       
       #custom polygon
-      pcol = "teal" ,
-      pfcol = "teal",
-      plwd = 4 ,
+      pcol="purple" , 
+      pfcol="purple",
+      plwd = 5 ,
       
       #custom the grid
       cglcol = "orange",
