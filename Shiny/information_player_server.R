@@ -26,6 +26,7 @@ information_player_server <- function(input, output, session){
      updateSelectizeInput(
        session,
        inputId = "information_player_season_selection",
+       # want to have the season format like this XXXX/XXXX
        choices = c("",
                    paste0(
                      unique(
@@ -80,8 +81,9 @@ information_player_server <- function(input, output, session){
      
    })
   
-  
+   ############# Overview tab begins #####################
   # filter the data for the selected league, club, season and the selected player
+  # reactive is more efficient
   player_infos <- reactive({
     player_tab_data %>%
       filter(
@@ -98,7 +100,7 @@ information_player_server <- function(input, output, session){
   })
   
   
-############# create the output for the table on the overview page
+  # create the output for the table on the overview page 
   output$info_player_overview <- renderUI({
     # there has to be a player, team, league, season selected
     req(input$information_player_player_selection)
@@ -141,7 +143,7 @@ information_player_server <- function(input, output, session){
     
   })
   
-  # output for the player logo
+  # output for the player image
   output$info_player_player_img <- renderUI({
     # we need the user to select a player first
     req(input$information_player_player_selection)
@@ -190,7 +192,7 @@ information_player_server <- function(input, output, session){
     tags$img(src = club_image)
   })
   
-############### valuebox for the fast facts
+# valuebox for the fast facts of players
   filter_player_data <- reactive({
     # there has to be a player selected
     req(input$information_player_player_selection)
@@ -445,7 +447,7 @@ information_player_server <- function(input, output, session){
     )
   })
   
-################### statistics tab of player tab
+################### statistics tab of player tab ###################
   # radarplot for the summary of selected player stats in selected season
   output$info_player_stats_radarplot <- renderPlot({
     # we need the user to select a player first
@@ -491,11 +493,11 @@ information_player_server <- function(input, output, session){
       #custom labels
       vlcex = 0.8
     )
-  }, height = 300, bg = "LightSteelBlue") # set the height and background color
+  }, height = 300, bg = "Grey") # set the height and background color
 
   
 # create stats tables for different type of stats 
-# firstly filter the data of seleted leagua, season and player
+# firstly filter the data of seleted league, season and player
   player_stats <- reactive({
     all_leagues_player_stats %>%
       filter(
@@ -949,7 +951,7 @@ information_player_server <- function(input, output, session){
     fifa_player_rating
   })
   
-##################### transfer infos of players 
+##################### transfer infos of players ####################
   # create a table for all transfers the player had so far during his career
   output$info_player_transfers <- renderReactable({
     # require the selected player

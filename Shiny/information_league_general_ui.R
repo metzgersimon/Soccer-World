@@ -35,29 +35,56 @@ tab_information_league_general_ui <- function(){
             # value
             tabPanel("Overview",
                      fluidRow(
-                       column(
-                         width = 6,
-                         align = "center",
-                         div(
-                           style = "margin-top: 20px;",
-                           br(),
-                           #"border: solid 2px #FFFFFF; margin-top: 20px;",
-                           tableOutput("info_league_overview_table"),
-                           br(),
-                           htmlOutput(
-                             "info_league_league_logo",
-                             width = "200%",
-                             height = 300
-                           )
-                         )
+                       br(),
+                       box(
+                         width = 2,
+                         title = "League Logo",
+                         solidHeader = TRUE,
+                         status = "primary",
+                         div(style = "margin-top: 20px;",
+                             htmlOutput("info_league_league_logo", height = 300))
                        ),
-                       column(
+                       box(
+                         width = 4,
+                         title = "League Overview",
+                         solidHeader = TRUE,
+                         status = "primary",
+                         div(style = "margin-top: 20px;",
+                             htmlOutput("info_league_overview"))
+                       ),
+                       box(
                          width = 6,
-                         align = "left",
-                         div(style = "margin-top: 20px;", #"border: solid 2px #FFFFFF; margin-top: 20px;",
-                             htmlOutput("info_league_country_logo", width = "100%"))
+                         title = "League country",
+                         solidHeader = TRUE,
+                         status = "primary",
+                         div(style = "margin-top: 20px;",
+                             htmlOutput("info_league_league_country", width = "40%"))
                        )
                      )),
+                     # fluidRow(
+                     #   column(
+                     #     width = 6,
+                     #     align = "center",
+                     #     div(
+                     #       style = "margin-top: 20px;",
+                     #       br(),
+                     #       #"border: solid 2px #FFFFFF; margin-top: 20px;",
+                     #       tableOutput("info_league_overview_table"),
+                     #       br(),
+                     #       htmlOutput(
+                     #         "info_league_league_logo",
+                     #         width = "200%",
+                     #         height = 300
+                     #       )
+                     #     )
+                     #   ),
+                     #   column(
+                     #     width = 6,
+                     #     align = "left",
+                     #     div(style = "margin-top: 20px;", #"border: solid 2px #FFFFFF; margin-top: 20px;",
+                     #         htmlOutput("info_league_country_logo", width = "100%"))
+                     #   )
+                     # )),
             # create an season specific page for the league to show information
             # for the matchdays, statistics for a selected season, etc.
             tabPanel("Season specific",
