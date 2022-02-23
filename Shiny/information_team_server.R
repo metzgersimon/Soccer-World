@@ -483,7 +483,7 @@ information_team_server <- function(input, output, session) {
     valueBox(
       value =  stats_select() %>% select(fixtures_played_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric()%>% unique() %>% .[1],
       "Total Plays",
-      color = "purple",
+      color = "navy",
       icon = icon("hourglass-half"),
       width = 3
     )
@@ -528,7 +528,7 @@ information_team_server <- function(input, output, session) {
     valueBox(
       value = stats_select() %>% select(fixtures_loses_total)  %>% unlist() %>% str_extract(., pattern = "[0-9]+.*") %>% as.numeric() %>% unique() %>% .[1],
       "Total Loses",
-      color = "navy",
+      color = "purple",
       icon = icon("bomb"),
       width = 3)
   })

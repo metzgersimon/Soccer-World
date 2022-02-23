@@ -135,7 +135,7 @@ tab_information_team_ui <- function(){
                                       withSpinner(color = "blue")
                                   )
                                 ))),
-                       tabPanel(div("Statistics", style = "color: LightSteelBlue"),
+                       tabPanel(div("Statistics", style = "color: LightSteelBlue"),br(),
                                 fluidRow(
                                   # Frontpage - boxes - start 
                                   # insert four value boxes for the infos of team
@@ -166,7 +166,7 @@ tab_information_team_ui <- function(){
                                     "total_penalty", # how many total penalty of this team
                                     width = 3)
                                   # Frontpage - boxes - end
-                                ),
+                                ),br(),
                                 fluidRow(  # box for the biggest streak infos for the team
                                   box(title = "Biggest streak infos", 
                                       status = "primary", width = 4,
@@ -189,7 +189,7 @@ tab_information_team_ui <- function(){
                                       reactableOutput("info_team_away") %>%
                                         withSpinner(color = "blue")    
                                   )
-                                ),
+                                ),br(),
                                 fluidRow(
                                   # plots - start
                                   tabBox( # time series infos as home team

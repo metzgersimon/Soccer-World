@@ -150,7 +150,7 @@ tab_information_player_ui <- function() {
                                             width = 3)
                            )
                          )
-                         ,
+                         ,br(),
                          fluidRow(
                            box( # with the boxes to present the stats in more detailed way (for each fixture date in the selected season)
                              title = "Game Infos",

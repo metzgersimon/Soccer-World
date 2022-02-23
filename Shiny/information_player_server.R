@@ -222,7 +222,7 @@ information_player_server <- function(input, output, session){
         select(player_joining_date) %>% pull(),
       "Joining date",
       icon = icon("arrow-left"),
-      color = "#567895",
+      color = "light-blue",
       width = 3
     )
   })
@@ -242,7 +242,7 @@ information_player_server <- function(input, output, session){
         pull() ,
       "Contract date",
       icon = icon("arrow-right"),
-      color = "#E2DFD8",
+      color = "light-blue",
       width = 3
     )
   })
@@ -262,7 +262,7 @@ information_player_server <- function(input, output, session){
         pull(),
       "Age",
       icon = icon("user"),
-      color = "#BFC9D1",
+      color = "purple",
       width = 3
     )
   })
@@ -282,7 +282,7 @@ information_player_server <- function(input, output, session){
         pull(),
       "Height (m)",
       icon = icon("flag"),
-      color = "#CE8B65",
+      color = "blue",
       width = 3
     )
   })
@@ -302,7 +302,7 @@ information_player_server <- function(input, output, session){
         pull() %>% round(2),
       "Mean Game Minutes",
       # icon = icon("clock"),
-      color = "#CE8B65",
+      color = "light-blue",
       width = 3
     )
   })
@@ -322,7 +322,7 @@ information_player_server <- function(input, output, session){
         pull() %>%round(2), 
       "Mean Passes Accuracy",
       # icon = icon("flag"),
-      color = "#BFC9D1",
+      color = "blue",
       width = 3
     )
   })
@@ -342,7 +342,7 @@ information_player_server <- function(input, output, session){
         pull() , 
       "Total Yellow Cards",
       # icon = icon("cross"),
-      color = "#E2DFD8",
+      color = "navy",
       width = 3
     )
   })
@@ -362,7 +362,7 @@ information_player_server <- function(input, output, session){
         pull() , 
       "Total Red Cards",
       # icon = icon("cross"),
-      color = "#567895",
+      color = "purple",
       width = 3
     )
   })
@@ -382,7 +382,7 @@ information_player_server <- function(input, output, session){
         pull() , 
       "Total Games Substitute",
       # icon = icon("flag"),
-      color = "#E2DFD8",
+      color = "navy",
       width = 3
     )
   })
@@ -402,7 +402,7 @@ information_player_server <- function(input, output, session){
         pull() , 
       "Total Goals Assists",
       # icon = icon("arrow"),
-      color = "#BFC9D1",
+      color = "light-blue",
       width = 3
     )
   })
@@ -422,7 +422,7 @@ information_player_server <- function(input, output, session){
         pull() , 
       "Total Scored Penalty",
       # icon = icon("arrow"),
-      color = "#CE8B65",
+      color = "blue",
       width = 3
     )
   })
@@ -442,7 +442,7 @@ information_player_server <- function(input, output, session){
         pull() , 
       "Total Saved Penalty",
       icon = icon("arrow"),
-      color = "#567895",
+      color = "purple",
       width = 3
     )
   })
@@ -479,8 +479,8 @@ information_player_server <- function(input, output, session){
       axistype = 1 ,
       
       #custom polygon
-      pcol = rgb(0.2, 0.5, 0.5, 0.9) ,
-      pfcol = rgb(0.2, 0.5, 0.5, 0.5) ,
+      pcol = "Teal" ,
+      pfcol = "Teal",
       plwd = 4 ,
       
       #custom the grid
