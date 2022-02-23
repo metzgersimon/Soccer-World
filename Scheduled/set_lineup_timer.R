@@ -19,9 +19,6 @@ slots <- get_times_for_lineup_scraping(
 dbWriteTable(con,"timeslots", slots,  overwrite = TRUE)
 dbDisconnect(con)
 
-# delete cron tabs from the day before
-cron_clear(ask = FALSE, user = "ubuntu")
-
 # initialise new cronR tabs for today
 slots <- slots %>% 
           ungroup() %>%
