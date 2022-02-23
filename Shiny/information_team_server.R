@@ -245,189 +245,6 @@ information_team_server <- function(input, output, session) {
       width = 3
     )
   })
-  # # create the output for the table on the overview page
-  # output$info_team_overview <- renderReactable({
-  #   # to gather venue infos
-  #   # <- all_infos_club %>% left_join(all_leagues_venue_information[,c(4,8,10:15)], by=c("club"="team_name"))
-  #   
-  #   # there has to be a club selected
-  #   req(input$info_team_league_selection)
-  #   req(input$info_team_club_selection)
-  #   req(input$info_team_season_selection)
-  #   
-  #   all_infos_club <-
-  #     inner_join(
-  #       all_leagues_squads_tm,
-  #       unique(all_leagues_matches[, c(2, 3, 19)]),
-  #       by = c("club" = "club_name_home", "league" = "league_name")
-  #     )
-  #   
-  #   # convert the season in a format we can work with
-  #   season_year <-
-  #     as.numeric(str_split(input$info_team_season_selection,
-  #                          pattern = "/")[[1]][1])
-  #   
-  #   # filter the huge data frame on the club selected
-  #   team_infos <- all_infos_club %>%
-  #     filter(
-  #       league ==  input$info_team_league_selection,
-  #       club == input$info_team_club_selection,
-  #       season == season_year
-  #     )
-  #   
-  #   # extract the club name
-  #   #name <- team_infos %>%
-  #   #  select(club) %>%
-  #   #  unlist() %>%
-  #   #  unname() %>%
-  #   #  unique()
-  #   
-  #   # extract the league of the club
-  #   #league <- unique(team_infos$league)
-  #   
-  #   # extract the country of the club
-  #   #country <- team_infos %>%
-  #   #  select(league_country) %>%
-  #   #  unlist() %>%
-  #   #  unname() %>%
-  #   #  unique()
-  #   
-  #   # extract the squad size of the club
-  #   #squad_size <- team_infos %>%
-  #   #  select(player_name) %>%
-  #   #  unique() %>%
-  #   #  nrow()
-  #   
-  #   # compute the average age of the players in the club
-  #   #avg_age <- team_infos %>%
-  #   # only unique player_names
-  #   #  distinct(player_name, .keep_all = TRUE) %>%
-  #   #  select(player_age) %>%
-  #   #  summarize(avg_age = mean(player_age, na.rm = TRUE)) %>%
-  #   # extract the value (it is a data frame)
-  #   #  pull() %>%
-  #   # round the value
-  #   #  round(digits = 2)
-  #   
-  #   # compute the average height of the players in the club
-  #   #avg_height <- team_infos %>%
-  #   # only unique player_names
-  #   #  distinct(player_name, .keep_all = TRUE) %>%
-  #   #  select(player_height) %>%
-  #   #  summarize(avg_age = mean(player_height, na.rm = TRUE)) %>%
-  #   # extract the value (it is a data frame)
-  #   #  pull() %>%
-  #   # round the value
-  #   # round(digits = 2)
-  #   
-  #   
-  #   # extract the information for the stadium
-  #   #venue_info <-
-  #   #   all_leagues_venue_information %>% mutate(league = if_else(
-  #   #    league_id == 78,
-  #   #    "Bundesliga",
-  #   #    if_else(
-  #   #      league_id == 79,
-  #   #      "Bundesliga 2",
-  #   #      if_else(
-  #   #        league_id == 39,
-  #   #        "Premier League",
-  #   #        if_else(
-  #   #          league_id == 61,
-  #   #          "Ligue 1",
-  #   #          "none"
-  #   #        )
-  #   #      )
-  #   #    )
-  #   #  )) %>% filter(
-  #   #    league ==  input$info_team_league_selection,
-  #   #    team_name == input$info_team_club_selection,
-  #   #    season == season_year
-  #   #  ) %>%
-  #   #  select(venue_name, venue_city,
-  #   #         venue_capacity) %>%
-  #   #  unique()
-  #   team_infos %>% select(player_name, player_position, player_foot) %>%
-  #     reactable(
-  #       defaultColDef = colDef(
-  #         align = "center",
-  #         minWidth = 150,
-  #         headerStyle = list(background = "darkblue")
-  #       ),
-  #       borderless = TRUE,
-  #       #searchable = TRUE,
-  #       striped = TRUE,
-  #       highlight = TRUE,
-  #       # set the theme for the table
-  #       theme = reactableTheme(
-  #         borderColor = "#000000",
-  #         color = "#000000",
-  #         backgroundColor = "#004157",
-  #         highlightColor = "#2f829e",
-  #         cellPadding = "8px 12px",
-  #         style = list(color = "white"),
-  #         # searchInputStyle = list(width = "100%")
-  #       ),
-  #       # modify the layout and names of the columns
-  #       columns = list(
-  #         player_name = colDef(name = "Player name",
-  #                              align = "left"),
-  #         player_position = colDef(name = "Player position",
-  #                                  align = "center"),
-  #         player_foot = colDef(name = "Player foot",
-  #                              align = "center")
-  #       )
-  #     )
-  #   
-  #   # combine the selected data (only name, league and country of the club)
-  #   # to a data frame
-  #   #club_info_frame <- data.frame(name, league, country)
-  #   # create additional rows to be able to merge the frames later
-  #   #club_info_frame[, (ncol(club_info_frame) + 1):(ncol(club_info_frame) +
-  #   #                                                 2)] <- NA
-  #   # transpose the frame such that the columns are now rows
-  #   #club_info_frame <- club_info_frame %>%
-  #   #  t()
-  #   
-  #   # create the texts for the table
-  #   #squad_size_text <- paste0("Squad size: ", squad_size)
-  #   #avg_age_text <-
-  #   #  paste0("Average squad age: ", avg_age, " years old")
-  #   #avg_height_text <-
-  #   #  paste0("Average squad height: ", avg_height, " m")
-  #   #venue_name_text <- paste0("Venue: ", venue_info$venue_name)
-  #   #venue_city_text <- paste0("City: ", venue_info$venue_city)
-  #   #venue_capa_text <-
-  #   #  paste0("\t", venue_info$venue_capacity, " seats")
-  #   
-  #   # put the texts together into a data frame
-  #   #add_info_frame <- data.frame(
-  #   #  squad_size_text,
-  #   #  avg_age_text,
-  #   #  avg_height_text,
-  #   #  venue_name_text,
-  #   #  venue_city_text
-  #   #  venue_capa_text
-  #   #) %>%
-  #   # and transpose it (columns to rows)
-  #   #  t()
-  #   
-  #   
-  #   # combine these two frames by binding them together by column
-  #   #suppressMessages(club_frame <- club_info_frame %>%
-  #   #                   rbind(add_info_frame))
-  #   
-  #   # set the NA format in a kable table to an empty string
-  #   #options(knitr.kable.NA = "")
-  #   
-  #   # create a kable table with the data
-  #   # club_frame %>%
-  #   #  kableExtra::kable("html", row.names = FALSE, col.names = NULL) %>%
-  #   #kable_minimal()
-  #   #  kable_styling(full_width = F)
-  #   
-  #   
-  # })
   
   # output for the club logo
   output$info_team_team_logo <- renderUI({
@@ -658,6 +475,7 @@ information_team_server <- function(input, output, session) {
       ) %>% filter(matchday == max(matchday, na.rm = TRUE))
   }) 
  
+  # output of the valuebox-total plays
   output$total_played <- renderValueBox({
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
@@ -673,6 +491,7 @@ information_team_server <- function(input, output, session) {
     
   })
   
+  # output of the valuebox-total wins
   output$total_wins <- renderValueBox({
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
@@ -687,6 +506,7 @@ information_team_server <- function(input, output, session) {
     )
   })
   
+  # output of the valuebox-total draws
   output$total_draws <- renderValueBox({
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
@@ -700,6 +520,7 @@ information_team_server <- function(input, output, session) {
       width = 3)
   })
   
+  # output of the valuebox-total loses
   output$total_loses <- renderValueBox({
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
@@ -713,6 +534,7 @@ information_team_server <- function(input, output, session) {
       width = 3)
   })
   
+  # output of the valuebox-total for goals
   output$total_for_goals <- renderValueBox({
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
@@ -726,6 +548,7 @@ information_team_server <- function(input, output, session) {
       width = 3)
   })
 
+  # output of the valuebox-total against goals
   output$total_against_goals <- renderValueBox({
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
@@ -739,6 +562,7 @@ information_team_server <- function(input, output, session) {
       width = 3)
   })
   
+  # output of the valuebox-total failed score
   output$total_failed_score <- renderValueBox({
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
@@ -752,6 +576,7 @@ information_team_server <- function(input, output, session) {
       width = 3)
   })
   
+  # output of the valuebox-total penalty
   output$total_penalty <- renderValueBox({
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
@@ -772,10 +597,11 @@ information_team_server <- function(input, output, session) {
     req(input$info_team_club_selection)
     req(input$info_team_season_selection)
     
+    # select the data
    data <-
      stats_select()  %>% select(biggest_streak_wins:biggest_streak_loses) %>% unique() %>% .[1,]
     
-
+    # make the table
     data %>%  
       reactable(
         defaultColDef = colDef(
@@ -810,6 +636,7 @@ information_team_server <- function(input, output, session) {
     
   })
   
+  # more details stats
   output$info_team_home <- renderReactable({
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
@@ -853,22 +680,11 @@ information_team_server <- function(input, output, session) {
     
   })
   
+  # more details stats
   output$info_team_away <- renderReactable({
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
     req(input$info_team_season_selection)
-    # 
-    # stats_select <- reactive ({
-    #   all_leagues_club_stats %>%
-    #     filter(
-    #       league_name == input$info_team_league_selection,
-    #       team_name == input$info_team_club_selection,
-    #       league_season == as.numeric(
-    #         str_split(input$info_team_season_selection,
-    #                   pattern = "/")[[1]][1]
-    #       )
-    #     ) %>% filter(matchday == max(matchday, na.rm = TRUE))
-    # })
     
     data <-
       stats_select()  %>% select(contains("away_diff"), clean_sheet_away) %>% unique()%>% .[1,]
@@ -908,6 +724,7 @@ information_team_server <- function(input, output, session) {
     
   })
   
+  # time series plot for team as home team stats 
   output$ts_home_stats <- renderPlotly({
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
@@ -934,7 +751,6 @@ information_team_server <- function(input, output, session) {
       )
     
     ts_home <- plot_data %>% 
-      # create actual plot for the market value over time by club
       plot_ly(
         x = ~ matchday,
         y = ~ value,
@@ -955,6 +771,7 @@ information_team_server <- function(input, output, session) {
     ts_home
   })
   
+  # time series plot for team as away team stats
   output$ts_away_stats <- renderPlotly({
     req(input$info_team_league_selection)
     req(input$info_team_club_selection)
@@ -981,7 +798,6 @@ information_team_server <- function(input, output, session) {
       )
     
     ts_away <- plot_data %>% 
-      # create actual plot for the market value over time by club
       plot_ly(
         x = ~ matchday,
         y = ~ value,
@@ -1209,9 +1025,6 @@ information_team_server <- function(input, output, session) {
   
   output$info_team_market_value_over_time <- renderPlotly({
     market_values <- market_value_reactive() %>%
-      # transform the market value at the given time to a numeric
-      # mutate(value_then = as.numeric(str_remove_all(value_then,"[\u20AC|m]")) * 1000000) %>%
-      # create actual plot for the market value over time by club
       plot_ly(x = ~date, y = ~value_then_mil_euro) %>%
       add_lines() %>%
       layout(title = list(text = "Market value over time", y = 0.95, x = 0.5),

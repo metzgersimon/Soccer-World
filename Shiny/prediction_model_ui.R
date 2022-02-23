@@ -7,7 +7,7 @@ tab_prediction_model_ui <- function(){
               width = 3,
               align = "center",
               selectizeInput(
-                "information_model_league_selection",
+                "prediction_model_league_selection",
                 label = "League",
                 choices = c("Bundesliga",  # four choices for leagues
                             "Bundesliga 2",
@@ -19,7 +19,7 @@ tab_prediction_model_ui <- function(){
               width = 3,
               align = "center",
               selectizeInput(
-                "information_model_season_selection",
+                "prediction_model_season_selection",
                 label = "Season",
                 choices = seasons,
                 selected = seasons[1]
@@ -29,7 +29,7 @@ tab_prediction_model_ui <- function(){
               width = 3,
               align = "center",
               selectizeInput(
-                "information_model_matchday_selection",
+                "prediction_model_matchday_selection",
                 label = "Matchday",
                 choices = c("All"),
                 selected = ""
@@ -41,12 +41,12 @@ tab_prediction_model_ui <- function(){
             div(
               style = "margin-top: 20px;",
               selectInput(
-                "prediction_model_type",
-                "Model",
-                choices = c("XGBoost",
-                            "Linear Regression",
-                            "Best"),
-                selected = "Best"
+                "prediction_model_bm",
+                "Benchmark",
+                choices = c("FiveThirtyEight",
+                            "Always Home",
+                            "Odds"),
+                selected = "Odds"
               )
             )
           ),

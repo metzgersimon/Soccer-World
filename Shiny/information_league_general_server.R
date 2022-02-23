@@ -26,7 +26,7 @@ information_league_general_server <- function(input, output, session){
      
    })
  
-  ################# overview tab begins 
+  ################# overview tab begins ######################
   # create the output for the table on the overview page
   overview_data <- reactive({
     req(input$info_team_league_selection)
@@ -118,18 +118,18 @@ information_league_general_server <- function(input, output, session){
     number_teams_text <- paste0("Number of teams: ", number_teams)
     number_players_text <-
       paste0("Number of players: ", number_players$n)
-    avg_age_league_text <- paste0("Average age: ", avg_age_league)
+    avg_age_league_text <- paste0("Average age: ", avg_age_league, " years")
     min_avg_age_text <-
-      paste0("Joungest team: ",
+      paste0("Youngest team: ",
              min_avg_age$club_name_home ,
              " (",
-             min_avg_age$avg_age,
+             min_avg_age$avg_age, " years",
              ")")
     max_avg_age_text <-
       paste0("Oldest team: ",
              max_avg_age$club_name_home ,
              " (",
-             max_avg_age$avg_age,
+             max_avg_age$avg_age, " years",
              ")")
     avg_market_value_text <-
       paste0("Average market value: ", avg_market_value, " million")
@@ -225,20 +225,25 @@ information_league_general_server <- function(input, output, session){
       select(league_round) %>%
       unlist() %>%
       unname() %>%
-      unique()
+      unique() %>% na.omit()  # remove the na value
     
     updateSelectizeInput(
       session,
       inputId = "information_league_matchday_selection",
       choices = data,
-      selected = max(data, na.rm = TRUE) 
+      selected = max(data, na.rm = TRUE)   # default is the max matchday
     )
+    
     
   })
   
   
   # create a output of the fixture results table
   output$information_league_matchday_fixtures <- renderReactable({
+    req(input$information_league_league_selection)
+    req(input$information_league_season_selection)
+    req(input$information_league_matchday_selection)
+    
     all_leagues_matches %>%
       filter(
         league_name == input$information_league_league_selection &
@@ -248,8 +253,9 @@ information_league_general_server <- function(input, output, session){
                       pattern = "/")[[1]][1]
           ) &
           league_round == as.numeric(input$information_league_matchday_selection)
-      ) %>%
-      mutate(game_score = paste0(fulltime_score_home, ":",
+      ) %>% 
+      # create a column to present the results intuitively
+      mutate(game_score = paste0(fulltime_score_home, ":",  
                                  fulltime_score_away)) %>%
       select(fixture_date,
              fixture_time,
@@ -295,6 +301,77 @@ information_league_general_server <- function(input, output, session){
   })
   
   
+  
+  
+  # create a output of the fixture results table
+  output$information_league_matchday_table <- renderReactable({
+    req(input$information_league_league_selection)
+    req(input$information_league_season_selection)
+    req(input$information_league_matchday_selection)
+    
+    # extract the needed information from the user input
+    league_id <- API_map_league_to_id(input$information_league_league_selection)
+    season <- as.numeric(
+      str_split(input$information_league_season_selection,
+                pattern = "/")[[1]][1]
+    )
+    matchday <- input$information_league_matchday_selection
+    
+    print(league_id)
+    print(season)
+    print(matchday)
+    
+    
+    
+    # get the standing of the league for that given matchday
+    current_table <- get_league_standing(league_id, season, matchday)
+    
+    current_table %>%
+      # drop columns
+      select(-c(league_round, points, goals, goals_against, club_id,
+                goal_diff)) %>%
+      # reorder the frame
+      select(rank, everything()) %>%
+    # create the actual table
+    reactable(
+      # set general options for the table
+      # such as the possibility to sort the table
+      sortable = TRUE,
+      highlight = TRUE,
+      borderless = TRUE,
+      defaultPageSize = 20,
+      # set the theme for the table
+      theme = reactableTheme(
+        borderColor = "#000000",
+        color = "#000000",
+        backgroundColor = "#004157",
+        highlightColor = "#2f829e",
+        cellPadding = "8px 12px",
+        style = list(color = "white")
+      ),
+      # modify the layout and names of the columns
+      columns = list(
+        club_name = colDef(name = "Team",
+                              align = "left"),
+        cum_points = colDef(name = "Points",
+                              align = "center"),
+        cum_goals = colDef(name = "Goals",
+                                align = "center"),
+        cum_goals_against = colDef(name = "Goals against",
+                            align = "center"),
+        cum_goal_diff = colDef(name = "Goal Difference",
+                                align = "center"),
+        rank = colDef(name = "Rank",
+                                align = "center")
+        
+      )
+    )
+    
+  })
+  
+  
+  
+  ##################### tab over time ################# 
   # create a plot for the market value over time
   # for each club and each leagues
   output$market_value_over_time <- renderPlotly({

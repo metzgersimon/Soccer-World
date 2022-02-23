@@ -91,7 +91,7 @@ prepare_club_stats <- function(){
       new_matchdays_curr_team <- NULL
       
       copied_matchdays <- all_leagues_club_stats_2021[i, ] %>% 
-        slice(rep(1:n(), length(matchdays_missing)))
+        dplyr::slice(rep(1:n(), length(matchdays_missing)))
       
       for(matchday in 1:nrow(copied_matchdays)){
         copied_matchdays$matchday[matchday] <- matchdays_missing[matchday]
@@ -115,7 +115,7 @@ prepare_club_stats <- function(){
     filter(league_season == 2021) %>%
     group_by(team_id) %>%
     filter(matchday == max(matchday)) %>%
-    slice(c(1:n(), n())) %>%
+    dplyr::slice(c(1:n(), n())) %>%
     unique() %>%
     mutate(matchday = matchday + 1)
   
@@ -273,16 +273,58 @@ prepare_spi_data <- function(){
     #         home_team_projected_score, away_team_projected_score,
     #         home_team_goals, away_team_goals)) %>%
     mutate(across(c(expected_goals:adjusted_goals),
-                  ~lag(.x, n = 1))) %>%
-    convert_two_lines_into_one(., columns_to_drop = c("league_id", "league_name",
-                                                      "league_season", "league_round", "fixture_date",
-                                                      "fixture_time"),
-      join_columns = c("fixture_id", "league_id", "league_name",
-                                                   "league_season", "league_round", "fixture_date",
-                                                   "fixture_time"))
+                  ~lag(.x, n = 1)))
+  
+  
+  spi_data_home <- spi_matched_data %>%
+    filter(club_id_home == club_id) %>%
+    select(-contains("away"))
+  
+  spi_data_away <- spi_matched_data %>%
+    filter(club_id_away == club_id) %>%
+    select(-contains("home"))
+  
+  
+  spi_data_total <- spi_data_home %>%
+    inner_join(spi_data_away, by = c("fixture_id", "league_id", "league_name",
+                                     "league_season", "league_round", "fixture_date",
+                                     "fixture_time"),
+               suffix = c("_home", "_away")) %>%
+    select(-c(club_id_home_home, club_id_away_away)) %>%
+    select(-c(contains("_prob_"), contains("projected"), goals_home, goals_away))
   
 
-  return(spi_matched_data)
+  # 
+  # spi_matched_data2 <- spi_matched_data %>%
+  #   group_by(fixture_id) %>%
+  #   inner_join(.,.,  by = "fixture_id", suffix = c("_home", "_away")) %>%
+  #   filter(club_id_home_home == club_id_away_away)
+  #   group_by(fixtur_id.x) %>%
+  #   distinct(fixture_id.x, keep.all = TRUE)
+  # 
+  # home_part <- frame_to_convert %>%
+  #   group_by(match_group) %>%
+  #   filter(row_number(desc(match_group)) == 1) %>%
+  #   ungroup() %>%
+  #   select(-c(contains("away"),
+  #             match_group))
+  # 
+  # away_part <- frame_to_convert %>%
+  #   group_by(match_group) %>%
+  #   filter(row_number(desc(match_group)) == 2) %>%
+  #   ungroup() %>%
+  #   select(-c(contains("home"),
+  #             match_group,
+  #             columns_to_drop))
+  # 
+  # spi_matched_data <- 
+  #   # convert_two_lines_into_one(., columns_to_drop = c("league_id", "league_name",
+  #   #                                                   "league_season", "league_round", "fixture_date",
+  #   #                                                   "fixture_time"),
+  #     join_columns = c("fixture_id"))
+  
+
+  return(spi_data_total)
 }
 
 

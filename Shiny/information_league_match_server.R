@@ -1,25 +1,42 @@
 # subserver for the match-tab in the information menu item
 information_league_match_server <- function(input, output, session){
   
-  #all_leagues_fixture_stats <- all_fixture_stats %>% left_join(all_leagues_matches, by = c("fixture_id"="fixture_id","league_id"="league_id"))
-  
   # if the league is selected we want to update the season selection and the team 
   # selection
   observeEvent(input$info_match_league, {
     # map the selected league name to the league id
     league_ID <- API_map_league_to_id(input$info_match_league)
-    updateSelectInput(session, 
+    updateSelectizeInput(session, 
                       inputId = "info_match_season",
-                      choices = c(unique(all_leagues_fixture_stats %>%
-                                           filter(league_id == league_ID
-                                           ) %>%
-                                           select(season) %>%
-                                           unlist() %>%
-                                           unname())))
-    
-    updateSelectInput(session, 
+                      selected = NULL,
+                      choices = c("",
+                                  paste0(
+                                    unique(
+                                      all_leagues_fixture_stats %>%
+                                        filter(league_id == league_ID
+                                        ) %>%
+                                        select(season) %>%
+                                        unlist() %>%
+                                        unname()
+                                    )
+                                    ,
+                                    "/",
+                                    unique(
+                                      all_leagues_fixture_stats %>% filter(league_id == league_ID
+                                      ) %>%
+                                        select(season) %>%
+                                        unlist() %>%
+                                        unname()
+                                    ) + 1
+                                  )))
+  })
+  
+  observeEvent(input$info_match_season, {
+  
+  updateSelectizeInput(session, 
                       inputId = "info_match_team1",
-                      choices = c(unique(all_leagues_matches %>%
+                      selected = NULL,
+                      choices = c("",unique(all_leagues_matches %>%
                                            filter(league_name == input$info_match_league &
                                                     league_season == 
                                                     as.numeric(
@@ -30,9 +47,13 @@ information_league_match_server <- function(input, output, session){
                                            unlist() %>%
                                            unname())))
     
-    updateSelectInput(session, 
+  })
+  
+  observeEvent(input$info_match_season, {
+  updateSelectizeInput(session, 
                       inputId = "info_match_team2",
-                      choices = c(unique(all_leagues_matches %>%
+                      selected = NULL,
+                      choices = c("",unique(all_leagues_matches %>%
                                            filter(league_name == input$info_match_league &
                                                     league_season == 
                                                     as.numeric(
@@ -44,44 +65,44 @@ information_league_match_server <- function(input, output, session){
                                            unname())))
   })
   
-  # create an observer to display for the season selection (home team) to display
-  # only those clubs that are present for the selected leagues
-  observeEvent(input$info_match_season, {
-    # map the selected league name to the league id
-    league_ID <- API_map_league_to_id(input$info_match_league)
-    updateSelectInput(session, 
-                      inputId = "info_match_team1",
-                      choices = c(unique(all_leagues_matches %>%
-                                           filter(league_name == input$info_match_league &
-                                                    league_season == 
-                                                    as.numeric(
-                                                      str_split(input$info_match_season,
-                                                                pattern = "/")[[1]][1])
-                                           ) %>%
-                                           select(club_name_home) %>%
-                                           unlist() %>%
-                                           unname())))
-  })
-  
-  
-  observeEvent(input$info_match_season, {
-    # map the selected league name to the league id
-    league_ID <- API_map_league_to_id(input$info_match_league)
-    updateSelectInput(session, 
-                      inputId = "info_match_team2",
-                      choices = c(unique(all_leagues_matches %>%
-                                           filter(league_name == input$info_match_league &
-                                                    league_season == 
-                                                    as.numeric(
-                                                      str_split(input$info_match_season,
-                                                                pattern = "/")[[1]][1])
-                                           ) %>%
-                                           select(club_name_away) %>%
-                                           unlist() %>%
-                                           unname())))
-  })
-  
-  
+  # # create an observer to display for the season selection (home team) to display
+  # # only those clubs that are present for the selected leagues
+  # observeEvent(input$info_match_season, {
+  #   # map the selected league name to the league id
+  #   league_ID <- API_map_league_to_id(input$info_match_league)
+  #   updateSelectizeInput(session, 
+  #                     inputId = "info_match_team1",
+  #                     choices = c(unique(all_leagues_matches %>%
+  #                                          filter(league_name == input$info_match_league &
+  #                                                   league_season == 
+  #                                                   as.numeric(
+  #                                                     str_split(input$info_match_season,
+  #                                                               pattern = "/")[[1]][1])
+  #                                          ) %>%
+  #                                          select(club_name_home) %>%
+  #                                          unlist() %>%
+  #                                          unname())), selected = NULL)
+  # })
+  # 
+  # 
+  # observeEvent(input$info_match_season, {
+  #   # map the selected league name to the league id
+  #   league_ID <- API_map_league_to_id(input$info_match_league)
+  #   updateSelectizeInput(session, 
+  #                     inputId = "info_match_team2",
+  #                     choices = c(unique(all_leagues_matches %>%
+  #                                          filter(league_name == input$info_match_league &
+  #                                                   league_season == 
+  #                                                   as.numeric(
+  #                                                     str_split(input$info_match_season,
+  #                                                               pattern = "/")[[1]][1])
+  #                                          ) %>%
+  #                                          select(club_name_away) %>%
+  #                                          unlist() %>%
+  #                                          unname())), selected = NULL)
+  # })
+  # 
+
   # reactive function (is executed every time something changes)
   # that returns the data frame which is needed for the match statistics
   # plot
@@ -263,7 +284,7 @@ information_league_match_server <- function(input, output, session){
     
   })
   
-  
+  ############### match stats tab begins ######################
   # creates the plot for the match statistic for a selected match
   output$info_match_match_stats <- renderPlotly({
     # wait until the input of the matches_reactive function is given
@@ -543,7 +564,8 @@ information_league_match_server <- function(input, output, session){
     return(list(lineups, date_info))
            
   })
-  
+ 
+  ############### overview tab begins ######################
   output$info_match_match_date <- renderText({
     req(lineups_reactive)
     
@@ -950,7 +972,7 @@ information_league_match_server <- function(input, output, session){
   })
   
   
-  
+  ############### lineup tab begins ######################
   # creates the table for the home match lineups for a selected match
   output$info_match_match_lineups_home <- renderReactable({
     # wait until the input of the lineups_reactive function is given
@@ -1309,6 +1331,133 @@ information_league_match_server <- function(input, output, session){
   #   
   #   
   # })
+  
+  ######################## head to heads begins
+  output$Aggregate_wins_1 <- renderValueBox({
+    # there has to be a club selected
+    req(input$info_match_league)
+    req(input$info_match_season)
+    req(input$info_match_team1)
+    req(input$info_match_team2)
+    
+    # filter the all leagues matches table 
+    wins_as_home <- all_leagues_matches %>%
+      # for the club names
+      filter(club_name_home == input$info_match_team1 & club_name_away == input$info_match_team2,
+             # the selected season (smaller or equal than the current season, i.e.,
+             # all matches of these two teams in the past)
+             league_season <= as.numeric(
+               str_split(input$info_match_season,
+                         pattern = "/")[[1]][1]),
+             fixture_date < Sys.Date()) %>%
+      # add a variable for the result
+      mutate(result_fixture = fulltime_score_home-fulltime_score_away) %>%
+      # arrange them based on the date
+      count(result_fixture>0)  
+
+    # if the wins_as_home has no TRUE row it means team had no wins 
+    if (nrow(wins_as_home[wins_as_home$`result_fixture > 0` == TRUE, ])==0) {
+      wins_as_home = 0
+    } else{ # else set the number to numeric
+      wins_as_home <- 
+        as.numeric(wins_as_home[wins_as_home$`result_fixture > 0` == TRUE, ]$n)
+      
+    }
+    
+    
+    wins_as_away <- all_leagues_matches %>%
+      # for the club names
+      filter(club_name_away == input$info_match_team1& club_name_home == input$info_match_team2,
+             # the selected season (smaller or equal than the current season, i.e.,
+             # all matches of these two teams in the past)
+             league_season <= as.numeric(
+               str_split(input$info_match_season,
+                         pattern = "/")[[1]][1]),
+             fixture_date < Sys.Date()) %>%
+      # add a variable for the result
+      mutate(result_fixture = fulltime_score_home-fulltime_score_away) %>%
+      # arrange them based on the date
+      count(result_fixture<0)
+    
+    if (nrow(wins_as_away[wins_as_away$`result_fixture < 0` == TRUE, ])==0) {
+      wins_as_away = 0
+    } else{
+      wins_as_away <-
+        as.numeric(wins_as_away[wins_as_away$`result_fixture < 0` == TRUE, ]$n)
+      
+    }
+    
+    valueBox(
+      wins_as_away + wins_as_home,
+      paste0("Aggregate Wins - ", input$info_match_team1),
+      icon = icon("flag"),
+      color = "purple",
+      width = 3
+    )
+  })
+  
+  output$Aggregate_wins_2 <- renderValueBox({
+    # there has to be a club selected
+    req(input$info_match_league)
+    req(input$info_match_season)
+    req(input$info_match_team1)
+    req(input$info_match_team2)
+    
+    # filter the all leagues matches table 
+    wins_as_home_2 <- all_leagues_matches %>%
+      # for the club names
+      filter(club_name_home == input$info_match_team2& club_name_away == input$info_match_team1,
+             # the selected season (smaller or equal than the current season, i.e.,
+             # all matches of these two teams in the past)
+             league_season <= as.numeric(
+               str_split(input$info_match_season,
+                         pattern = "/")[[1]][1]),
+             fixture_date < Sys.Date()) %>%
+      # add a variable for the result
+      mutate(result_fixture = fulltime_score_home-fulltime_score_away) %>%
+      # arrange them based on the date
+      count(result_fixture>0) 
+    
+    # if the wins_as_home has no TRUE row it means team had no wins 
+    if (nrow(wins_as_home_2[wins_as_home_2$`result_fixture > 0` == TRUE, ])==0) {
+      wins_as_home_2 = 0
+    } else{
+      wins_as_home_2 <-
+        as.numeric(wins_as_home_2[wins_as_home_2$`result_fixture > 0` == TRUE, ]$n)
+      
+    }
+    
+    wins_as_away_2 <- all_leagues_matches %>%
+      # for the club names
+      filter(club_name_away == input$info_match_team2& club_name_home == input$info_match_team1,
+             # the selected season (smaller or equal than the current season, i.e.,
+             # all matches of these two teams in the past)
+             league_season <= as.numeric(
+               str_split(input$info_match_season,
+                         pattern = "/")[[1]][1]),
+             fixture_date < Sys.Date()) %>%
+      mutate(result_fixture = fulltime_score_home-fulltime_score_away) %>%
+      count(result_fixture<0)  # count the wins 
+    
+    if (nrow(wins_as_away_2[wins_as_away_2$`result_fixture < 0` == TRUE, ])==0) {
+      wins_as_away_2 = 0
+    } else{
+      wins_as_away_2 <-
+        as.numeric(wins_as_away_2[wins_as_away_2$`result_fixture < 0` == TRUE, ]$n)
+      
+    }
+
+    valueBox(
+      wins_as_home_2 + wins_as_away_2,
+      paste0("Aggregate Wins - ", input$info_match_team2),
+      icon = icon("flag"),
+      color = "orange",
+      width = 3
+    )
+  })
+  
+  
+  
   
   
   # outputs a table with past matches of the two selected teams

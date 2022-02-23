@@ -63,6 +63,71 @@ naive_baseline_acc <- function(){
 }
 
 
+
+
+# function returns a data set with the running accuracy of a the plain model 
+plain_model_acc <- function(){
+  model_acc <- all_leagues_historical_predictions %>%
+    # select only important variables
+    select(league_id, league_name, league_season, fixture_date, fixture_time,
+           league_round, club_name_home, club_name_away,
+           club_id_home, club_id_away, prediction, home_points, away_points) %>%
+    filter(fixture_date < Sys.Date(),
+           !is.na(league_round),
+           !is.na(home_points), !is.na(away_points)) %>%
+    # round the prediction
+    mutate(prediction = round(prediction, 0)) %>%
+    # create a variable whether it is a correct prediction
+    mutate(correct_predicted = ifelse(prediction > 0 &
+                                        home_points == 3,
+                                      TRUE, ifelse(prediction == 0 &
+                                                     home_points == 1,
+                                                   TRUE, ifelse(prediction < 0 &
+                                                                  home_points == 0,
+                                                                TRUE, FALSE)))) %>%
+    # remove rows where the prediction is NA
+    filter(!is.na(prediction)) %>%
+    mutate(moving_accuracy_model = runMean(correct_predicted, n = 2, cumulative = TRUE))
+  
+  return(model_acc)
+  
+}
+
+
+
+
+
+# function returns a data set with the running accuracy of a the plain model 
+lineup_model_acc <- function(){
+  model_acc <- all_leagues_historical_lineups_predictions %>%
+    # select only important variables
+    select(league_id, league_name, league_season, fixture_date, fixture_time,
+           league_round, club_name_home, club_name_away,
+           club_id_home, club_id_away, prediction, home_points, away_points) %>%
+    filter(fixture_date < Sys.Date(),
+           !is.na(league_round),
+           !is.na(home_points), !is.na(away_points)) %>%
+    # round the prediction
+    mutate(prediction = round(prediction, 0)) %>%
+    # create a variable whether it is a correct prediction
+    mutate(correct_predicted = ifelse(prediction > 0 &
+                                        home_points == 3,
+                                      TRUE, ifelse(prediction == 0 &
+                                                     home_points == 1,
+                                                   TRUE, ifelse(prediction < 0 &
+                                                                  home_points == 0,
+                                                                TRUE, FALSE)))) %>%
+    # remove rows where the prediction is NA
+    filter(!is.na(prediction)) %>%
+    mutate(moving_accuracy_model = runMean(correct_predicted, n = 2, cumulative = TRUE))
+  
+  return(model_acc)
+  
+}
+
+
+
+
 # function returns a data set with the running accuracy of a the odds as
 # a benchmark for the predictions.
 odds_acc <- function(){
