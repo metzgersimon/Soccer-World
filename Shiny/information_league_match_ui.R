@@ -62,9 +62,8 @@ tab_information_league_match_ui <- function(){
               fluidRow(
                 column(width = 12,
                        align = "center",
-                       div(style = paste0("border: solid 1px #000000;",
-                                          "margin-top: 20px;",
-                                          "background-color: #004157;"),
+                       div(style = paste0("margin-top: 20px;",
+                                          "background-color: #F4F4F4;"),
                            textOutput("info_match_match_date")
                        )
                 )
@@ -72,7 +71,7 @@ tab_information_league_match_ui <- function(){
               fluidRow(
                 column(width = 12,
                        align = "center",
-                       div(style = "border: solid 2px #000000; margin-top: 20px;",
+                       div(style = "margin-top: 20px;",
                            reactableOutput("info_match_match_events") %>%
                              withSpinner(color = "blue")
                        )
@@ -81,13 +80,13 @@ tab_information_league_match_ui <- function(){
               fluidRow(
                 column(width = 6,
                        align = "center",
-                       div(style = "border: solid 2px #000000; margin-top: 20px; background-color: #004157;",
+                       div(style = "margin-top: 20px; background-color: #F4F4F4;",
                            textOutput("info_match_match_lineups_overview_home_text")
                        )
                 ),
                 column(width = 6,
                        align = "center",
-                       div(style = "border: solid 2px #000000; margin-top: 20px; background-color: #004157;",
+                       div(style = "margin-top: 20px; background-color: #F4F4F4;",
                            textOutput("info_match_match_lineups_overview_away_text")
                        )
                 )
@@ -95,17 +94,15 @@ tab_information_league_match_ui <- function(){
               fluidRow(
                 column(width = 6,
                        align = "center",
-                       div(style = paste0("border: solid 1px #000000;",
-                                          "margin-top: 20px;",
-                                          "background-color: #004157;"),
+                       div(style = paste0("margin-top: 20px;",
+                                          "background-color: #567895;"),
                            textOutput("info_match_match_formation_home")
                        )
                 ),
                 column(width = 6,
                        align = "center",
-                       div(style = paste0("border: solid 1px #000000;",
-                                          "margin-top: 20px;",
-                                          "background-color: #004157;"),
+                       div(style = paste0("margin-top: 20px;",
+                                          "background-color: #567895;"),
                            textOutput("info_match_match_formation_away")
                        )
                 )
@@ -115,8 +112,7 @@ tab_information_league_match_ui <- function(){
                   width = 6,
                   align = "center",
                   div(
-                    style = paste0("border: solid 1px #000000;",
-                                   "margin-top: 20px;"),
+                    style = "margin-top: 20px;",
                     plotlyOutput("info_match_match_lineups_overview_home") %>%
                       withSpinner(color = "blue")
                   )
@@ -125,8 +121,7 @@ tab_information_league_match_ui <- function(){
                   width = 6,
                   align = "center",
                   div(
-                    style = paste0("border: solid 1px #000000;",
-                                   "margin-top: 20px;"),
+                    style = "margin-top: 20px;",
                     plotlyOutput("info_match_match_lineups_overview_away") %>%
                       withSpinner(color = "blue")
                   )
@@ -137,7 +132,7 @@ tab_information_league_match_ui <- function(){
                      fluidRow(
                        column(width = 12,
                               align = "center",
-                              div(style = "border: solid 1px #000000; margin-top: 20px;",
+                              div(style = "margin-top: 20px;",
                                   plotlyOutput("info_match_match_stats") %>%
                                     withSpinner(color = "blue")
                               )
@@ -148,13 +143,13 @@ tab_information_league_match_ui <- function(){
                      fluidRow(
                        column(width = 6,
                               align = "center",
-                              div(style = "border: solid 2px #000000; margin-top: 20px; background-color: #004157;",
+                              div(style = "margin-top: 20px; background-color: #F4F4F4;",
                                   textOutput("info_match_match_lineups_home_text")
                               )
                        ),
                        column(width = 6,
                               align = "center",
-                              div(style = "border: solid 2px #000000; margin-top: 20px; background-color: #004157;",
+                              div(style = "margin-top: 20px; background-color: #F4F4F4;",
                                   textOutput("info_match_match_lineups_away_text")
                               )
                        )
@@ -162,14 +157,14 @@ tab_information_league_match_ui <- function(){
                      fluidRow(
                        column(width = 6,
                               align = "center",
-                              div(style = "border: solid 2px #000000; margin-top: 20px;",
+                              div(style = "margin-top: 20px;",
                                   reactableOutput("info_match_match_lineups_home") %>%
                                     withSpinner(color = "blue")
                                   )
                               ),
                        column(width = 6,
                               align = "center",
-                              div(style = "border: solid 2px #000000; margin-top: 20px;",
+                              div(style = "margin-top: 20px;",
                                   reactableOutput("info_match_match_lineups_away") %>%
                                     withSpinner(color = "blue")
                               )

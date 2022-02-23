@@ -136,9 +136,9 @@ prediction_model_server <- function(input, output, session) {
                 name = paste0("Benchmark ", league_selection),
                 line = list(color = "#d95f02")) %>%
       layout(font = list(color = "white"),
-             plot_bgcolor = "rgba(0, 65, 87, 10)",
-             paper_bgcolor = "rgba(0, 65, 87, 10)",
-             fig_bg_color = "rgba(0, 65, 87, 10)",
+             plot_bgcolor = "#567895",
+             paper_bgcolor = "#567895",
+             fig_bg_color = "#567895",
              xaxis = list(title = "Date"),
              yaxis = list(title = "Accuracy"),
              title = list(text = "Accuracy over time", y = 0.95, x = 0.5))
@@ -190,14 +190,13 @@ prediction_model_server <- function(input, output, session) {
           showPagination = FALSE,
           # set the theme for the table
           theme = reactableTheme(
-            borderColor = "#000000",
-            color = "#000000",
-            backgroundColor = "#004157",
-            highlightColor = "#2f829e",
+            borderColor = "#BFC9D1",
+            color = "#BFC9D1",
+            backgroundColor = "#567895",
+            highlightColor = "#CE8B65",
             cellPadding = "8px 12px",
-            style = list(color = "white")
-            # searchInputStyle = list(width = "100%",
-            #                         color = "black")
+            style = list(color = "white"),
+            searchInputStyle = list(width = "100%")
           )
           ,
           # modify the layout and names of the columns
@@ -271,14 +270,13 @@ prediction_model_server <- function(input, output, session) {
           showPagination = FALSE,
           # set the theme for the table
           theme = reactableTheme(
-            borderColor = "#000000",
-            color = "#000000",
-            backgroundColor = "#004157",
-            highlightColor = "#2f829e",
+            borderColor = "#BFC9D1",
+            color = "#BFC9D1",
+            backgroundColor = "#567895",
+            highlightColor = "#CE8B65",
             cellPadding = "8px 12px",
-            style = list(color = "white")
-            # searchInputStyle = list(width = "100%",
-            #                         color = "black")
+            style = list(color = "white"),
+            searchInputStyle = list(width = "100%")
           )
           ,
           # modify the layout and names of the columns
@@ -341,14 +339,13 @@ prediction_model_server <- function(input, output, session) {
           showPagination = FALSE,
           # set the theme for the table
           theme = reactableTheme(
-            borderColor = "#000000",
-            color = "#000000",
-            backgroundColor = "#004157",
-            highlightColor = "#2f829e",
+            borderColor = "#BFC9D1",
+            color = "#BFC9D1",
+            backgroundColor = "#567895",
+            highlightColor = "#CE8B65",
             cellPadding = "8px 12px",
-            style = list(color = "white")
-            # searchInputStyle = list(width = "100%",
-            #                         color = "black")
+            style = list(color = "white"),
+            searchInputStyle = list(width = "100%")
           )
           ,
           # modify the layout and names of the columns
@@ -407,14 +404,13 @@ prediction_model_server <- function(input, output, session) {
           showPagination = FALSE,
           # set the theme for the table
           theme = reactableTheme(
-            borderColor = "#000000",
-            color = "#000000",
-            backgroundColor = "#004157",
-            highlightColor = "#2f829e",
+            borderColor = "#BFC9D1",
+            color = "#BFC9D1",
+            backgroundColor = "#567895",
+            highlightColor = "#CE8B65",
             cellPadding = "8px 12px",
-            style = list(color = "white")
-            # searchInputStyle = list(width = "100%",
-            #                         color = "black")
+            style = list(color = "white"),
+            searchInputStyle = list(width = "100%")
           )
           ,
           # modify the layout and names of the columns

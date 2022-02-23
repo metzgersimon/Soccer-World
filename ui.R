@@ -42,7 +42,7 @@ ui <- dashboardPage(
     # tags$head(# change the front for the tab
     #   tags$style("*{font-family: Century Gothic;}")),
     # set the theme for the ui
-    shinyDashboardThemes(theme = "grey_dark"),
+    shinyDashboardThemes(theme = "grey_light"),
     # use the shinyjs package to improve the user experience
     # of the app
     useShinyjs(),
