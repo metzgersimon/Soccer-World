@@ -27,8 +27,8 @@ prediction_model_server <- function(input, output, session) {
                       ) + 1
                     )),
         selected = ""
-    )
-  })
+      )
+    })
   
   # create an observer to display for the season selection to display
   # only those players that are present in the selected club
@@ -47,7 +47,8 @@ prediction_model_server <- function(input, output, session) {
           ) %>%
           select(league_round) %>%
           unlist() %>%
-          unname() %>% na.omit()
+          unname() %>%
+          na.omit()
       ),
       selected = ""
     )
@@ -69,7 +70,7 @@ prediction_model_server <- function(input, output, session) {
     } else {
       model_acc <- plain_model_acc()
     }
-
+    
     # select the benchmark based on the user selection
     if(bm_selection == "FiveThirtyEight"){
       bm_prediction_data <- spi_prediction_acc() %>%
@@ -149,7 +150,8 @@ prediction_model_server <- function(input, output, session) {
     req(input$prediction_model_league_selection)
     req(input$prediction_model_season_selection)
     req(input$prediction_model_matchday_selection)
-
+    req(input$prediction_model_bm)
+    
     if (input$prediction_model_lineups == FALSE) {
       result <- all_leagues_historical_predictions %>%
         filter(
@@ -164,7 +166,7 @@ prediction_model_server <- function(input, output, session) {
           game_score = paste0(fulltime_score_home, ":",
                               fulltime_score_away),
           actual_difference = fulltime_score_home - fulltime_score_away,
-          prediction = round(prediction, 2)
+          prediction = round(prediction, 0)
         ) %>%
         select(
           fixture_date,
@@ -202,15 +204,15 @@ prediction_model_server <- function(input, output, session) {
           columns = list(
             fixture_date = colDef(name = "Date",
                                   align = "left"),
-            club_name_home = colDef(name = "Home club",
+            club_name_home = colDef(name = "Home team",
                                     align = "center"),
-            club_name_away = colDef(name = "Away club",
+            club_name_away = colDef(name = "Away team",
                                     align = "center"),
             game_score = colDef(name = "Result",
                                 align = "center"),
-            actual_difference = colDef(name = "Difference",
+            actual_difference = colDef(name = "Goal Difference",
                                        align = "center"),
-            prediction = colDef(name = "Prediction without lineup",
+            prediction = colDef(name = "Predicted Goal Difference",
                                 align = "center")
             
           )
@@ -295,6 +297,6 @@ prediction_model_server <- function(input, output, session) {
           )
         )
     }
-})
-
+  })
+  
 }
