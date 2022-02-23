@@ -8,9 +8,9 @@ source("Setup.R")
 # set a color scheme
 colors <- viridis_pal(option = "D")(30)
 # create the seasons
-seasons <- c(paste0(sort(c(2015:2021),
+seasons <- c(paste0(sort(c(2016:2021),
                          decreasing = TRUE),
-                    "/", sort(c(2016:2022),
+                    "/", sort(c(2017:2022),
                               decreasing = TRUE)))
 
 # setup a connection to the database
