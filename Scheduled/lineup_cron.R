@@ -1,5 +1,6 @@
-setwd("/home/ubuntu/project/Soccer-Prediction-App")
+setwd("/srv/shiny-server/Soccer-Prediction-App")
 source("Setup.R")
+source("Get_data_API.R")
 
 # connect to database
 con <- dbConnect(RMariaDB::MariaDB(), 
@@ -27,9 +28,18 @@ for (id in current$fixture_id) {
   new_lineups <- rbind(new_lineups, get_fixture_lineups(id))
 }
 
+dbWriteTable(con, "all_leagues_fixture_lineups", new_lineups,
+             overwrite = FALSE, append = TRUE)
 
+source("global.R")
 
-dbWriteTable(con, "all_leagues_fifa_squads", all_leagues_fifa_squads,
-             overwrite = TRUE)
+# load the model here 
+
+# then get the full lineup model data 
+
+# then filter fixture ids only in new_lineups
+
+# write predictions to all_leagues_historical_lineups_predictions
+new_lineups
 
 dbDisconnect(con)

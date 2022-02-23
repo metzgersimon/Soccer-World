@@ -16,7 +16,6 @@ slots <- get_times_for_lineup_scraping(
             get_new_match_information_daily(season = 2021))
 
 # save the list for today
-dbRemoveTable(con, "timeslots")
 dbWriteTable(con,"timeslots", slots,  overwrite = TRUE)
 dbDisconnect(con)
 
@@ -24,7 +23,7 @@ dbDisconnect(con)
 cron_clear(ask = FALSE, user = "ubuntu")
 
 # initialise new cronR tabs for today
-slots <- timeslots %>% 
+slots <- slots %>% 
           ungroup() %>%
           select(lineup_time1_cronjob) %>%
           unique()
