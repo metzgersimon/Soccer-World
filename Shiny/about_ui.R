@@ -35,7 +35,11 @@ tab_about_ui <- function() {
                                    "5. ",
                                    a(href = "https://www.oddsportal.com/", "Oddsportal"),
                                    ": provides informations of odds and odds comparison of different leagues."
-                                 ),br(),
+                                   ,br(),
+                                   "6. ",
+                                   a(href = "https://projects.fivethirtyeight.com/soccer-predictions/", "Soccer Power Index (SPI) ratings"),
+                                   ": provides informations of predictions and ratings of clubs in different leagues."
+                                  ),br(),
                                  h2(em("Image Credits")), # image credits
                                  p(
                                    "1. ",
